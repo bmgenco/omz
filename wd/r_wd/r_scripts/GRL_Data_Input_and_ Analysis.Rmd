@@ -1,0 +1,1002 @@
+---
+title: "GRL Data Input and Analysis"
+author: "Brandon M. Genco"
+date: "11/02/2021"
+output: html_document
+---
+# Setup
+* do not move code blocks as might break flow
+```{r, include=FALSE, warning=FALSE}
+rm(list=ls())
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+# Packages, Directories, and Functions
+## Load Packages
+* Change 'packages' vector accordingly 
+* change font type
+
+```{r}
+f.ipak <- function(pkg){
+  
+  # loads packages, quietly, given by a vector of package names e.g., pkg<-c("ggplot", "tidyverse")
+  # will install  packages listed , and their dependencies, if needed.
+  
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg))
+    install.packages(new.pkg, dependencies = TRUE, quiet=T, verbose = F)
+  sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
+}
+packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "RColorBrewer", "marmap", "extrafont", "oce", "MODIS", "measurements")  # set packages here
+f.ipak(packages)
+rm(f.ipak, packages)
+```
+
+## Set Directories
+* Currently machine "Vesta"
+* Improve data directory structure by R2R -> Cruise ID
+* issues with rearragnging dat structr on vesta 2021-10-20?
+
+```{r, setup}
+# wd<-"/home/brandon/vestawd/omz/wd/r_wd"
+
+setwd("..")
+wd<-getwd()
+
+robj<-"./r_objects"
+fig<-"../../figures"
+gis_data<-"../../data/gis_data"
+data_d<-"../../data/2018_data"
+ocean_color<-"../../data/ocean_color_bud"
+bathy_d<-"../../data/bathy" # edit this
+
+
+ctdata<-"../../data/2018_data/ctd/data"
+fdata<-"../../data/2018_data/fluor/get.rvdata.us/cruise/OC1806A/fileset/129998/OC1806A/129998/data" # Cruise flow fluorometer
+tdata<-"../../data/2018_data/temp/OC1806A/130001/data" # Cruise flow Temp
+wdata<-"../../data/2018_data/anem/OC1806A/130002/data" # Cruise wind/anemometer
+gps_data<-"../../data/2018_data/gnss/data" # Cruise gps raw
+corrected_fdata<-"../../data/2018_data/fluor/corrected_fluorometer/FLOW_THROUGH-20210511T213127Z-001/FLOW_THROUGH/CHL"
+
+knitr::opts_knit$set(root.dir=wd)
+```
+
+
+
+## Functions
+* double check for duplicates
+* in the future make functions more general
+```{r}
+#### fluorometer functions ####
+f.read_cruise<-function(directory){
+  files<-list.files(directory)
+  data<-vector(mode="list", length=length(files))
+  
+  for(i in 1:length(files)){
+    data[[i]]<-read.delim(file.path(directory, files[i]), sep =",", header = F)  
+  }
+  
+  return(data)}
+f.rearrange_temp<-function(x, c.names){
+  
+  names(x)<-c.names
+  options("digits.secs"=3)
+  x$time<-mdy_hms(paste(x$`SCS UTC DATE`, x$`SCS UTC TIME`, tz="UTC"))
+  x$time<-with_tz(x$time, tz="US/Mountain")
+  x$date<-date(x$time)
+  x<-subset(x, select= c(date, time, `TEMPERATURE CELSIUS`))
+  x<-as_tibble(x)
+  names(x)<-c("date", "time", "celsius")
+  return(x)
+} 
+f.rearrange_flr<-function(x, c.names){
+  
+  names(x)<-c.names
+  options("digits.secs"=3)
+  x$time<-mdy_hms(paste(x$`SCS UTC DATE`, x$`SCS UTC TIME`, tz="UTC"))
+  x$time<-with_tz(x$time, tz="US/Mountain")
+  x$date<-date(x$time)
+  x<-subset(x, select= c(date, time,  `TRANSMISSOMETER RAW VOLTAGE`, `FLOUROMETER RAW VOLTAGE`, `SURFACE PAR RAW VOLTAGE`))
+  x<-as_tibble(x)
+  names(x)<-c("date", "time", "transmissometer", "fluorometer","PAR")
+  return(x)
+} 
+f.rearrange_flr_corrected<-function(x){
+  options("digits.secs"=3)
+  x$time<-mdy_hms(paste(x[,1], x[,2], tz="UTC"))
+  x$time<-with_tz(x$time, tz="US/Mountain")
+  x$date<-date(x$time)
+  x<-subset(x, select= c(date, time,  V4))
+  x<-as_tibble(x)
+  names(x)<-c("date", "time", "chlorophyll")
+  return(x)
+} 
+f.rearrange_wind<-function(x){
+  
+  #names(x)<-c.names
+  options("digits.secs"=3)
+  x$time<-mdy_hms(paste(x$V1, x$V2, tz="UTC"))
+  x$time<-with_tz(x$time, tz="US/Mountain")
+  x$date<-date(x$time)
+  #x<-subset(x, select=c(date, time, V3, V4, V5, V6, V7,V8,V9,V10))
+  x<-subset(x, select=c(date, time, V5))
+  x<-as_tibble(x)
+  return(x)
+}
+#### gps functions ####
+
+f.rearrange_gps<-function(x, c.names){
+  x<-x[,c(1,2,5,7)]
+  names(x)<-c.names
+  options("digits.secs"=3)
+  x$time<-mdy_hms(paste(x$date1, x$time1, tz="UTC"))
+  x$time<-with_tz(x$time, tz="US/Mountain")
+  x$date<-date(x$time)
+  x<-subset(x, select= c(date, time, lat, lon))
+  x<-as_tibble(x)
+  names(x)<-c("date", "time", "lat", "lon")
+  return(x)
+} # requires env variable "c.names"
+f.gps_lat<-function(data){
+  x<-data$lat
+  x<-format(round(x, digits=5), nsmall = 5)
+  x<-as.character(x)
+  p<-"(([0-9]{2})(?=\\.))"
+  r<-" \\1"
+  x<-str_replace_all(pattern=p, replacement = r, x)
+  x<-measurements::conv_unit(x, from='deg_dec_min', to ="dec_deg")
+  x<-as.numeric(x)
+  x<-format(round(x, digits=4), nsmall = 4)
+  data$lat<<-x
+}
+f.gps_lon<-function(data){
+  x<-data$lon
+  x<-format(round(x, digits=5), nsmall = 5)
+  x<-as.character(x)
+  p<-"(([0-9]{2})(?=\\.))"
+  r<-" \\1"
+  x<-str_replace_all(pattern=p, replacement = r, x)
+  x<-measurements::conv_unit(x, from='deg_dec_min', to ="dec_deg")
+  x<-as.numeric(x)
+  x<-format(round(x, digits=4), nsmall = 4)
+  data$lon<<-x
+}
+
+#### combination functions ####
+f.time_join_flow<-function(f, t){
+  #for joining data by "nearest" time/date in seconds
+  #requires "data.table" package
+  setDT(f)
+  setDT(t)
+  setkey(f, time)
+  setkey(t, time)
+  f<-f[t, roll='nearest']
+} #for spatial stations from flowthrough
+f.time_join2_flow<-function(data, pos){
+  setDT(data)
+  setDT(pos)
+  setkey(data, time)
+  setkey(pos, time)
+  data<-data[pos, roll='nearest']
+}
+
+#### ctd functions ####
+f.time_ctd<-function(x){
+x$time<-with_tz(x$time, tz="US/Mountain")
+return(x)} #for spatial stations from CTD centroids
+f.cent_ctd<-function(x){
+y<-SpatialPoints(coords=cbind(x$longitude, x$latitude), proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
+x<-gCentroid(y)
+x<-cbind(x@coords[1], x@coords[2])
+return(x)} #for spatial stations from CTD centroids
+f.mean_time_ctd<-function(x){
+x<-with_tz(x$time, tzone="UTC")%>%as.numeric%>%mean
+x<-with_tz(with_tz(as_datetime(x), tzone="UTC"), tzone="US/Mountain")
+return(x)}  #for spatial stations from CTD centroids
+
+
+# f.read_ctd<-function(ctdata){
+#   files<-list.files(ctdata)
+#   data<-vector(mode="list", length=length(files))
+#   
+#   for(i in 1:length(files)){
+#     # add if else statement
+#     data[[i]]<-read.ctd(file.path(ctdata, files[]),)  
+#    # trim downcast
+#     x<-ctdTrim(x, method = "downcast")
+#     }
+#   
+#   
+# return(data)} #for CTD data not used
+
+# remote sensing functions
+
+```
+
+# Flowthrough - wind, and GPS
+* read in wind, temperature, flourometr and GPS
+* Creates robjects of all raw data
+* combines and agrgeates to minut level data
+* saves combination as 'OC1806A_cruise_sensor_matchup.R'
+
+## Flowthrough & wind load data and analysis
+
+### Temperature 1 - read raw files save as R object
+* What sensor?
+* see here: http://get.rvdata.us/device/100777
+
+```{r}
+data<-f.read_cruise(tdata)
+c.names<-c("SCS UTC DATE",	"SCS UTC TIME",	"TEMPERATURE CELSIUS")
+raw<-lapply(data, f.rearrange_temp, c.names=c.names)
+rm(data, c.names)
+
+x<-do.call(rbind.data.frame, raw)
+rm(raw)
+setwd(robj)
+saveRDS(x, "OC1806A_temperature_raw.R")
+rm(x)
+
+```
+
+### Fluorometer 1 - read raw files save as R object
+*raw voltage only
+* dont use this
+```{r}
+# data<-f.read_cruise(fdata)
+# c.names<-c("SCS UTC DATE", "SCS UTC TIME", "STRING NAME", "TRANSMISSOMETER RAW VOLTAGE",  "FLOUROMETER RAW VOLTAGE", "SURFACE PAR RAW VOLTAGE", "AN") 
+# raw<-lapply(data, f.rearrange_flr, c.names=c.names)
+# rm(data, c.names)
+# 
+# x<-do.call(rbind.data.frame, raw)
+# rm(raw)
+# setwd(robj)
+# saveRDS(x, "OC1806A_fluorometer_raw.R")
+# rm(x)
+
+```
+
+### Flurormeter 2 - corrected files
+```{r}
+data<-f.read_cruise(corrected_fdata)
+raw<-lapply(data, f.rearrange_flr_corrected)
+rm(data)
+
+x<-do.call(rbind.data.frame, raw)
+rm(raw)
+setwd(robj)
+saveRDS(x, "OC1806A_fluorometer_corrected.R")
+rm(x)
+
+```
+
+### Wind 1 - read raw files save as R object
+```{r}
+data<-f.read_cruise(wdata)
+#c.names<-c("Bow_Wind_Relative",  "Bow-Wind", "SCS UTC DATE", "SCS UTC TIME", "N/A", "DIRECTION RELATIVE",  "SPEED KNOTS", "SPEED OF SOUND", "AIR TEMP", "CELCIUS")
+# raw data does not correspond with the text headings had to manual inspect all variables and best guess
+raw<-lapply(data, f.rearrange_wind)
+rm(data)
+x<-do.call(rbind.data.frame, raw)
+rm(raw)
+
+x$V5<-as.numeric(x$V5)
+x[x == 999.99] <- NA
+names(x)<-c("date", "time", "knots") # wind speed in knots
+setwd(robj)
+saveRDS(x, "OC1806A_wind_raw.R")
+rm(x)
+
+```
+
+## GPS
+### GPS - read raw files save as R object
+```{r}
+data<-f.read_cruise(gps_data)
+c.names<-c("date1","time1","lat","lon")
+raw<-lapply(data, f.rearrange_gps, c.names=c.names)
+rm(data)
+data<-do.call(rbind.data.frame, raw)
+rm(raw)
+
+## convert to degree decimal ##
+
+data<-na.omit(data)
+f.gps_lat(data)
+f.gps_lon(data)
+data$lat<-as.numeric(data$lat)
+data$lon<-as.numeric(data$lon)
+
+data$lon<- (-1 * data$lon) # make it west longitude!
+
+setwd(robj)
+saveRDS(data, "OC1806A_gps.R")
+rm(data)
+
+```
+
+## Match up: Flow,  Wind, and GPS
+* commnetd out raw floruometr, and changes to coreccted chlorophyll
+* Matches up flowthrough data by time and then to gps
+* agregatese second data to minutes - Median values
+** improve this seection to function where user sets time agragation
+* saves database iof crusie data matchedup
+* saves mapped flow through sf object
+
+```{r}
+## Load data
+setwd(robj)
+pos<-readRDS("OC1806A_gps.R")
+#f<-readRDS("OC1806A_fluorometer_raw.R") # old uncorrected data
+f<-readRDS("OC1806A_fluorometer_corrected.R")
+t<-readRDS("OC1806A_temperature_raw.R")
+w<-readRDS("OC1806A_wind_raw.R")
+names(w)<-c("date", "time", "wind")
+
+#### Match Up ####
+
+## join flow
+data<-f.time_join_flow(f,w)
+#data<-subset(data, select=c(date, time, fluorometer, wind)) # for raw voltage
+data<-subset(data, select=c(date, time, chlorophyll, wind))
+
+data<-f.time_join_flow(f=t, t=data)
+rm(f,t,w)
+# data<-subset(data, select=c(date, time, wind, fluorometer, celsius))
+data<-subset(data, select=c(date, time, wind, chlorophyll, celsius))
+
+## match position to data
+x<-f.time_join2_flow(data,pos)
+rm(pos,data)
+full<-subset(x, select= -i.date)
+rm(x)
+
+#### Subset by Minutes ####
+# improve - write function to change to desired time unit for aggregation
+
+full$minute<-round_date(full$time, unit="minute" )
+full.cel<-aggregate(celsius ~ minute, full, median)
+# full.fl<-aggregate(fluorometer ~ minute, full, median)
+full.fl<-aggregate(chlorophyll ~ minute, full, median)
+full.wind<-aggregate(wind ~ minute, full, median)
+
+full.cel<- full%>% dplyr::select(.,minute, lat, lon ) %>% merge(., full.cel, by= "minute",  all.x = FALSE, all.y=FALSE) 
+full.cel<-full.cel %>% distinct(minute,  .keep_all = TRUE) 
+
+full.fl<- full%>% dplyr::select(.,minute, lat, lon ) %>% merge(., full.fl, by= "minute",  all.x = FALSE, all.y=FALSE)
+full.fl<-full.fl %>% distinct(minute,  .keep_all = TRUE)
+
+full.wind<- full%>% dplyr::select(.,minute, lat, lon ) %>% merge(., full.wind, by= "minute",  all.x = FALSE, all.y=FALSE)
+full.wind<-full.wind %>% distinct(minute,  .keep_all = TRUE)
+
+full<-merge(full.fl, full.cel, by = "minute")
+full<-merge(full, full.wind, by="minute")
+
+# full<- dplyr::select (full, minute, lon.x, lat.x, fluorometer, celsius, wind) 
+# names(full)<-c("time", "lon", "lat", "fluorometer", "celsius", "wind")
+full<- dplyr::select (full, minute, lon.x, lat.x, chlorophyll, celsius, wind) 
+names(full)<-c("time", "lon", "lat", "chlorophyll", "celsius", "wind")
+rm(full.cel, full.fl, full.wind)
+
+setwd(robj)
+saveRDS(full, "OC1806A_cruise_sensor_matchup.R")
+
+mapped<-st_as_sf(full, coords = c("lon", "lat"),
+                 crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+
+rm(full)
+saveRDS(mapped, "OC1806A_mapped_cruise_sensor.R")
+rm(mapped)
+
+```
+
+# Hurricane Bud Track
+## Bud Track - load, saves as r object
+*from noaa
+*time zones in utc
+```{r}
+setwd(data_d)
+bud<-read_csv("hurricane_bud/bud_hurdat2.csv", skip = 1, col_names = F)
+bud <- bud[,-21]
+
+hurdat2_names <- c("date", "hour_minute", "record_id", 'storm_status', "lat", 'lon', "max_sustained_wind_knots", "min_pressure_millibars", "34_ne", "34_se", "34_sw", "34_nw", "50_ne", "50_se", "50_sw", "50_nw", "64_ne", "64_se", "64_sw", "64_nw")
+names(bud) <- hurdat2_names
+rm(hurdat2_names)
+
+bud$lat<-as.numeric(str_extract_all(bud$lat, '[:digit:][:digit:][:punct:][:digit:]', simplify = T))
+bud$lon<-(as.numeric(str_extract_all(bud$lon, '[:digit:][:digit:][:digit:][:punct:][:digit:]', simplify = T))) * -1
+
+# time conversion
+bud$date <- as.character(bud$date)
+bud$time<-ymd_hm(paste(bud$'date', bud$'hour_minute', tz="UTC"))
+bud$storm_status<-as.factor(bud$storm_status)
+
+bud[, "print_date"]<-NA
+t1<-which(bud$hour_minute=="1800")
+bud$print_date[t1]<-bud$date[t1]
+bud$print_date<-day(ymd(bud$print_date))
+rm(t1)
+
+
+bud_mapped<-st_as_sf(bud, coords = c("lon", "lat"),
+                 crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+
+
+read_me<-c("unmapped and mapped, SF object, hurricane bud track from NOAA", "time zones are UTC")
+
+bud_list<-vector(mode="list", length=3)
+bud_list[[1]]<-read_me
+bud_list[[2]]<-bud
+bud_list[[3]]<-bud_mapped
+
+names(bud_list)<-c("read_me", "bud_data", "bud_mapped")
+
+setwd(robj)
+saveRDS(bud_list, "2018_hurricane_bud_track_data.R")
+rm(bud_list, bud_mapped) # saving bud object for analysis of track data
+
+```
+
+# 2018 CTD and CTD stations
+
+
+## CTD load data
+```{r}
+# plotting depends on package oce
+# see https://dankelley.github.io/oce/
+# and: https://bscheng.com/2017/10/08/oceanographic-data/
+
+#################################################################
+#                         TO DO                                 #
+# 1: explore use of "useSmoothScatter"
+# 2: write functions to simplify
+# 3: see function options:
+# https://dankelley.github.io/oce/reference/plot-ctd-method.html
+# 4: plot sections
+# 5: om section maps rmeove line ad numbers
+# 5: fix casts with incorrect staion ids
+
+#################################################################
+
+
+
+files<-list.files(ctdata)
+
+#### create stations section - make a function ####
+
+## station 1 - casts ##
+c1<-read.ctd(file.path(ctdata, files[1]),) %>% ctdTrim(., method = "downcast")
+c2<-read.ctd(file.path(ctdata, files[23]),) %>% ctdTrim(., method = "downcast")
+c3<-read.ctd(file.path(ctdata, files[45]),) %>% ctdTrim(., method = "downcast")
+c4<-read.ctd(file.path(ctdata, files[67]),) %>% ctdTrim(., method = "downcast")
+c5<-read.ctd(file.path(ctdata, files[81]),) %>% ctdTrim(., method = "downcast")
+c6<-read.ctd(file.path(ctdata, files[83]),) %>% ctdTrim(., method = "downcast")
+c7<-read.ctd(file.path(ctdata, files[85]),) %>% ctdTrim(., method = "downcast")
+c8<-read.ctd(file.path(ctdata, files[87]),) %>% ctdTrim(., method = "downcast")
+#section
+st1<-as.section(list(c1,c2,c3,c4,c5,c6,c7,c8))
+st1@metadata$sectionId<-"station_1"
+
+## station 2 - casts ##
+c9<-read.ctd(file.path(ctdata, files[89]),) %>% ctdTrim(., method = "downcast")
+c10<-read.ctd(file.path(ctdata, files[3]),) %>% ctdTrim(., method = "downcast")
+c11<-read.ctd(file.path(ctdata, files[5]),) %>% ctdTrim(., method = "downcast")
+c12<-read.ctd(file.path(ctdata, files[7]),) %>% ctdTrim(., method = "downcast")
+c13<-read.ctd(file.path(ctdata, files[9]),) %>% ctdTrim(., method = "downcast")
+c14<-read.ctd(file.path(ctdata, files[11]),) %>% ctdTrim(., method = "downcast")
+c15<-read.ctd(file.path(ctdata, files[13]),) %>% ctdTrim(., method = "downcast")
+c16<-read.ctd(file.path(ctdata, files[15]),) %>% ctdTrim(., method = "downcast")
+c17<-read.ctd(file.path(ctdata, files[17]),) %>% ctdTrim(., method = "downcast")
+
+#section
+st2<-as.section(list(c9,c10,c11,c12,c13,c14,c15,c16,c17))
+st2@metadata$sectionId<-"station_2"
+
+## station 3 - casts ##
+c18<-read.ctd(file.path(ctdata, files[19]),) %>% ctdTrim(., method = "downcast")
+c19<-read.ctd(file.path(ctdata, files[21]),) %>% ctdTrim(., method = "downcast")
+c20<-read.ctd(file.path(ctdata, files[25]),) %>% ctdTrim(., method = "downcast")
+c21<-read.ctd(file.path(ctdata, files[27]),) %>% ctdTrim(., method = "downcast")
+c22<-read.ctd(file.path(ctdata, files[29]),) %>% ctdTrim(., method = "downcast")
+c23<-read.ctd(file.path(ctdata, files[31]),) %>% ctdTrim(., method = "downcast")
+c24<-read.ctd(file.path(ctdata, files[33]),) %>% ctdTrim(., method = "downcast")
+c25<-read.ctd(file.path(ctdata, files[35]),) %>% ctdTrim(., method = "downcast") 
+c26<-read.ctd(file.path(ctdata, files[37]),) %>% ctdTrim(., method = "downcast") 
+c27<-read.ctd(file.path(ctdata, files[39]),) %>% ctdTrim(., method = "downcast") 
+c28<-read.ctd(file.path(ctdata, files[41]),) %>% ctdTrim(., method = "downcast") 
+c29<-read.ctd(file.path(ctdata, files[43]),) %>% ctdTrim(., method = "downcast")
+
+#section
+st3<-as.section(list(c18,c19,c20,c21,c22,c23,c24,c25,c26,c27,c28,c29))
+st3@metadata$sectionId<-"station_3"
+#c30 is mis mislabeled as station 3
+
+## station 3.5 - casts ##
+c30<-read.ctd(file.path(ctdata, files[47]),) %>% ctdTrim(., method = "downcast")
+c31<-read.ctd(file.path(ctdata, files[49]),) %>% ctdTrim(., method = "downcast")
+c32<-read.ctd(file.path(ctdata, files[51]),) %>% ctdTrim(., method = "downcast")
+c33<-read.ctd(file.path(ctdata, files[53]),) %>% ctdTrim(., method = "downcast")
+c34<-read.ctd(file.path(ctdata, files[55]),) %>% ctdTrim(., method = "downcast")
+#section
+st3.5<-as.section(list(c30,c31,c32,c33,c34))
+st3.5@metadata$sectionId<-"station_3.5"
+
+## station 4 - casts ##
+c35<-read.ctd(file.path(ctdata, files[57]),) %>% ctdTrim(., method = "downcast")
+c36<-read.ctd(file.path(ctdata, files[59]),) %>% ctdTrim(., method = "downcast")
+c37<-read.ctd(file.path(ctdata, files[61]),) %>% ctdTrim(., method = "downcast")
+c38<-read.ctd(file.path(ctdata, files[63]),) %>% ctdTrim(., method = "downcast")
+c39<-read.ctd(file.path(ctdata, files[65]),) %>% ctdTrim(., method = "downcast")
+c40<-read.ctd(file.path(ctdata, files[69]),) %>% ctdTrim(., method = "downcast")
+#section
+st4<-as.section(list(c35,c36,c37,c38,c39,c40))
+st4@metadata$sectionId<-"station_4"
+
+## station 5 - casts ##
+c41<-read.ctd(file.path(ctdata, files[71]),) %>% ctdTrim(., method = "downcast")
+c42<-read.ctd(file.path(ctdata, files[73]),) %>% ctdTrim(., method = "downcast")
+c43<-read.ctd(file.path(ctdata, files[75]),) %>% ctdTrim(., method = "downcast")
+c44<-read.ctd(file.path(ctdata, files[77]),) %>% ctdTrim(., method = "downcast")
+c45<-read.ctd(file.path(ctdata, files[79]),) %>% ctdTrim(., method = "downcast")
+#section
+st5<-as.section(list(c41,c42,c43,c44,c45))
+st5@metadata$sectionId<-"station_5"
+
+#### larger sections ####
+
+# all
+all<-as.section(list(c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17,
+c18,c19,c20,c21,c22,c23,c24,c25,c26,c27,c28,c29,c30,c31,c32,c33,c34,c35,c36,c37,
+c38,c39,c40,c41,c42,c43,c44,c45))
+all@metadata$sectionId<-"all_stations"
+
+# ocean_section (stations 2-4)
+ocean_section<-as.section(list(c9,c10,c11,c12,c13,c14,c15,c16,c17,
+c18,c19,c20,c21,c22,c23,c24,c25,c26,c27,c28,c29,c30,c31,c32,c33,c34,c35,c36,c37,
+c38,c39,c40))
+ocean_section@metadata$sectionId<-"stations_2-4"
+
+rm(c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17,
+c18,c19,c20,c21,c22,c23,c24,c25,c26,c27,c28,c29,c30,c31,c32,c33,c34,c35,c36,c37,
+c38,c39,c40,c41,c42,c43,c44,c45)
+
+```
+
+## Save CTD list object
+* Improvement: save only all stations, subset as needed in plotting?
+```{r}
+# save CTD objects
+ctd_sections<-vector(mode="list", length=8)
+
+ctd_sections[[1]]<-st1
+ctd_sections[[2]]<-st2
+ctd_sections[[3]]<-st3
+ctd_sections[[4]]<-st3.5
+ctd_sections[[5]]<-st4
+ctd_sections[[6]]<-st5
+ctd_sections[[7]]<-ocean_section # stations 2-4
+ctd_sections[[8]]<-all
+
+names(ctd_sections)<-c("st1", "st2", "st3", "st3.5", "st4", "st5", "ocean_section", "all")
+setwd(robj)
+
+saveRDS(ctd_sections, "OC1806A_ctd_sections.R")
+
+rm(list=ls()[! ls() %in% c( "robj","gis_data", "wd", "data_d", "gps_dat", "f.time_join_flow", "f.time_join2_flow", "f.time_ctd", "f.cent_ctd", "f.mean_time_ctd")]) # leave commented to in order to calculate centroid ctd station positions. would need to include all relevant functions as well
+```
+
+# Stations
+
+## Stations load data
+* requires ctd sections cells to be run
+
+```{r}
+setwd(data_d)
+stations<-read_csv("2018_time_and_station.csv")
+
+setwd(wd)
+setwd(robj)
+
+ctd_sections<-readRDS("OC1806A_ctd_sections.R")
+ctd_sections[[1]]->st1
+ctd_sections[[2]]->st2
+ctd_sections[[3]]->st3
+ctd_sections[[4]]->st3.5
+ctd_sections[[5]]->st4
+ctd_sections[[6]]->st5
+#ctd_sections[[7]]->ocean_section # stations 2-4
+#ctd_sections[[8]]->all
+rm(ctd_sections)
+
+```
+## Create spatial dataframe of stations from CTD centroids and Flowthrough
+* flowthrough lsit object need s to be improved as is is not helpful
+* select by unique starts and ends
+```{r}
+
+##### centroids #### 
+
+namez<-c("time", "longitude", "latitude")
+
+one<-cbind.data.frame(st1@metadata$time, st1@metadata$longitude, st1@metadata$latitude)
+names(one)<-namez
+
+two<-cbind.data.frame(st2@metadata$time, st2@metadata$longitude, st2@metadata$latitude)
+names(two)<-namez
+
+three<-cbind.data.frame(st3@metadata$time, st3@metadata$longitude, st3@metadata$latitude)
+names(three)<-namez
+
+three_five<-cbind.data.frame(st3.5@metadata$time, st3.5@metadata$longitude, st3.5@metadata$latitude)
+names(three_five)<-namez
+
+four<-cbind.data.frame(st4@metadata$time, st4@metadata$longitude, st4@metadata$latitude)
+names(four)<-namez
+
+five<-cbind.data.frame(st5@metadata$time, st5@metadata$longitude, st5@metadata$latitude)
+names(five)<-namez
+
+ctd_stations_list<-vector(mode = "list", length =6)
+ctd_stations_list[[1]]<-one
+ctd_stations_list[[2]]<-two
+ctd_stations_list[[3]]<-three
+ctd_stations_list[[4]]<-three_five
+ctd_stations_list[[5]]<-four
+ctd_stations_list[[6]]<-five
+
+ctd_stations_list<-lapply(ctd_stations_list, f.time_ctd)
+names(ctd_stations_list)<-c("st1", "st2", "st3", "st3.5", "st4", "st5")
+
+cent<-lapply(ctd_stations_list,f.cent_ctd)
+cent<-data.frame(matrix(unlist(cent), nrow=length(cent), byrow=TRUE))
+cent<-cbind(as.vector(c("1", "2", "3", "3.5", "4", "5" )), cent)
+names(cent)<-c("station", "longitude", "latitude")
+
+x<-unlist(lapply(ctd_stations_list, f.mean_time_ctd))
+x<-with_tz(with_tz(as_datetime(x), tzone="UTC"), tzone="US/Mountain")
+cent$time<-x
+
+rm(x, one,two, three, three_five, four, five, st1, st2, st3, st3.5, st4, st5, ctd_stations_list )
+
+#### flowthrough ####
+
+# improve this
+# setwd(data_d)
+# stations<-read_csv("2018_time_and_station.csv") # loaded in previous cell
+
+names(stations)<-c("date", "hour", "station")
+stations$station<-as.factor(stations$station)
+stations[10,2]<-"0400"
+stations$time<-mdy_hm(paste(stations$date, stations$hour, tz="UTC"))
+stations$time<-with_tz(stations$time, tz="US/Mountain")
+stations<-dplyr::select(stations, time, station)
+
+stations<-dplyr::filter(stations, station != "Steam" & station != "Unknown")
+stations<-droplevels(stations)
+tz(stations$time)<-"US/Mountain"
+
+start<-stations %>% group_by(station) %>% filter(time== min(time)) %>%
+  slice(1) %>% ungroup()
+start<-as.data.frame(start)
+names(start)<-c("start_time", "station")
+
+end<-stations %>% group_by(station) %>% filter(time== max(time)) %>%
+  slice(1) %>% ungroup()
+end<-as.data.frame(end)
+names(end)<-c("end_time", "station")
+
+x<-merge(start, end, by="station")
+x$middle_time<-((x$end_time-x$start_time)/2 +x$start_time)
+
+stations_centroid_ctd<-cent
+station_time<-x # save this object
+
+cent_ctd<-st_as_sf(cent, coords = c("longitude", "latitude"),
+          crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+
+setwd(wd)
+setwd(robj)
+saveRDS(cent_ctd, "OC1806A_mapped_ctd_stations.R")
+rm(stations, x, cent, start, end, cent_ctd)
+
+full<-readRDS("OC1806A_cruise_sensor_matchup.R")
+pos<-readRDS("OC1806A_gps.R")
+
+full$hour<-round_date(full$time, unit="hour" )
+match<-full %>% distinct(hour,  .keep_all = TRUE)
+rm(full)
+
+pos<-f.time_join_flow(pos, match)
+pos<-select(pos, time, lat, lon)
+
+# hard coding, needs to be a function....
+
+start<-dplyr::select(station_time, station, start_time)
+names(start)[2]<-"time"
+start<-f.time_join2_flow(start,pos)
+names(start)<-c("station", "start_time", "start_lat", "start_lon")
+
+mid<-dplyr::select(station_time, station, middle_time)
+names(mid)[2]<-"time"
+mid<-f.time_join2_flow(mid,pos)
+names(mid)<-c("station", "middle_time", "middle_lat", "middle_lon")
+
+end<-dplyr::select(station_time, station, end_time)
+names(end)[2]<-"time"
+end<-f.time_join2_flow(end,pos)
+names(end)<-c("station", "end_time", "end_lat", "end_lon")
+
+start<-dplyr::full_join(start, mid)
+flowthrough_stations<-dplyr::full_join(start, end)
+
+rm(station_time, start, end, mid, pos, match)
+```
+
+## Save List object of stations
+```{r}
+stations_positions_list<-vector(mode="list", length=4)
+
+read_me<-('list of stations of dataframes of positions and times from 2018 cruise.list object[[2]] "flowthrough_stations" is start, time and  middle position for flowthrough data. list object[[3]]  "stations_centroid_ctd" is centroid of ctd casts, and time at that position')
+
+stations_positions_list[[1]]<-read_me
+stations_positions_list[[2]]<-flowthrough_stations
+stations_positions_list[[3]]<-stations_centroid_ctd
+names(stations_positions_list)<-c("read_me", "flowthrough", "ctd_centroids")
+
+rm(list=ls()[! ls() %in% c("stations_positions_list",  "robj", "fig", "gis_data", "wd", "data_d", "f.time_join_flow", "f.time_join2_flow")])
+
+setwd(robj)
+saveRDS(stations_positions_list, "OC1806A_stations_positions_list.R")
+rm(read_me, flowthrough_stations, stations_centroid_ctd, stations_positions_list)
+```
+
+# Analysis - various
+## flowthrough by day:
+
+```{r}
+setwd(robj)
+pos<-readRDS("OC1806A_gps.R")
+#f<-readRDS("OC1806A_fluorometer_raw.R") # old uncorrected data
+f<-readRDS("OC1806A_fluorometer_corrected.R")
+t<-readRDS("OC1806A_temperature_raw.R")
+w<-readRDS("OC1806A_wind_raw.R")
+names(w)<-c("date", "time", "wind")
+
+data<-f.time_join_flow(f,w)
+data<-subset(data, select=c(date, time, chlorophyll, wind))
+data<-f.time_join_flow(f=t, t=data)
+rm(f,t,w)
+
+data<-subset(data, select=c(date, time, wind, chlorophyll, celsius))
+
+## match position to data
+x<-f.time_join2_flow(data,pos)
+rm(pos,data)
+x<-subset(x, select= -i.date)
+
+date_25<- interval(start ="2018-06-25 12:00:00", end = "2018-06-25 24:00:00 ") # subset x-axis interval is in utc, so subet is in local time
+day_25<- x[which(time %within% date_25),]
+
+date_24<- interval(start ="2018-06-24 12:00:00", end = "2018-06-24 24:00:00 ") 
+day_24<- x[which(time %within% date_24),]
+
+date_23<- interval(start ="2018-06-23 12:00:00", end = "2018-06-23 24:00:00 ") 
+day_23<- x[which(time %within% date_23),]
+
+date_22<- interval(start ="2018-06-22 12:00:00", end = "2018-06-22 24:00:00 ")
+day_22<- x[which(time %within% date_22),]
+
+date_21<- interval(start ="2018-06-21 12:00:00", end = "2018-06-21 24:00:00 ") 
+day_21<- x[which(time %within% date_21),]
+
+date_20<- interval(start ="2018-06-20 12:00:00", end = "2018-06-20 24:00:00 ") 
+day_20<- x[which(time %within% date_20),]
+
+date_19<- interval(start ="2018-06-19 12:00:00", end = "2018-06-19 24:00:00 ") 
+day_19<- x[which(time %within% date_19),]
+
+date_18<- interval(start ="2018-06-18 12:00:00", end = "2018-06-18 24:00:00 ") 
+day_18<- x[which(time %within% date_18),]
+
+date_17<- interval(start ="2018-06-17 12:00:00", end = "2018-06-17 24:00:00 ") 
+day_17<- x[which(time %within% date_17),]
+
+```
+
+## flowthrough by station:
+
+```{r}
+setwd(robj)
+
+pos<-readRDS("OC1806A_gps.R")
+#f<-readRDS("OC1806A_fluorometer_raw.R") # old uncorrected data
+f<-readRDS("OC1806A_fluorometer_corrected.R")
+t<-readRDS("OC1806A_temperature_raw.R")
+w<-readRDS("OC1806A_wind_raw.R")
+names(w)<-c("date", "time", "wind")
+
+data<-f.time_join_flow(f,w)
+data<-subset(data, select=c(date, time, chlorophyll, wind))
+data<-f.time_join_flow(f=t, t=data)
+rm(f,t,w)
+
+data<-subset(data, select=c(date, time, wind, chlorophyll, celsius))
+
+## match position to data
+x<-f.time_join2_flow(data,pos)
+rm(pos,data)
+x<-subset(x, select= -i.date)
+
+y<-stations_positions_list$flowthrough_stations
+
+interval_3.5 <-filter(y, station=="Station 3.5")
+begin<-min(interval_3.5$start_time)
+ending<-max(interval_3.5$end_time)
+interval_3.5<-interval(start=begin, end =ending)
+st3.5_v<-x[which(time %within% interval_3.5),]
+
+interval(start ="2018-06-25 12:00:00", end = "2018-06-25 24:00:00 ")
+st3.5
+
+date_25 <- interval(start ="2018-06-25 12:00:00", end = "2018-06-25 24:00:00 ") # subset x-axis interval is in utc, so subet is i local time
+day_25<- x[which(time %within% date_25),]
+
+```
+
+
+```{r}
+setwd(data_d)
+stations<-read_csv("2018_time_and_station.csv")
+setwd(wd)
+setwd(robj)
+stations<-filter(stations, Event=="Station 3.5")
+
+
+```
+
+```{r}
+
+setwd(data_d)
+
+stations<-read_csv("2018_time_and_station.csv")
+names(stations)<-c("date", "hour", "station")
+stations$station<-as.factor(stations$station)
+stations[10,2]<-"0400"
+stations$time<-mdy_hm(paste(stations$date, stations$hour, tz="UTC"))
+stations$time<-with_tz(stations$time, tz="US/Mountain")
+stations<-dplyr::select(stations, time, station)
+
+stations<-dplyr::filter(stations, station != "Steam" & station != "Unknown")
+stations<-droplevels(stations)
+tz(stations$time)<-"US/Mountain"
+
+start<-stations %>% group_by(station) %>% 
+  filter(time== min(time)) %>%
+  slice(1) %>% 
+  ungroup()
+start<-as.data.frame(start)
+
+end<-stations %>% group_by(station) %>% 
+  filter(time== max(time)) %>%
+  slice(1) %>% 
+  ungroup()
+end<-as.data.frame(end)
+
+rects<-dplyr::inner_join(start, end, by="station")
+names(rects)<-c("x1", "station", "x2")
+rm(start, end)
+
+rects$y1<-Inf
+rects$y2<-Inf
+centered<-((rects$x2-rects$x1)/2)+rects$x1
+rects$station<-c("Sta 1", "Sta 2", "Sta 3", "Sta 3.5", "Sta 4", "Sta 5" )
+rm(stations)
+
+rects<-select(rects, c(x1, x2,station))
+names(rects)<-c("start", "end", "station")
+
+setwd(wd)
+setwd(robj)
+pos<-readRDS("OC1806A_gps.R")
+#f<-readRDS("OC1806A_fluorometer_raw.R") # old uncorrected data
+f<-readRDS("OC1806A_fluorometer_corrected.R")
+t<-readRDS("OC1806A_temperature_raw.R")
+w<-readRDS("OC1806A_wind_raw.R")
+names(w)<-c("date", "time", "wind")
+
+data<-f.time_join_flow(f,w)
+data<-subset(data, select=c(date, time, chlorophyll, wind))
+data<-f.time_join_flow(f=t, t=data)
+rm(f,t,w)
+
+data<-subset(data, select=c(date, time, wind, chlorophyll, celsius))
+
+## match position to data
+x<-f.time_join2_flow(data,pos)
+rm(pos,data)
+x<-subset(x, select= -i.date)
+
+st3.5<-filter(rects, station=="Sta 3.5")
+st3.5<-interval(start=st3.5$start, end=st3.5$end)
+st3.5<- x[which(time %within% st3.5),]
+max(st3.5$chlorophyll)
+median(st3.5$chlorophyll)
+
+
+st2<-filter(rects, station=="Sta 2")
+st2<-interval(start=st2$start, end=st2$end)
+st2<- x[which(time %within% st2),]
+
+max(st2$chlorophyll)
+median(st2$chlorophyll)
+
+
+```
+## hurricane metrics
+* MSW Maximum Sustained Wind
+* TS ranslational Speed (m/s)
+* wind speed to translational speed (WS/TS)
+
+```{r}
+setwd(robj)
+bud_list<-readRDS("2018_hurricane_bud_track_data.R") #times in utc
+x<-bud_list$bud_data
+
+x$time<-ymd_hm(paste(x$date, x$hour_minute, tz="UTC"))
+x$time<-with_tz(x$time, tz="US/Mountain")
+x$date<-ymd(paste(x$date, tz="UTC"))
+x$date<-with_tz(x$date, tz="US/Mountain")
+x<-as.data.frame(x)
+
+tmp<-SpatialPointsDataFrame(coords = cbind(x$lat, x$lon), proj4string =CRS("+proj=longlat") , data = x)
+
+y <- sp::spDists(tmp, longlat=T, segments=T)
+x$distance<-c(0,y)
+
+y<-subset(x, select=c(date, time, distance, lat, lon))
+y<-subset(x, select=c(date, time, max_sustained_wind_knots, distance, lat, lon))
+
+# below is imperfect, change for larger fucntion. as is requrie manual edirts
+
+y$delta= NA
+for(i in seq(1, nrow(y), by=2 )){
+  y[i,"delta"] = y[i+1,"delta"] = y[i+1,"time"] - y[i,"time"]
+}
+
+y$delta<-shift(y$delta, n=1, fill="NA", type="lag")
+y$delta[23]<-2
+
+y$time
+y$speed<-(y$distance*1000)/(as.numeric(y$delta)*3600)
+y<-y[-1,]
+y<-na.omit(y)
+          
+# https://mhallwor.github.io/_pages/basics_SpatialPoints
+
+z<-subset(y, select=c(date, max_sustained_wind_knots))
+z<-subset(y, select=c(time, max_sustained_wind_knots))
+z$max_sustained_wind_knots<-z$max_sustained_wind_knots/1.94384
+names(z)<-c("time", "wind")
+
+a<-z[09:20,]
+a<-z[16:26,]
+
+```
+# Inertial wave stuff
+
+## basic maths
+```{r}
+lat<-16
+omega<-7.2921e-5
+f<-2*omega*sin(lat)
+# shoukld be in ceniters
+u<-40
+v<-40
+V<-sqrt((u^2)+(v^2))
+t<-36*3600
+u<-V*sin(f*t)
+
+#see mathmatic for imnversfunction
+
+```
+
