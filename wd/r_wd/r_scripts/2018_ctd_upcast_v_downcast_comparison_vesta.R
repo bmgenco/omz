@@ -21,7 +21,7 @@
 # 5: fix casts with incorrect staion ids
 
 #################################################################
-rm(list=ls())
+# rm(list=ls())
 
 
 ### install packages ###
@@ -50,7 +50,7 @@ ctdata<-"/home/brandon/vestawd/omz/data/2018_data/ctd/data"
 
 
 #### load r object
-set(robj)
+setwd(robj)
 x<-readRDS("2018_ctd_comparison_up_v_downcasts.R")
 x[[1]]->d2
 x[[2]]->d35
@@ -105,3 +105,64 @@ p
 plot(st35, which="oxygen2", depth)
 plot(u35, which="oxygen2")
 
+
+#data combination:
+up_35 <- unlist(lapply(u35, function(x) x[['oxygen2']]))
+y<-ctdDecimate(u35)
+
+u35_1<-cbind(u35@data$station[[1]]@data$oxygen2,u35@data$station[[1]]@data$depth)  
+u35_1<-as.data.frame(u35_1)
+names(u35_1)<-c("o2", "depth")
+
+u35_2<-cbind(u35@data$station[[2]]@data$oxygen2,u35@data$station[[2]]@data$depth)  
+u35_2<-as.data.frame(u35_2)
+names(u35_2)<-c("o2", "depth")
+
+u35_3<-cbind(u35@data$station[[3]]@data$oxygen2,u35@data$station[[3]]@data$depth)  
+u35_3<-as.data.frame(u35_3)
+names(u35_3)<-c("o2", "depth")
+
+u35_4<-cbind(u35@data$station[[4]]@data$oxygen2,u35@data$station[[4]]@data$depth)  
+u35_4<-as.data.frame(u35_4)
+names(u35_4)<-c("o2", "depth")
+
+u35_5<-cbind(u35@data$station[[5]]@data$oxygen2,u35@data$station[[5]]@data$depth)  
+u35_5<-as.data.frame(u35_5)
+names(u35_5)<-c("o2", "depth")
+
+
+d35_1<-cbind(d35@data$station[[1]]@data$oxygen2,d35@data$station[[1]]@data$depth)  
+d35_1<-as.data.frame(d35_1)
+names(d35_1)<-c("o2", "depth")
+
+d35_2<-cbind(d35@data$station[[2]]@data$oxygen2,d35@data$station[[2]]@data$depth)  
+d35_2<-as.data.frame(d35_2)
+names(d35_2)<-c("o2", "depth")
+
+d35_3<-cbind(d35@data$station[[3]]@data$oxygen2,d35@data$station[[3]]@data$depth)  
+d35_3<-as.data.frame(d35_3)
+names(d35_3)<-c("o2", "depth")
+
+d35_4<-cbind(d35@data$station[[4]]@data$oxygen2,d35@data$station[[4]]@data$depth)  
+d35_4<-as.data.frame(d35_4)
+names(d35_4)<-c("o2", "depth")
+
+d35_5<-cbind(d35@data$station[[5]]@data$oxygen2,d35@data$station[[5]]@data$depth)  
+d35_5<-as.data.frame(d35_5)
+names(d35_5)<-c("o2", "depth")
+
+par(mfrow=c(2,3))
+plot(u35_1, xlim=c(0, 250), ylim=c(75,0), col="red");par(new=TRUE)
+plot(d35_1,xlim=c(0, 250), ylim=c(75, 0), col ="blue", main="station 3.5")
+
+plot(u35_2, xlim=c(0, 250), ylim=c(75,0), col="red");par(new=TRUE)
+plot(d35_2,xlim=c(0, 250), ylim=c(75, 0), col ="blue", main="red = upcast")
+
+plot(u35_3,xlim=c(0, 250), ylim=c(75,0), col="red");par(new=TRUE)
+plot(d35_3,xlim=c(0, 250), ylim=c(75, 0), col ="blue", main="blue = downcast")
+
+plot(u35_4,xlim=c(0, 250), ylim=c(75,0), col="red");par(new=TRUE)
+plot(d35_4,xlim=c(0, 250), ylim=c(75, 0), col ="blue")
+
+plot(u35_5,xlim=c(0, 250), ylim=c(75,0), col="red");par(new=TRUE)
+plot(d35_5,xlim=c(0, 250), ylim=c(75, 0), col ="blue")
