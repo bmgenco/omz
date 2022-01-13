@@ -1,0 +1,293 @@
+---
+title: "Hurricane_insitu_matchup_v1"
+author: "Brandon M. Genco"
+date: "1/11/2022"
+output: html_document
+---
+# Setup
+
+## Directories and defaults
+```{r setup, include=FALSE}
+rm(list=ls())
+
+# relative directories
+robj<-"r_objects"
+fig<-"../../figures"
+gis_data<-"../../data/gis_data"
+# data_d<-"../../data/2018_data"
+data_d<-"../../data"
+ocean_color<-"../../data/ocean_color_bud"
+bathy_d<-"../../data/bathy" # edit this
+
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+## Packages
+
+```{r}
+f.ipak <- function(pkg){
+  
+  # loads packages, quietly, given by a vector of package names e.g., pkg<-c("ggplot", "tidyverse")
+  # will install  packages listed , and their dependencies, if needed.
+  
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg))
+    install.packages(new.pkg, dependencies = TRUE, quiet=T, verbose = F)
+  sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
+}
+
+# packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "RColorBrewer", "marmap", "extrafont", "oce", "MODIS", "measurements")  # set packages here
+
+packages<-c("sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "HURDAT")
+
+
+f.ipak(packages)
+rm(f.ipak, packages)
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+installed custom hurdat package using r mardown menu
+-downlaod  tar from archive as no longer maintaine on cran repository
+-https://cran.r-project.org/src/contrib/Archive/HURDAT/
+
+
+## Functions
+```{r}
+
+# select an individual storm by name OR  key fromm hurdat, "h" datsetset
+f.select_ts<-function(key_id){
+# can use or operator io incle storm name
+x<-filter(h, Key == key_id)
+# assign(key_id, x)
+# rm(x, key_id)
+# x<-ls()
+# return(x[1])
+}
+
+
+
+# function to spatial select TS
+f.h_spatial-function(h, lat_max, lat_min, lon_min, lon_max){
+  #bound
+  
+  return()
+}
+
+# function to spatial select odz actual in-situ data or secondary products
+f.odz_actual_spatial<-function(odz_a, lat_max, lat_min, lon_min, lon_max){}
+
+# function to spatial select woa actual in-situ data or secondary products
+f.woa_actual_spatial<-function(woa_a, lat_max, lat_min, lon_min, lon_max){}
+
+# function to spatial select odz interpolated products
+f.odz_interpolated_spatial<-function(odz_i, lat_max, lat_min, lon_min, lon_max){}
+
+# function to spatial select woa interpolated  products
+f.woa_interpolated_spatial<-function(woa_i, lat_max, lat_min, lon_min, lon_max){}
+
+
+f.select_up<-function()
+
+
+```
+
+
+# Data Import
+## Read in "Best Track Data (HURDAT2)" hurricane data
+
+Usinmg hurdat package
+-current version download 2022-01-11
+-Best Track Data (HURDAT2) 
+-https://www.nhc.noaa.gov/data/#text
+-"This dataset was provided on 30 April 2021 to include the best tracks for 
+the 2020 hurricane season, 2019's Ema (CP012019), and an update for 2019's 
+Erick (EP062019) within the North Central Pacific basin."
+
+
+```{r}
+# 
+```
+
+
+```{r}
+# download from online. Basin is eastern pacific
+h<-get_hurdat(basin="EP")
+
+# file not used needs improvement
+# h<-read_csv2(file.path(data_d, "/all_omz_hurricanes/hurdat2-nepac-1949-2020-043021a.txt"),trim_ws=T, col_names = F, show_col_types=F)
+
+```
+
+
+## read in ODZ actual
+- using nc files from online repository
+- https://www.bco-dmo.org/dataset/865316
+
+```{r}
+# from remote sensiong code. edit this
+
+
+x<-nc_open(file.path(data_d, "odz_atlas/nc_depth.nc"))
+
+# 
+# list.files(file.path(data_d, "odz_atlas"))
+# 
+# f.tmp1<-function(x){
+#   y<-nc_open(x)
+#   chl<-ncvar_get(y, 'chlor_a')
+#   lon<-ncvar_get(y, 'lon')
+#   lat<-ncvar_get(y, 'lat')
+#   rownames(chl)<-lon
+#   colnames(chl)<-lat
+#   nc_close(y)
+#   rm(y)
+#   x<-chl
+#   return(x)
+# }
+# 
+# f.tmp2<-function(x){
+#   y<-nc_open(x)
+#   # start<-ncatt_get(y, attname = 'time_coverage_start', varid = 0, verbose=F)
+#   # start<-start$value
+#   # start<-ymd_hms(start)
+#   # start<-with_tz(start, tz="US/Mountain")
+#   
+#   end<-ncatt_get(y, attname = 'time_coverage_end', varid = 0, verbose=F)
+#   end<-end$value
+#   end<-ymd_hms(end)
+#   end<-with_tz(end, tz="US/Mountain")
+#   # time<-c(start, end, (end-start))
+#   day<-day(end)
+#   nc_close(y)
+#   # rm(y, start, end)
+#   rm(y, end)
+#   
+#   return(as.character(day))
+#   
+#   
+#   lon<-ncvar_get(y, 'lon')
+#   lat<-ncvar_get(y, 'lat')
+#   rownames(chl)<-lon
+#   colnames(chl)<-lat
+#   nc_close(y)
+#   rm(y)
+#   x<-chl
+#   return(x)
+# }
+# 
+# etwd(wd)
+# setwd(aqua_directory)
+# files<-list.files()
+# 
+# a<-lapply(files, f.tmp1)
+# dates<-lapply(files, f.tmp2)
+# names(a)<-as.character(dates)
+# rm(files, directory, dates)
+
+
+```
+
+### convert to dbar to depth usinc oce package
+-see methods for function swDepth in oce
+_witre function to loop thourgh dtaset
+
+```{r}
+
+
+
+
+
+```
+
+
+## read in ODZ interoplated
+
+```{r}
+
+```
+
+## read in WOA actual 
+
+```{r}
+
+```
+
+## read in WOA interpolated 
+
+```{r}
+
+```
+
+## read in meta data from world ocean atlas
+see oce function: https://rdrr.io/cran/oce/man/read.woa.html
+
+### search cruise data using metat data
+
+
+# Function defaults (INCLUDES DYNAMIC VARIABLES):
+- define here as opposed to within function or sub blocks
+- dynamic variables are form datasets
+
+```{r}
+
+### user defined: ####
+
+# prior and post for time frame of woa or ODZ in days
+prior<-21
+post<-21 
+
+# Mike's  deliminations: Only need to go to 30 N and 150 W on one corner.  Also 80 W is far enough. .. (implied = 0 south so just use 0.00)
+lon_max<-70 # need to improve here
+lon_min<--150
+lat_max<-30
+lat_min<-0
+
+# radius around TS in km
+radi<-500
+
+### dynamic ####
+
+#from hurdat dataset
+
+# lat_max<-max(h$Lat)
+# lat_min<-min(h$Lat)
+# # lon_max<-max(h$Lon)# need to subset form negtive values only
+# lon_min<-min(h$Lon)
+ 
+```
+
+
+
+## Initial data subsetting
+### find storms near areas with high
+```{r}
+
+```
+
+## Specific storms
+impove this for actually use
+
+```{r}
+# list unique identifiers by storm name
+
+storm_name<-"BUD"
+print(filter(h, Name == storm_name) %>% select(., Key) %>% unique(.))
+
+# retun a specific storm by unique key
+key_id<-"EP032018"
+
+x<-f.select_ts(key_id)
+assign(key_id, x)
+rm(x)
+
+
+
+```
+
+
+
+
+
+## Storm selction space and time
+-Create spatial datbase of poygons with data from f date set

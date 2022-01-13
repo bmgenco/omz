@@ -21,7 +21,7 @@
 # 5: fix casts with incorrect staion ids
 
 #################################################################
-# rm(list=ls())
+rm(list=ls())
 
 
 ### install packages ###
@@ -100,15 +100,15 @@ c40<-read.ctd(file.path(ctdata, files[69]),)
 st4<-as.section(list(c35,c36,c37,c38,c39,c40))
 
 #### plotting ###
-plot(c13, which="oxygen2")
-p
-plot(st35, which="oxygen2", depth)
-plot(u35, which="oxygen2")
-
-
-#data combination:
-up_35 <- unlist(lapply(u35, function(x) x[['oxygen2']]))
-y<-ctdDecimate(u35)
+# plot(c13, which="oxygen2")
+# p
+# plot(st35, which="oxygen2", depth)
+# plot(u35, which="oxygen2")
+# 
+# 
+# #data combination:
+# up_35 <- unlist(lapply(u35, function(x) x[['oxygen2']]))
+# y<-ctdDecimate(u35)
 
 u35_1<-cbind(u35@data$station[[1]]@data$oxygen2,u35@data$station[[1]]@data$depth)  
 u35_1<-as.data.frame(u35_1)
@@ -152,17 +152,17 @@ d35_5<-as.data.frame(d35_5)
 names(d35_5)<-c("o2", "depth")
 
 par(mfrow=c(2,3))
-plot(u35_1, xlim=c(0, 250), ylim=c(75,0), col="red");par(new=TRUE)
-plot(d35_1,xlim=c(0, 250), ylim=c(75, 0), col ="blue", main="station 3.5")
+plot(u35_1, xlim=c(0, 250), ylim=c(60,0), col="red");par(new=TRUE)
+plot(d35_1,xlim=c(0, 250), ylim=c(60, 0), col ="blue", main="station 3.5 individual casts")
 
-plot(u35_2, xlim=c(0, 250), ylim=c(75,0), col="red");par(new=TRUE)
-plot(d35_2,xlim=c(0, 250), ylim=c(75, 0), col ="blue", main="red = upcast")
+plot(u35_2, xlim=c(0, 250), ylim=c(60,0), col="red");par(new=TRUE)
+plot(d35_2,xlim=c(0, 250), ylim=c(60, 0), col ="blue", main="red = upcast")
 
-plot(u35_3,xlim=c(0, 250), ylim=c(75,0), col="red");par(new=TRUE)
-plot(d35_3,xlim=c(0, 250), ylim=c(75, 0), col ="blue", main="blue = downcast")
+plot(u35_3,xlim=c(0, 250), ylim=c(60,0), col="red");par(new=TRUE)
+plot(d35_3,xlim=c(0, 250), ylim=c(60, 0), col ="blue", main="blue = downcast")
 
-plot(u35_4,xlim=c(0, 250), ylim=c(75,0), col="red");par(new=TRUE)
-plot(d35_4,xlim=c(0, 250), ylim=c(75, 0), col ="blue")
+plot(u35_4,xlim=c(0, 250), ylim=c(60,0), col="red");par(new=TRUE)
+plot(d35_4,xlim=c(0, 250), ylim=c(60, 0), col ="blue")
 
-plot(u35_5,xlim=c(0, 250), ylim=c(75,0), col="red");par(new=TRUE)
-plot(d35_5,xlim=c(0, 250), ylim=c(75, 0), col ="blue")
+plot(u35_5,xlim=c(0, 250), ylim=c(60,0), col="red");par(new=TRUE)
+plot(d35_5,xlim=c(0, 250), ylim=c(60, 0), col ="blue")
