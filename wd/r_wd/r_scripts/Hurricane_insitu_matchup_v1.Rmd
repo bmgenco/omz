@@ -5,8 +5,8 @@ date: "1/11/2022"
 output: html_document
 ---
 # Setup
-
 ## Directories and defaults
+Use r proj file for relative directories
 ```{r setup, include=FALSE}
 rm(list=ls())
 
@@ -24,6 +24,10 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
 ## Packages
+Installed custom hurdat package using r markdown menu
+* download  tar from archive as no longer maintained on cran repository
+* [link]https://cran.r-project.org/src/contrib/Archive/HURDAT/
++ include as git submodule instead
 
 ```{r}
 f.ipak <- function(pkg){
@@ -39,7 +43,7 @@ f.ipak <- function(pkg){
 
 # packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "RColorBrewer", "marmap", "extrafont", "oce", "MODIS", "measurements")  # set packages here
 
-packages<-c("sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "HURDAT")
+packages<-c("sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "HURDAT", "sf", "cmocean", "ncdf4", "plot3D", "tidync")
 
 
 f.ipak(packages)
@@ -47,90 +51,51 @@ rm(f.ipak, packages)
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-installed custom hurdat package using r mardown menu
--downlaod  tar from archive as no longer maintaine on cran repository
--https://cran.r-project.org/src/contrib/Archive/HURDAT/
-
-
 ## Functions
+Note importance of "function_variables<-vector(mode="list")"
 ```{r}
 
-# select an individual storm by name OR  key fromm hurdat, "h" datsetset
-f.select_ts<-function(key_id){
-# can use or operator io incle storm name
-x<-filter(h, Key == key_id)
-# assign(key_id, x)
-# rm(x, key_id)
-# x<-ls()
-# return(x[1])
-}
-
-
-
-# function to spatial select TS
-f.h_spatial-function(h, lat_max, lat_min, lon_min, lon_max){
-  #bound
-  
-  return()
-}
-
-# function to spatial select odz actual in-situ data or secondary products
-f.odz_actual_spatial<-function(odz_a, lat_max, lat_min, lon_min, lon_max){}
-
-# function to spatial select woa actual in-situ data or secondary products
-f.woa_actual_spatial<-function(woa_a, lat_max, lat_min, lon_min, lon_max){}
-
-# function to spatial select odz interpolated products
-f.odz_interpolated_spatial<-function(odz_i, lat_max, lat_min, lon_min, lon_max){}
-
-# function to spatial select woa interpolated  products
-f.woa_interpolated_spatial<-function(woa_i, lat_max, lat_min, lon_min, lon_max){}
-
-
-f.select_up<-function()
-
-
-```
-
-
-# Data Import
-## Read in "Best Track Data (HURDAT2)" hurricane data
-
-Usinmg hurdat package
--current version download 2022-01-11
--Best Track Data (HURDAT2) 
--https://www.nhc.noaa.gov/data/#text
--"This dataset was provided on 30 April 2021 to include the best tracks for 
-the 2020 hurricane season, 2019's Ema (CP012019), and an update for 2019's 
-Erick (EP062019) within the North Central Pacific basin."
-
-
-```{r}
+function_variables<-vector(mode="list") # for storing all function variables that may be dynamic or other wise
 # 
-```
-
-
-```{r}
-# download from online. Basin is eastern pacific
-h<-get_hurdat(basin="EP")
-
-# file not used needs improvement
-# h<-read_csv2(file.path(data_d, "/all_omz_hurricanes/hurdat2-nepac-1949-2020-043021a.txt"),trim_ws=T, col_names = F, show_col_types=F)
-
-```
-
-
-## read in ODZ actual
-- using nc files from online repository
-- https://www.bco-dmo.org/dataset/865316
-
-```{r}
-# from remote sensiong code. edit this
-
-
-x<-nc_open(file.path(data_d, "odz_atlas/nc_depth.nc"))
-
+# # select an individual storm by name OR  key fromm hurdat, "h" datsetset
+# f.select_ts<-function(key_id){
+# # can use or operator io incle storm name
+# x<-filter(h, Key == key_id)
+# # assign(key_id, x)
+# # rm(x, key_id)
+# # x<-ls()
+# # return(x[1])
+# }
 # 
+# 
+# 
+# # function to spatial select TS
+# f.h_spatial-function(h, lat_max, lat_min, lon_min, lon_max){
+#   #bound
+#   
+#   return()
+# }
+# 
+# # function to spatial select odz actual in-situ data or secondary products
+# f.odz_actual_spatial<-function(odz_a, lat_max, lat_min, lon_min, lon_max){}
+# 
+# # function to spatial select woa actual in-situ data or secondary products
+# f.woa_actual_spatial<-function(woa_a, lat_max, lat_min, lon_min, lon_max){}
+# 
+# # function to spatial select odz interpolated products
+# f.odz_interpolated_spatial<-function(odz_i, lat_max, lat_min, lon_min, lon_max){}
+# 
+# # function to spatial select woa interpolated  products
+# f.woa_interpolated_spatial<-function(woa_i, lat_max, lat_min, lon_min, lon_max){}
+# 
+# 
+# f.select_up<-function()
+# 
+
+### nc files ####
+
+
+
 # list.files(file.path(data_d, "odz_atlas"))
 # 
 # f.tmp1<-function(x){
@@ -186,108 +151,239 @@ x<-nc_open(file.path(data_d, "odz_atlas/nc_depth.nc"))
 # rm(files, directory, dates)
 
 
+
+
 ```
 
-### convert to dbar to depth usinc oce package
--see methods for function swDepth in oce
-_witre function to loop thourgh dtaset
+# Data sets Import
+
+## ploting objects - see script "GRL_Main_Figures.Rmd"
+```{r}
+setwd(gis_data)
+coastline<-st_read("./ne_50m_land/ne_50m_land.shp") 
+```
+
+## Read in "Best Track Data (HURDAT2)" hurricane data
+Using 'hurdat package'
+* If downloaded file  then:
++ [link]https://www.nhc.noaa.gov/data/#text 
++ current version download 2022-01-11
++ "This dataset was provided on 30 April 2021 to include the best tracks for 
+  the 2020 hurricane season, 2019's Ema (CP012019), and an update for 2019's 
+  Erick (EP062019) within the North Central Pacific basin."
 
 ```{r}
+# download from online. Basin is eastern pacific
+# h<-get_hurdat(basin="EP")
+# saveRDS(h, "r_objects/hurdat.R")
 
-
-
-
-
+h<-readRDS("r_objects/hurdat.R")
 ```
 
-
-## read in ODZ interoplated
-
-```{r}
-
-```
-
-## read in WOA actual 
-
-```{r}
-
-```
-
-## read in WOA interpolated 
-
-```{r}
-
-```
-
-## read in meta data from world ocean atlas
-see oce function: https://rdrr.io/cran/oce/man/read.woa.html
-
-### search cruise data using metat data
-
-
-# Function defaults (INCLUDES DYNAMIC VARIABLES):
-- define here as opposed to within function or sub blocks
-- dynamic variables are form datasets
+### Hurdat -> function_variables (INCLUDES DYNAMIC VARIABLES):
+Appending 'function_variables' with dynamic variables from hurdat 'h' data set
+* define here as opposed to within function or sub blocks
++ add hurdat coordinates as bbox feature
 
 ```{r}
 
 ### user defined: ####
 
 # prior and post for time frame of woa or ODZ in days
-prior<-21
-post<-21 
+function_variables$h.prior<-21
+function_variables$h.post<-21 
 
 # Mike's  deliminations: Only need to go to 30 N and 150 W on one corner.  Also 80 W is far enough. .. (implied = 0 south so just use 0.00)
-lon_max<-70 # need to improve here
-lon_min<--150
-lat_max<-30
-lat_min<-0
+
+function_variables$h.lon_max<--90 # need to improve here
+function_variables$h.lon_min<--150
+function_variables$h.lat_max<-30
+# function_variables$h.lat_min<-0
 
 # radius around TS in km
-radi<-500
+function_variables$h.radi<-500
 
 ### dynamic ####
-
 #from hurdat dataset
+# 
+# function_variables$h.lat_max<-max(h$Lat)
+function_variables$h.lat_min<-min(h$Lat)
+# function_variables$h.lon_max<-max(h$Lon[h$Lon < 0])
+# function_variables$h.lon_min<-min(h$Lon)
+# function_variables$h.lat_max<-max(h$Lat)
 
-# lat_max<-max(h$Lat)
-# lat_min<-min(h$Lat)
-# # lon_max<-max(h$Lon)# need to subset form negtive values only
-# lon_min<-min(h$Lon)
- 
+Selection<-paste0("Lat (", function_variables$h.lat_min, ", ", function_variables$h.lat_max, ") Lon (", function_variables$h.lon_min, ", ", function_variables$h.lon_max,  ")")
+
+```
+
+## read in meta data from urls -List of locations for metadata: 
+World Ocean database select
+* Downloaded spatial search -> in omz/outputWorld Ocean Database Select and Retrieval System_files
++ TODO: convert  html to table
++ [link]https://www.ncei.noaa.gov/access/world-ocean-database-select/dbsearch.html
++ see oce function: https://rdrr.io/cran/oce/man/read.woa.html
+WOA
+* [link]
+SAMOS 
+*[link]https://samos.coaps.fsu.edu/html/webservices.php
++nothing done yet
+BCO-DMO
+* dowload metadat from [link]https://erddap.bco-dmo.org/erddap/search/advanced.html?page=1&itemsPerPage=1000
+*use ODV to download meta data [link]https://erddap.bco-dmo.org/erddap/griddap/documentation.html
+
+## read in in situ
+### read in ODZ actual
+* using nc files from online repository
++ [link]https://www.bco-dmo.org/dataset/865316
++ see [link]https://rpubs.com/boyerag/297592
+* perhaps us tidy nc pacakage
++[link]https://ropensci.org/blog/2019/11/05/tidync/
+
+
+TODO : retrun grid cells with a high number of observations in upper 200M
+
+```{r}
+# from remote sensiong code. edit this
+
+#### Option 1 netcdf: ####
+# x<-nc_open(file.path(data_d, "odz_atlas/nc_depth.nc"))
+# lat<-ncvar_get(x, "Latitude")
+# lon<-ncvar_get(x, "Longitude")
+# z<-ncvar_get(x, "Depth")
+# obs<-ncvar_get(x, "numObs")
+# nc_close(x)
+# 
+
+# come back here:
+# derivdepth<-ncvar_get(x, "maxDerivDepth")
+# fodz<-ncvar_get(x, "fODZ")
+# o2<-ncvar_get(x, "O2")
+
+
+# test<-obs[,,1]
+# 
+# x<-dim()
+# 
+# scatter3D(obs[(1:256),,], obs[,(1:230),], obs[,,(1:50)])
+# 
+# x<-obs[(1:dim(obs)[1]),1,1]
+# y<-obs[1,(1:dim(obs)[2]),1]
+# z<-obs[1,1,(1:dim(obs)[3])]
+# 
+# scatter3D(x,y,z)
+# 
+
+#### option 2 tidync package ####
+
+x<-tidync(file.path(data_d, "odz_atlas/nc_depth.nc"))
+
+
+
 ```
 
 
+### read in ODZ interoplated
 
-## Initial data subsetting
-### find storms near areas with high
 ```{r}
 
 ```
 
-## Specific storms
+### read in WOA actual 
+
+```{r}
+
+```
+
+### read in WOA interpolated 
+
+```{r}
+
+```
+
+
+
+### convert to dbar to depth usinc oce package
+* see methods for function 'swDepth' in oce
++ TODO: write function to loop through dat sets
+
+```{r}
+
+```
+
+# Initial data subsetting
+## spatial h reformation
+```{r}
+x<-filter(h, Status == "HU")
+
+h.sf<- sf::st_as_sf(x, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") 
+
+h.sf<-sf::st_crop(h.sf, c(xmin=function_variables$h.lon_min, ymin=function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax=function_variables$h.lat_max)) #subset by uset defined 
+rm(x)
+
+
+```
+
+plotting basic
+double check re projecting issues: 
+*[link]https://geocompr.robinlovelace.net/reproj-geo-data.html
+
+
+```{r}
+
+# cl<-st_crop(coastline, xmin=-170, ymin=-20, xmax=-80, ymax=40) # change here based on desired figure size
+
+cl<-st_crop(coastline, xmin=function_variables$h.lon_min, ymin=function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax=function_variables$h.lat_max)
+
+m.coast <- ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+
+  theme_bw()+ theme(text = element_text(size =12)) 
+
+#'Selection' variable created in different code cell 
+
+# option 1
+m.map<-m.coast+geom_sf(mapping = aes(col=Wind), data=h.sf, size=.25)+ggtitle(paste0("Hurricanes: ", Selection))+ labs(color = "Wind speed (m/s)")
+m.map
+
+#option 2
+m.map<-m.coast+geom_sf(mapping = aes(col=Wind), data=h.sf, size= .25)+scale_color_cmocean(name="dense", direction= 1)+ggtitle(paste0("Hurricanes: ", Selection)) + labs(color = "Wind speed (m/s)")
+m.map
+
+rm(m.map, m.coast, cl, Selection) 
+
+```
+
+
+## match up h to meta -> h_meta.sp
+## select insitu by h_meta.sp
+
+
+# misc:
+## Storms specific data from h
+#### find storms near areas with high
+```{r}
+
+```
+
+#### Specific storms
 impove this for actually use
 
 ```{r}
 # list unique identifiers by storm name
-
-storm_name<-"BUD"
-print(filter(h, Name == storm_name) %>% select(., Key) %>% unique(.))
-
-# retun a specific storm by unique key
-key_id<-"EP032018"
-
-x<-f.select_ts(key_id)
-assign(key_id, x)
-rm(x)
+# 
+# storm_name<-"BUD"
+# print(filter(h, Name == storm_name) %>% select(., Key) %>% unique(.))
+# 
+# # retun a specific storm by unique key
+# key_id<-"EP032018"
+# 
+# x<-f.select_ts(key_id)
+# assign(key_id, x)
+# rm(x)
 
 
 
 ```
 
 
+#### Storm selction space and time
+TODO: Create spatial database of poygons with data from f date set
 
-
-
-## Storm selction space and time
--Create spatial datbase of poygons with data from f date set
