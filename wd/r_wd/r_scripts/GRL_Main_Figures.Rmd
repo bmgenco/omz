@@ -1856,7 +1856,7 @@ rm(stations_positions_list)
 
 ```
 #### Final Attempt (5.b) - individual plots 
-* add 100 km circle
+* add 200 km circle- 100km radi
 https://stackoverflow.com/questions/34183049/plot-circle-with-a-certain-radius-around-point-on-a-map-in-ggplot2
 
 ```{r}

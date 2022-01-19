@@ -58,8 +58,8 @@ Note importance of "function_variables<-vector(mode="list")"
 ```{r}
 
 function_variables<-vector(mode="list") # for storing all function variables that may be dynamic or other wise
-# 
-# # select an individual storm by name OR  key fromm hurdat, "h" datsetset
+
+### function to select an individual storm by name OR  key from hurdat, "h" datsetset  ####
 # f.select_ts<-function(key_id){
 # # can use or operator io incle storm name
 # x<-filter(h, Key == key_id)
@@ -68,90 +68,60 @@ function_variables<-vector(mode="list") # for storing all function variables tha
 # # x<-ls()
 # # return(x[1])
 # }
-# 
-# 
-# 
-# # function to spatial select TS
+
+### function to spatial select TS ####
 # f.h_spatial-function(h, lat_max, lat_min, lon_min, lon_max){
 #   #bound
 #   
 #   return()
 # }
-# 
-# # function to spatial select odz actual in-situ data or secondary products
+#
+### function to add polygons
+f.buffer_select<-function(h.sf, function_variables){
+  # x<-h.sf
+  x<-h.sf[1:20,]
+  
+  radi.m<-function_variables$h.radi
+  
+# apply function 
+    
+  
+  return(x)
+}
+
+### function to spatial select odz actual in-situ data or secondary products ####
 # f.odz_actual_spatial<-function(odz_a, lat_max, lat_min, lon_min, lon_max){}
-# 
-# # function to spatial select woa actual in-situ data or secondary products
+
+### function to spatial select woa actual in-situ data or secondary productsc ####
 # f.woa_actual_spatial<-function(woa_a, lat_max, lat_min, lon_min, lon_max){}
 # 
-# # function to spatial select odz interpolated products
+### function to spatial select odz interpolated products ####
 # f.odz_interpolated_spatial<-function(odz_i, lat_max, lat_min, lon_min, lon_max){}
 # 
-# # function to spatial select woa interpolated  products
+### function to spatial select woa interpolated  products ####
 # f.woa_interpolated_spatial<-function(woa_i, lat_max, lat_min, lon_min, lon_max){}
-# 
-# 
-# f.select_up<-function()
-# 
-
-### nc files ####
+### function to convert depth when reading in nc files
 
 
-
-# list.files(file.path(data_d, "odz_atlas"))
-# 
-# f.tmp1<-function(x){
-#   y<-nc_open(x)
-#   chl<-ncvar_get(y, 'chlor_a')
-#   lon<-ncvar_get(y, 'lon')
-#   lat<-ncvar_get(y, 'lat')
-#   rownames(chl)<-lon
-#   colnames(chl)<-lat
-#   nc_close(y)
-#   rm(y)
-#   x<-chl
-#   return(x)
-# }
-# 
-# f.tmp2<-function(x){
-#   y<-nc_open(x)
-#   # start<-ncatt_get(y, attname = 'time_coverage_start', varid = 0, verbose=F)
-#   # start<-start$value
-#   # start<-ymd_hms(start)
-#   # start<-with_tz(start, tz="US/Mountain")
-#   
-#   end<-ncatt_get(y, attname = 'time_coverage_end', varid = 0, verbose=F)
-#   end<-end$value
-#   end<-ymd_hms(end)
-#   end<-with_tz(end, tz="US/Mountain")
-#   # time<-c(start, end, (end-start))
-#   day<-day(end)
-#   nc_close(y)
-#   # rm(y, start, end)
-#   rm(y, end)
-#   
-#   return(as.character(day))
-#   
-#   
-#   lon<-ncvar_get(y, 'lon')
-#   lat<-ncvar_get(y, 'lat')
-#   rownames(chl)<-lon
-#   colnames(chl)<-lat
-#   nc_close(y)
-#   rm(y)
-#   x<-chl
-#   return(x)
-# }
-# 
-# etwd(wd)
-# setwd(aqua_directory)
-# files<-list.files()
-# 
-# a<-lapply(files, f.tmp1)
-# dates<-lapply(files, f.tmp2)
-# names(a)<-as.character(dates)
-# rm(files, directory, dates)
-
+#### function to create buffer around hurricane points
+f.buffer_select<-function(h.sf, function_variables){
+  # x<-h.sf
+  x<-h.sf
+  radi.m<-function_variables$h.radi
+  y<-st_geometry(x)
+  
+  f.circle<-function(y, radi.m){
+  lat0<-y[[1]][2]
+  lon0<-y[[1]][1]
+  center.reproj<-paste0("+proj=aeqd +lat_0=", lat0, " ", "+lon_0=", lon0)
+  flat<-sf::st_transform(y, center.reproj )
+  circle<-sf::st_buffer(flat, dist=radi.m)%>%sf::st_transform(., "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") 
+  return(circle)
+  }
+  z<-f.circle(y, radi.m)
+  x$buffer<-z
+  return(x)
+}
 
 
 
@@ -202,8 +172,11 @@ function_variables$h.lon_min<--150
 function_variables$h.lat_max<-30
 # function_variables$h.lat_min<-0
 
-# radius around TS in km
-function_variables$h.radi<-500
+# radius around TS in m
+function_variables$h.radi<-100000
+
+# # radius around TS in degrees
+# function_variables$h.radi<-0.5
 
 ### dynamic ####
 #from hurdat dataset
@@ -282,7 +255,7 @@ TODO : retrun grid cells with a high number of observations in upper 200M
 #### option 2 tidync package ####
 file<-(file.path(data_d, "odz_atlas/nc_depth.nc"))
 x<-tidync(file)
-y<-hyper_filter(x)
+# y<-hyper_filter(x)
 
 
 ```
@@ -332,7 +305,7 @@ Plotting basic
 double check re projecting issues: 
 *https://geocompr.robinlovelace.net/reproj-geo-data.html
 
-
+#### Plotting
 ```{r}
 
 # cl<-st_crop(coastline, xmin=-170, ymin=-20, xmax=-80, ymax=40) # change here based on desired figure size
@@ -353,6 +326,14 @@ m.map<-m.coast+geom_sf(mapping = aes(col=Wind), data=h.sf, size= .25)+scale_colo
 m.map
 
 rm(m.map, m.coast, cl, Selection) 
+
+```
+### buffer
+see: https://r-spatial.github.io/sf/reference/geos_unary.html
+
+```{r}
+h.buf<-f.buffer_select(h.sf, function_variables)
+
 
 ```
 
