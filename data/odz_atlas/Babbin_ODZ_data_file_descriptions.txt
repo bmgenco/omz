@@ -1,0 +1,193 @@
+File name: nc_density.nc
+
+Description: Atlas of density-gridded, un-interpolated Pacific oxygen deficient zones from data compilation. Primary data were gridded on a 0.5º x 0.5º x 0.1 kg/m^3 (sigma-theta) grid.
+
+NetCDF header information:
+netcdf nc_density {
+dimensions:
+	Latitude = 256 ;
+	Longitude = 230 ;
+	Sigma\ Theta = 25 ;
+variables:
+	double Latitude(Latitude) ;
+		Latitude:units = "degrees" ;
+		Latitude:long_name = "Latitude" ;
+	double Longitude(Longitude) ;
+		Longitude:units = "degrees" ;
+		Longitude:long_name = "Longitude" ;
+	double Sigma\ Theta(Sigma\ Theta) ;
+		Sigma\ Theta:units = "kg/m^3" ;
+		Sigma\ Theta:long_name = "Sigma Theta" ;
+	float fODZ(Sigma\ Theta, Longitude, Latitude) ;
+	float O2(Sigma\ Theta, Longitude, Latitude) ;
+		O2:units = "umol/kg" ;
+	float deriv(Sigma\ Theta, Longitude, Latitude) ;
+		deriv:units = "umol/(kg*dbar)" ;
+	float IR(Sigma\ Theta, Longitude, Latitude) ;
+	float topDensity(Longitude, Latitude) ;
+		topDensity:units = "kg/m^3" ;
+	float maxDerivDensity(Longitude, Latitude) ;
+		maxDerivDensity:units = "kg/m^3" ;
+	float numObs(Sigma\ Theta, Longitude, Latitude) ;
+}
+
+Variable descriptions:
+Name,Description,Units
+deriv,vertical derivative of O2 with depth,umol/kg / dbar
+fODZ,fraction of observations identified as ODZ,[fraction 0-1]
+IR,intrusion rate of O2 into ODZ,[fraction 0-1]
+Latitude,spatial variable for latitude,degrees
+Longitude,spatial variable for longitude,degrees
+maxDerivDensity,density of maximum vertical O2 derivative,kg/m^3
+numObs,number of observations in a grid cell,[unitless]
+O2,oxygen concentration from literature,umol/kg
+Sigma_Theta,spatial variable for density (sigT units),kg/m^3
+topDensity,density of top of ODZ,kg/m^3
+
+
+-----------------------------------
+-----------------------------------
+
+File name: nc_density_DIVA.nc
+
+Description: Atlas of density-gridded, interpolated Pacific oxygen deficient zones from data compilation. Primary data were gridded on a 0.5º x 0.5º x 0.1 kg/m^3 (sigma-theta) grid.
+
+NetCDF header information:
+netcdf nc_density_DIVA {
+dimensions:
+	Longitude = 173 ;
+	Latitude = 139 ;
+	Density = 22 ;
+variables:
+	double Longitude(Longitude) ;
+		Longitude:units = "degrees" ;
+		Longitude:long_name = "Longitude" ;
+	double Latitude(Latitude) ;
+		Latitude:units = "degrees" ;
+		Latitude:long_name = "Latitude" ;
+	double Density(Density) ;
+		Density:units = "kg/m^3" ;
+		Density:long_name = "Density" ;
+	float fODZ(Density, Latitude, Longitude) ;
+	float fODZError(Density, Latitude, Longitude) ;
+	float topDensity(Latitude, Longitude) ;
+		topDensity:units = "kg/m^3" ;
+	float botDensity(Latitude, Longitude) ;
+		botDensity:units = "kg/m^3" ;
+	float MaxfODZ(Latitude, Longitude) ;
+}
+
+Variable descriptions:
+Name,Description,Units
+botDensity,density of bottom of ODZ,kg/m^3
+Density,spatial variable for density (sigT units),kg/m^3
+fODZ,fraction of observations identified as ODZ,[fraction 0-1]
+fODZError,reported DIVA error in fODZ interpolation,[fraction 0-1]
+Latitude,spatial variable for latitude,degrees
+Longitude,spatial variable for longitude,degrees
+MaxfODZ,maximum fODZ for each grid cell,[fraction 0-1]
+topDensity,density of top of ODZ,kg/m^3
+
+
+-----------------------------------
+-----------------------------------
+
+File name: nc_depth.nc
+
+Description: Atlas of depth-gridded, un-interpolated Pacific oxygen deficient zones from data compilation. Primary data were gridded on a 0.5º x 0.5º x 20 m grid.
+
+NetCDF header information:
+netcdf nc_depth {
+dimensions:
+	Latitude = 256 ;
+	Longitude = 230 ;
+	Depth = 50 ;
+variables:
+	double Latitude(Latitude) ;
+		Latitude:units = "degrees" ;
+		Latitude:long_name = "Latitude" ;
+	double Longitude(Longitude) ;
+		Longitude:units = "degrees" ;
+		Longitude:long_name = "Longitude" ;
+	double Depth(Depth) ;
+		Depth:units = "dbar" ;
+		Depth:long_name = "Depth" ;
+	float fODZ(Depth, Longitude, Latitude) ;
+	float O2(Depth, Longitude, Latitude) ;
+		O2:units = "umol/kg" ;
+	float deriv(Depth, Longitude, Latitude) ;
+		deriv:units = "umol/(kg*dbar)" ;
+	float IR(Depth, Longitude, Latitude) ;
+	float topDepth(Longitude, Latitude) ;
+		topDepth:units = "dbar" ;
+	float maxDerivDepth(Longitude, Latitude) ;
+		maxDerivDepth:units = "dbar" ;
+	float thickness(Longitude, Latitude) ;
+		thickness:units = "dbar" ;
+	float numObs(Depth, Longitude, Latitude) ;
+}
+
+Variable descriptions:
+Name,Description,Units
+Depth,spatial variable for depth,dbar
+deriv,vertical derivative of O2 with depth,umol/kg / dbar
+fODZ,fraction of observations identified as ODZ,[fraction 0-1]
+IR,intrusion rate of O2 into ODZ,[fraction 0-1]
+Latitude,spatial variable for latitude,degrees
+Longitude,spatial variable for longitude,degrees
+maxDerivDepth,depth of maximum vertical O2 derivative,dbar
+numObs,number of observations in a grid cell,[unitless]
+O2,oxygen concentration from literature,umol/kg
+thickness,thickness of ODZ,dbar
+topDepth,depth of top of ODZ,dbar
+
+
+-----------------------------------
+-----------------------------------
+
+File name: nc_depth_DIVA.nc
+
+Description: Atlas of depth-gridded, interpolated Pacific oxygen deficient zones from data compilation. Primary data were gridded on a 0.5º x 0.5º x 20 m grid.
+
+NetCDF header information:
+netcdf nc_depth_DIVA {
+dimensions:
+	Longitude = 173 ;
+	Latitude = 139 ;
+	Depth = 49 ;
+variables:
+	double Longitude(Longitude) ;
+		Longitude:units = "degrees" ;
+		Longitude:long_name = "Longitude" ;
+	double Latitude(Latitude) ;
+		Latitude:units = "degrees" ;
+		Latitude:long_name = "Latitude" ;
+	double Depth(Depth) ;
+		Depth:units = "dbar" ;
+		Depth:long_name = "Depth" ;
+	float fODZ(Depth, Latitude, Longitude) ;
+	float fODZError(Depth, Latitude, Longitude) ;
+	float topDepth(Latitude, Longitude) ;
+		topDepth:units = "dbar" ;
+	float botDepth(Latitude, Longitude) ;
+		botDepth:units = "dbar" ;
+	float thickness(Latitude, Longitude) ;
+		thickness:units = "dbar" ;
+	float maxFODZ(Latitude, Longitude) ;
+}
+
+Variable descriptions:
+botDepth,depth of bottom of ODZ,dbar
+Depth,spatial variable for depth,dbar
+fODZ,fraction of observations identified as ODZ,[fraction 0-1]
+fODZError,reported DIVA error in fODZ interpolation,[fraction 0-1]
+Latitude,spatial variable for latitude,degrees
+Longitude,spatial variable for longitude,degrees
+maxFODZ,maximum fODZ for each grid cell,[fraction 0-1]
+thickness,thickness of ODZ,dbar
+topDepth,depth of top of ODZ,dbar
+
+
+-----------------------------------
+-----------------------------------
+\END
