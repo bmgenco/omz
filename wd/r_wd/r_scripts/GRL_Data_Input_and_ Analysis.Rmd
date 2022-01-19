@@ -17,6 +17,9 @@ knitr::opts_chunk$set(echo = FALSE)
 * change font type
 
 ```{r}
+
+# See: https://stackoverflow.com/questions/25721884/how-should-i-deal-with-package-xxx-is-not-available-for-r-version-x-y-z-wa
+
 f.ipak <- function(pkg){
   
   # loads packages, quietly, given by a vector of package names e.g., pkg<-c("ggplot", "tidyverse")
