@@ -26,7 +26,7 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ## Packages
 Installed custom hurdat package using r markdown menu
 * download  tar from archive as no longer maintained on cran repository
-* [link]https://cran.r-project.org/src/contrib/Archive/HURDAT/
+* https://cran.r-project.org/src/contrib/Archive/HURDAT/
 + include as git submodule instead
 
 ```{r}
@@ -43,7 +43,9 @@ f.ipak <- function(pkg){
 
 # packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "RColorBrewer", "marmap", "extrafont", "oce", "MODIS", "measurements")  # set packages here
 
-packages<-c("sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "HURDAT", "sf", "cmocean", "ncdf4", "plot3D", "tidync")
+#tidyverse is all of the following packages: ggplot2, dplyr, tidyr, readr, purr, tibble, sringr, & forcats.
+
+packages<-c("sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "lubridate",  "ggthemes", "HURDAT", "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table")
 
 
 f.ipak(packages)
@@ -232,6 +234,10 @@ BCO-DMO
 *use ODV to download meta data [link]https://erddap.bco-dmo.org/erddap/griddap/documentation.html
 
 ## read in in situ
+### SST products:
+* download from https://psl.noaa.gov/data/gridded/data.noaa.oisst.v2.highres.html
+* see nc file tutorial https://ropensci.org/blog/2019/11/05/tidync/
+
 ### read in ODZ actual
 * using nc files from online repository
 + [link]https://www.bco-dmo.org/dataset/865316
@@ -274,9 +280,9 @@ TODO : retrun grid cells with a high number of observations in upper 200M
 # 
 
 #### option 2 tidync package ####
-
-x<-tidync(file.path(data_d, "odz_atlas/nc_depth.nc"))
-
+file<-(file.path(data_d, "odz_atlas/nc_depth.nc"))
+x<-tidync(file)
+y<-hyper_filter(x)
 
 
 ```
@@ -322,10 +328,9 @@ rm(x)
 
 
 ```
-
-plotting basic
+Plotting basic
 double check re projecting issues: 
-*[link]https://geocompr.robinlovelace.net/reproj-geo-data.html
+*https://geocompr.robinlovelace.net/reproj-geo-data.html
 
 
 ```{r}
@@ -340,8 +345,8 @@ m.coast <- ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_bla
 #'Selection' variable created in different code cell 
 
 # option 1
-m.map<-m.coast+geom_sf(mapping = aes(col=Wind), data=h.sf, size=.25)+ggtitle(paste0("Hurricanes: ", Selection))+ labs(color = "Wind speed (m/s)")
-m.map
+# m.map<-m.coast+geom_sf(mapping = aes(col=Wind), data=h.sf, size=.25)+ggtitle(paste0("Hurricanes: ", Selection))+ labs(color = "Wind speed (m/s)")
+# m.map
 
 #option 2
 m.map<-m.coast+geom_sf(mapping = aes(col=Wind), data=h.sf, size= .25)+scale_color_cmocean(name="dense", direction= 1)+ggtitle(paste0("Hurricanes: ", Selection)) + labs(color = "Wind speed (m/s)")
