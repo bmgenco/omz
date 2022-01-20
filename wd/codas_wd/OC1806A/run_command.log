@@ -1,0 +1,18 @@
+
+===2021-03-26 21:57:51.541687===
+Command: EA_estimator.py wh /home/brandon/vestawd/omz/2018_data/0210010/1.1/data/0-data/OC1806A_129999_adcp/data/raw/wh300/*.raw
+Std Output:
+
+# mean   stddev  N
+51.13    3.00  32224
+no bottom track data found
+
+
+===2021-03-26 21:57:57.278876===
+Command: EA_estimator.py os /home/brandon/vestawd/omz/2018_data/0210010/1.1/data/0-data/OC1806A_129999_adcp/data/raw/os75/*.raw
+Std Output:
+
+# mean   stddev  N
+-44.54    3.91  14646
+no bottom track data found
+

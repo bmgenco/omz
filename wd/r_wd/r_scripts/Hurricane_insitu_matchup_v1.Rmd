@@ -7,6 +7,7 @@ output: html_document
 # Setup
 ## Directories and defaults
 Use r proj file for relative directories
+see: https://yihui.org/knitr/options/
 ```{r setup, include=FALSE}
 rm(list=ls())
 
@@ -45,7 +46,7 @@ f.ipak <- function(pkg){
 
 #tidyverse is all of the following packages: ggplot2, dplyr, tidyr, readr, purr, tibble, sringr, & forcats.
 
-packages<-c("sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "lubridate",  "ggthemes", "HURDAT", "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table")
+packages<-c("sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "lubridate",  "ggthemes", "HURDAT", "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize")
 
 
 f.ipak(packages)
@@ -90,10 +91,10 @@ function_variables<-vector(mode="list") # for storing all function variables tha
 ### function to convert depth when reading in nc files
 
 
-#### function to create buffer around hurricane points
-f.buffer_select<-function(h.sf, function_variables){
-  # x<-h.sf
-  x<-h.sf
+#### function to create buffer around hurricane points ####
+f.buffer_select<-function(h.pts, function_variables){
+  # x<-h.pts
+  x<-h.pts
   radi.m<-function_variables$h.radi
   y<-st_geometry(x)
   
@@ -105,12 +106,16 @@ f.buffer_select<-function(h.sf, function_variables){
   circle<-sf::st_buffer(flat, dist=radi.m)%>%sf::st_transform(., "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") 
   return(circle)
   }
-  z<-f.circle(y, radi.m)
-  x$buffer<-z
-  return(x)
+  
+  circle<-sf::st_as_sf(f.circle(y, radi.m))
+  names(circle)<-"buffer"
+  st_geometry(circle)<-"buffer"
+  z<-cbind(x, circle)
+  names(z)[names(z) == "geometry"] <- "points"
+  st_geometry(z)<-"buffer"
+return(z)
+   
 }
-
-
 
 ```
 
@@ -137,6 +142,7 @@ Using 'hurdat package'
 # saveRDS(h, "r_objects/hurdat.R")
 
 h<-readRDS("r_objects/hurdat.R")
+# h<-filter(h, between(Lon,-113,-108)) %>% filter(., between(Lat, 18,22))
 ```
 
 ### Hurdat -> function_variables (INCLUDES DYNAMIC VARIABLES):
@@ -174,7 +180,7 @@ function_variables$h.lat_min<-min(h$Lat)
 # function_variables$h.lon_min<-min(h$Lon)
 # function_variables$h.lat_max<-max(h$Lat)
 
-Selection<-paste0("Lat (", function_variables$h.lat_min, ", ", function_variables$h.lat_max, ") Lon (", function_variables$h.lon_min, ", ", function_variables$h.lon_max,  ")")
+function_variables$selection<-paste0("Lat (", function_variables$h.lat_min, ", ", function_variables$h.lat_max, ") Lon (", function_variables$h.lon_min, ", ", function_variables$h.lon_max,  ")")
 
 ```
 
@@ -200,102 +206,57 @@ BCO-DMO
 
 ### read in ODZ actual
 * using nc files from online repository
-+ [link]https://www.bco-dmo.org/dataset/865316
-+ see [link]https://rpubs.com/boyerag/297592
-* perhaps us tidy nc pacakage
-+[link]https://ropensci.org/blog/2019/11/05/tidync/
++ https://www.bco-dmo.org/dataset/865316
+* use tidy nc pacakage: 
++ https://ropensci.org/blog/2019/11/05/tidync/
+* see https://uomresearchit.github.io/r-tidyverse-intro/04-dplyr/ forexmaple
 
-
-TODO : retrun grid cells with a high number of observations in upper 200M
+#### create  raster of number of observations from odz atlas
 
 ```{r}
-# from remote sensiong code. edit this
-
-#### Option 1 netcdf: ####
-# x<-nc_open(file.path(data_d, "odz_atlas/nc_depth.nc"))
-# lat<-ncvar_get(x, "Latitude")
-# lon<-ncvar_get(x, "Longitude")
-# z<-ncvar_get(x, "Depth")
-# obs<-ncvar_get(x, "numObs")
-# nc_close(x)
-# 
-
-# come back here:
-# derivdepth<-ncvar_get(x, "maxDerivDepth")
-# fodz<-ncvar_get(x, "fODZ")
-# o2<-ncvar_get(x, "O2")
-
-
-# test<-obs[,,1]
-# 
-# x<-dim()
-# 
-# scatter3D(obs[(1:256),,], obs[,(1:230),], obs[,,(1:50)])
-# 
-# x<-obs[(1:dim(obs)[1]),1,1]
-# y<-obs[1,(1:dim(obs)[2]),1]
-# z<-obs[1,1,(1:dim(obs)[3])]
-# 
-# scatter3D(x,y,z)
-# 
-
-#### option 2 tidync package ####
 file<-(file.path(data_d, "odz_atlas/nc_depth.nc"))
-x<-tidync(file)
-# y<-hyper_filter(x)
+x<-tidync(file) %>% hyper_tibble(select_var = "numObs")
 
+y<-x%>% group_by(Longitude, Latitude) %>% summarise(sum_obs = sum(numObs)) %>% filter(., sum_obs >1) %>% as.data.frame(.) #return 2d dataframame of 
+print(paste0("For cells with a minimum of one observation the ", summary(y)[3,3]))
 
+x<-rasterFromXYZ(y)
+rm(y)
+crs(x) <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0" 
+numobs.raster<-x
+rm(x)
 ```
 
+
+#### convert to dbar to depth usinc oce package
+* see methods for function 'swDepth' in oce
++ TODO: write function to loop through data sets
 
 ### read in ODZ interoplated
 
-```{r}
-
-```
-
 ### read in WOA actual 
-
-```{r}
-
-```
 
 ### read in WOA interpolated 
 
-```{r}
-
-```
-
-
-
-### convert to dbar to depth usinc oce package
-* see methods for function 'swDepth' in oce
-+ TODO: write function to loop through dat sets
-
-```{r}
-
-```
 
 # Initial data subsetting
 ## spatial h reformation
 ```{r}
 x<-filter(h, Status == "HU")
-
-h.sf<- sf::st_as_sf(x, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") 
-
-h.sf<-sf::st_crop(h.sf, c(xmin=function_variables$h.lon_min, ymin=function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax=function_variables$h.lat_max)) #subset by uset defined 
+h.pts<- sf::st_as_sf(x, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") 
+h.pts<-sf::st_crop(h.pts, c(xmin=function_variables$h.lon_min, ymin=function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax=function_variables$h.lat_max)) #subset by uset defined 
 rm(x)
 
-
 ```
+
 Plotting basic
 double check re projecting issues: 
 *https://geocompr.robinlovelace.net/reproj-geo-data.html
 
 #### Plotting
 ```{r}
-
 # cl<-st_crop(coastline, xmin=-170, ymin=-20, xmax=-80, ymax=40) # change here based on desired figure size
+# cl<-st_crop(coastline, xmin=min(h$Lon), ymin=min(h$Lat), xmax=max(h$Lon), ymax=max(h$Lat))
 
 cl<-st_crop(coastline, xmin=function_variables$h.lon_min, ymin=function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax=function_variables$h.lat_max)
 
@@ -305,39 +266,66 @@ m.coast <- ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_bla
 #'Selection' variable created in different code cell 
 
 # option 1
-# m.map<-m.coast+geom_sf(mapping = aes(col=Wind), data=h.sf, size=.25)+ggtitle(paste0("Hurricanes: ", Selection))+ labs(color = "Wind speed (m/s)")
+# m.map<-m.coast+geom_sf(mapping = aes(col=Wind), data=h.pts, size=.25)+ggtitle(paste0("Hurricanes: ", Selection))+ labs(color = "Wind speed (m/s)")
 # m.map
 
 #option 2
-m.map<-m.coast+geom_sf(mapping = aes(col=Wind), data=h.sf, size= .25)+scale_color_cmocean(name="dense", direction= 1)+ggtitle(paste0("Hurricanes: ", Selection)) + labs(color = "Wind speed (m/s)")
+m.map<-m.coast+geom_sf(mapping = aes(col=Wind), data=h.pts, size=.25)+scale_color_cmocean(name="dense", direction= 1)+ggtitle(paste0("Hurricanes: ", function_variables$selection)) + labs(color = "Wind speed (m/s)")
 m.map
-
-rm(m.map, m.coast, cl, Selection) 
-
+rm(m.map, cl) 
 ```
+
 ### buffer
 see: https://r-spatial.github.io/sf/reference/geos_unary.html
 
 ```{r}
-h.buf<-f.buffer_select(h.sf, function_variables)
+h.buf<-f.buffer_select(h.pts, function_variables)
+```
 
+### plotting h.buf
+```{r}
+m.map<-ggplot()+geom_sf(data=h.pts[1,], size= .25)+geom_sf(data =h.buf[1,], fill = NA, color = gray(.5)) + ggtitle("100 km radius")
+# + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+m.map
 
+m.map<-m.coast+geom_sf(data =h.buf, fill = NA, color = gray(.5))+geom_sf(data=h.pts, size= .25) + ggtitle(paste0("100 km radius: ", function_variables$selection))
+# + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+m.map
+rm(m.map)
+```
+
+## match up odz to hurrican buffer
+*conver sf to raster
+```{r}
+# creat raster from buffers
+
+x<-fasterize(h.buf, numobs.raster, field=NULL, fun="any")
+extent(x)<-extent(h.buf)
+extent(numobs.raster)<-extent(h.buf)
+
+# y<- extract(x, numobs.raster)
+# z <- numobs.raster[!is.na(z), ]
+
+#intersection does not work???
+
+# y<-st_intersection(x, numobs.raster)
+# 
+overlap.odz<-mask(numobs.raster, x)
+overlap.h<-mask(x, numobs.raster)
+
+plot(x)
+plot(numobs.raster, col="red", add=T)
+plot(overlap, col="black", add=T, main="overlap ODZ and hurrincan buffer")
 ```
 
 
-## match up h to meta -> h_meta.sp
 ## select insitu by h_meta.sp
-
 
 # misc:
 ## Storms specific data from h
 #### find storms near areas with high
-```{r}
-
-```
-
 #### Specific storms
-impove this for actually use
+Improve this for actually use
 
 ```{r}
 # list unique identifiers by storm name
@@ -355,7 +343,6 @@ impove this for actually use
 
 
 ```
-
 
 #### Storm selction space and time
 TODO: Create spatial database of poygons with data from f date set

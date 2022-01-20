@@ -1,0 +1,22 @@
+#from: https://currents.soest.hawaii.edu/docs/adcp_doc/codas_doc/adcp_py3demos/intro/index.html
+
+# make directories and copy directories form demo
+cd
+mkdir my_adcp_py3demos
+cd my_adcp_py3demos
+
+
+cp -a  /home/brandon/adcpcode/programs/adcp_py3demos/uhdas_data  .
+cp -a  /home/brandon/adcpcode/programs/adcp_py3demos/vmdas_data  .
+mkdir uhdas_style_data
+mkdir adcp_pyproc
+cd  adcp_pyproc
+mkdir km1001c_uhdas
+mkdir ps0918_vmdas
+
+# start demo
+cd ~/adcpproc/my_adcp_py3demos/adcp_pyproc
+cd  km1001c_uhdas
+pwd
+
+cp -a ../../uhdas_data/km1001c/proc/os38nb os38nb_postproc
