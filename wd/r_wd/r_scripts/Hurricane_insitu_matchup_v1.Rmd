@@ -76,19 +76,6 @@ function_variables<-vector(mode="list") # for storing all function variables tha
 #   return()
 # }
 #
-### function to add polygons
-f.buffer_select<-function(h.sf, function_variables){
-  # x<-h.sf
-  x<-h.sf[1:20,]
-  
-  radi.m<-function_variables$h.radi
-  
-# apply function 
-    
-  
-  return(x)
-}
-
 ### function to spatial select odz actual in-situ data or secondary products ####
 # f.odz_actual_spatial<-function(odz_a, lat_max, lat_min, lon_min, lon_max){}
 
