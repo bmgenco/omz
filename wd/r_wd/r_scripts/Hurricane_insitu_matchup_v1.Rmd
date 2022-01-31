@@ -178,7 +178,109 @@ rm(x,z,cl.buf)
   return(y)
 }
 
+ ## match up functions
+
+f.argo_by_database<-function(database, year_begin){
+  y<-filter(database, year(DateTime) >= year_begin) %>% .[order( .$grid_id, decreasing = F),]
+  id<-unique(y$grid_id)
+  # cell_list<-vector(mode="list", length=length(id))
+  function_list<-as.list(id)
+  names(function_list)<-id
+    
+  f.get<-function(x, y){
+        y.id<-x
+        data<-filter(y, grid_id == y.id)
+  
+        z<-st_bbox(unique(data))
+        lat_lim=c(z$ymin[[1]], z$ymax[[1]])
+        lon_lim=c(z$xmin[[1]], z$xmax[[1]])
+        start_date=date(min(y$DateTime)) - 90
+        end_date=date(max(y$DateTime)) + 90
+  
+  cell_floats= select_profiles(lon_lim,lat_lim,start_date, end_date,
+                sensor=c(), 
+                outside="both" #  All floats that cross into time/space limits
+                            )
+  
+# 'DOXY'  
+p<-vector(mode="list")
+p$data<-data
+p$profiles<-cell_floats$profiles
+p$floats<-cell_floats$floats
+return(p)
+
+}
+
+  cell_list<-lapply(function_list, y=y, f.get)
+  rm(function_list)
+  names(cell_list)<-id
+  return(cell_list)
+}
+
+f.argo_by_database_w_clipFODZ<-function(database, maxf, year_begin, decimal){
+  y<-filter(database, year(DateTime) >= year_begin) 
+  z<-maxf %>% filter(., maxFODZ >= decimal)
+  y<-st_difference(y,z)
+  rm(z)
+  y<-y[order(y$grid_id, decreasing = F),]
+  id<-unique(y$grid_id)
+  # cell_list<-vector(mode="list", length=length(id))
+  function_list<-as.list(id)
+  names(function_list)<-id
+    
+  f.get<-function(x, y){
+        y.id<-x
+        data<-filter(y, grid_id == y.id)
+  
+        z<-st_bbox(unique(data))
+        lat_lim=c(z$ymin[[1]], z$ymax[[1]])
+        lon_lim=c(z$xmin[[1]], z$xmax[[1]])
+        start_date=date(min(y$DateTime)) - 90
+        end_date=date(max(y$DateTime)) + 90
+  
+  cell_floats= select_profiles(lon_lim,lat_lim,start_date, end_date,
+                sensor=c("DOXY"), 
+                outside="both" #  All floats that cross into time/space limits
+                            )
+  
+# 'DOXY'  
+p<-vector(mode="list")
+p$data<-data
+p$profiles<-cell_floats$profiles
+p$floats<-cell_floats$floats
+return(p)
+
+}
+
+  cell_list<-lapply(function_list, y=y, f.get)
+  rm(function_list)
+  names(cell_list)<-id
+  return(cell_list)
+}
+
 ```
+
+## temp load/save works sapce for next steps
+
+```{r}
+setwd(robj)
+# save(function_variables, h, h.buf, m.coast, database,  file="20220128_temp_workspace.RData")
+load("20220128_temp_workspace.RData")
+# saveRDS(match, "r_objects/match.R")
+
+```
+
+### Import BioArgo slection (requires submodule install)
+
+```{r}
+# initialize_argo() # downloads meat dat for argo
+# setwd(robj)
+# save(Float, Setting, Sprof, sprof_update, file="init_argo.RData")
+setwd(robj)
+load("init_argo.RData")
+
+```
+
 
 # Data sets Import
 
@@ -281,6 +383,7 @@ BCO-DMO
 
 ```{r}
 file<-(file.path(data_d, "odz_atlas/nc_depth.nc"))
+
 x<-tidync(file) %>% hyper_tibble(select_var = "numObs")
 rm(file)
 y<-x%>% group_by(Longitude, Latitude) %>% summarise(sum_obs = sum(numObs)) %>% filter(., sum_obs >1) %>% as.data.frame(.) #return 2d dataframame of 
@@ -297,12 +400,35 @@ numobs.raster<-x
 rm(x)
 ```
 
-
 #### convert to dbar to depth usinc oce package
 * see methods for function 'swDepth' in oce
 + TODO: write function to loop through data sets
 
 ### read in ODZ interoplated
+
+```{r}
+file<-(file.path(data_d, "odz_atlas/nc_depth_DIVA.nc"))
+q<-c("maxFODZ", "topDepth", "thickness", "botDepth")
+diva<-tidync(file)%>% activate(c("D0,D1")) %>% hyper_tibble(select_var =q)
+rm(file, q)
+
+# test<-tidync(file)
+# maxf<-diva%>% select(., maxFODZ, Longitude, Latitude) %>%
+
+maxf<-diva %>% sf::st_as_sf(., coords = c("Longitude","Latitude"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84")
+
+maxf<- st_crop(maxf,xmin = function_variables$h.lon_min,ymin= function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax= function_variables$h.lat_max )
+
+
+
+# m.map<-m.coast+geom_sf(data=test, aes(color=maxFODZ))+scale_color_cmocean(name="matter", direction =1)
+
+# crs(x) <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0" 
+# plot(x)
+
+rm(diva) # for now
+
+```
 
 ### read in WOA actual 
 
@@ -712,18 +838,7 @@ database$DateTime<-with_tz(database$DateTime, tz="UTC")
 
 
 
-# Import BioArgo slection (requires submodule install)
 
-```{r}
-
-# initialize_argo() # downloads meat dat for argo
-# setwd(robj)
-# save(Float, Setting, Sprof, sprof_update, file="init_argo.RData")
- 
-setwd(robj)
-load("init_argo.RData")
-
-```
 ## select 
 * create bounding box from center point (same resolution as raster)
 * sort by date
@@ -771,45 +886,10 @@ load("init_argo.RData")
 
 # year_begin=1990
 
-f.argo_by_database<-function(database, year_begin){
-  y<-filter(database, year(DateTime) >= year_begin) %>% .[order( .$grid_id, decreasing = F),]
-  id<-unique(y$grid_id)
-  # cell_list<-vector(mode="list", length=length(id))
-  function_list<-as.list(id)
-  names(function_list)<-id
-    
-  f.get<-function(x, y){
-        y.id<-x
-        data<-filter(y, grid_id == y.id)
-  
-        z<-st_bbox(unique(data))
-        lat_lim=c(z$ymin[[1]], z$ymax[[1]])
-        lon_lim=c(z$xmin[[1]], z$xmax[[1]])
-        start_date=date(min(y$DateTime)) - 90
-        end_date=date(max(y$DateTime)) + 90
-  
-  cell_floats= select_profiles(lon_lim,lat_lim,start_date, end_date,
-                sensor=c(), 
-                outside="both" #  All floats that cross into time/space limits
-                            )
-  
-# 'DOXY'  
-p<-vector(mode="list")
-p$data<-data
-p$profiles<-cell_floats$profiles
-p$floats<-cell_floats$floats
-return(p)
+# match<-f.argo_by_database(database, year_begin<-2000)
 
-}
+match2<-f.argo_by_database_w_clipFODZ(database, maxf, year_begin = 2000, decimal=0.25)
 
-  cell_list<-lapply(function_list, y=y, f.get)
-  rm(function_list)
-  names(cell_list)<-id
-  return(cell_list)
-}
-
-
-match<-f.argo_by_database(database, year_begin = 2000)
 
 
 # seraching through list
@@ -817,14 +897,40 @@ test<-lapply(match,'[[',2)
 test<-test[lengths(test) != 0]
 test<-test[order(sapply(test, length))]
 trial<-test[length(test)]
-id<-as.numeric(names(trial))
-print<-match$'41272'
-
-
-head(print$data)
-test2<-do.call(rbind.data.frame, test)
+# id<-as.numeric(names(trial))
+# print<-match$'41272'
+# 
+# 
+# head(print$data)
+# test2<-do.call(rbind.data.frame, test)
 
 ```
+
+
+
+
+```{r}
+overpass_time<-match$`41272`$data$DateTime
+dates<-Sprof$date[trial$`41272`]
+closest<-which(abs(dates-overpass_time) == min(abs(dates - overpass_time)))
+date_closet<-dates[closest]
+profile<-match$'41272'$profiles[closest]
+cl
+window<-match$'41272'$profiles[c((closest-5):(closest+5))]
+print(paste0("overpass: ", overpass_time, " profile: ", profile, " at ", date_closet))
+```
+
+```{r}
+
+match$'41272'$floats
+download_multi_floats(match$'41272'$floats)  
+
+show_profiles(window, variables = c("DOXY"))
+show_sections("5903888", variables = c("DOXY"))
+show_sections("5903888", variables = c("DOXY"))
+show_sections("5903888", variables = c("DOXY"))
+```
+
 
 
 ```{r}
@@ -839,49 +945,55 @@ sink()
 
 ```{r}
 
-year_begin=1950
-f.argo_by_hbuf<-function(h.buf, year_begin){
-  y<-filter(h.buf, year(DateTime) >= year_begin)
- 
-  box<-vector(mode="list", length=nrow(y))
-  start<-vector(mode="character", length=nrow(y))
-  end<-vector(mode="character", length=nrow(y)) 
-  
-  for(i in 1:nrow(y)){
-   box[[i]]<-st_bbox(y[i,])
-   start[i]<-date(y[i,]$DateTime) - 90
-   end[i]<-date(y[i,]$DateTime) + 90
- }
-   
- 
-
-   
-    
-  f.get<-function(x, y){
-  
-        z<-x
-        lat_lim=c(z$ymin[[1]], z$ymin[[1]])
-        lon_lim=c(z$xmin[[1]], z$xmax[[1]])
-        start_date=date(min(y$DateTime)) - 90
-        end_date=date(max(y$DateTime)) + 90
-  
-  cell_floats= select_profiles(lon_lim,lat_lim,start_date, end_date,
-                sensor=c(), 
-                outside="both" #  All floats that cross into time/space limits
-                            )
-  
-# 'DOXY'  
-p<-vector(mode="list")
-p$data<-data
-p$profiles<-cell_floats$profiles
-p$floats<-cell_floats$floats
-return(p)
-
-}
-
-
-
-st_bbox(test)
+#  # for(i in 1:nrow(y)){
+#  #   box[[i]]<-st_bbox(y[i,])
+#  #   start[i]<-date(y[i,]$DateTime) - 90
+#  #   end[i]<-date(y[i,]$DateTime) + 90
+#  # }
+# 
+# year_begin=2000
+# f.argo_by_hbuf<-function(h.buf, year_begin){
+#   y<-filter(h.buf, year(DateTime) >= year_begin)
+#  
+#   box<-vector(mode="list", length=nrow(y))
+#   start<-vector(mode="character", length=nrow(y))
+#   end<-vector(mode="character", length=nrow(y)) 
+#   
+# 
+#    
+#     
+#   f.get<-function(x, y){
+#   
+#         z<-x
+#         lat_lim=c(z$ymin[[1]], z$ymin[[1]])
+#         lon_lim=c(z$xmin[[1]], z$xmax[[1]])
+#         start_date=date(min(y$DateTime)) - 90
+#         end_date=date(max(y$DateTime)) + 90
+#   
+#   cell_floats= select_profiles(lon_lim,lat_lim,start_date, end_date,
+#                 sensor=c(), 
+#                 outside="both" #  All floats that cross into time/space limits
+#                             )
+#   
+# # 'DOXY'  
+# p<-vector(mode="list")
+# p$data<-data
+# p$profiles<-cell_floats$profiles
+# p$floats<-cell_floats$floats
+# return(p)
+# 
+# 
+# 
+# }
+# 
+# cell_list<-lapply(function_list, y=y, f.get)
+# names(cell_list)<-id
+# return(cell_list)
+# }
+# 
+# test<-lapply(match,'[[',2)
+# 
+# st_bbox(test)
 
 ```
 
@@ -889,16 +1001,7 @@ st_bbox(test)
 ## select insitu by h_meta.sp
 
 # misc:
-## temp save works sapce for next steps
 
-```{r}
-setwd(robj)
-# save(function_variables, h, h.buf, m.coast, database,  file="20220128_temp_workspace.RData")
-load("20220128_temp_workspace.RData")
-
-
-
-```
 ## Storms specific data from h
 #### find storms near areas with high
 #### Specific storms
