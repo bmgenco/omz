@@ -58,20 +58,38 @@ start_date, end_date, sensor=function_variables$argo_sensor, outside="both")}
         #           (Currently, only one sensor type can be selected.)
     
         p<-vector(mode="list")
-        # p$all_data<-data
+        p$data<-data
+        
+        data.select<-p$data %>% filter(., year(DateTime)>=year_begin) %>%
+          select(., Key, Name, DateTime, lon, lat, Wind) %>% st_drop_geometry(.)%>%
+          remove_rownames(.)
+      
+        names(p$events)<-data.select$Key
+        p$events<-vector(mode="list", length=nrow(data.select))
+        for(i in 1:length(p$events)){
+          p$events[[i]]$data<-data.select[i,]}
+        rm(data.selects)
+        
         p$profiles<-cell_floats$profiles
         p$floats<-cell_floats$floats
         p$profile_dates<-Sprof$date[cell_floats$profiles]
+        
+        p$profiles_postions ### need to do this for adjusting events data
+        p$floats_slection ## tmeproary thing for matching floats to profiles??
+        
+        # f.window<-function(p){p}
+        # p$individual_tracks<-vector()
+        # p$match<-f.wind(p)
+        p$events<-lapply(p$events, f.closest)
+        
         return(p)
-    # f.window<-function(p){p}
-    # p$individual_tracks<-vector()
-    # p$match<-f.wind(p)
+ 
         }
   
     cell_list<-lapply(function_list, y=y, f.get)
     rm(function_list)
     names(cell_list)<-id
-      f.rm<-function(x){if(length(x$profiles)==0){x<-NULL} 
+      f.rm<-function(x){if(length(p$profiles)==0){x<-NULL} 
         return(x)}
   
   cell_list<-lapply(cell_list, f.rm)
@@ -106,23 +124,92 @@ data.select<-data %>% filter(., year(DateTime)>=(year_begin-1)) %>%
 p$events<-vector(mode="list", length=nrow(data.select))
 names(p$events)<-data.select$Key
 
-f.closest<-function(data.select){
+## testing:
+
+
+q
+
+x<-p$events[[18]]
+function_variables$h.prior<-90
+function_variables$h.post<-90
+f.closest<-function(x){
   
-} 
+  
+  return(p$events)
+ 
+
+# here
+
+
+# how do i match float and fporfiles??
+
+before<-p$profile_dates[p$profile_dates<=x$data$DateTime]
+after<-p$profile_dates[p$profile_dates>=x$data$DateTime]
+
+before_window<-before[which(date(before) >= date(x$data$DateTime)-function_variables$h.prior)]
+after_window<-after[which(date(after) <= date(x$data$DateTime)+function_variables$h.post)] 
+
+x$prior<-data.frame(matrix(ncol=5, nrow=length(before_window))) # profiles withins user define function_
+x$post<-data.frame(matrix(ncol=5, nrow=length(after_window)))
+
+names(x$prior)<-c("float", "profiles", "DateTime", "distance", "time_prior")
+names(x$post)<-c("float", "profiles", "DateTime", "distance", "time_after")
+
+x$prior$DateTime<-before_window
+x$post$DateTime<-after_window
+print(x)
+
+
+# add if staemnets here
+
+prior<-which(abs(x$data$DateTime - before) == min(abs(x$data$DateTime - before)))
+before_time<-p$profile_dates[prior]
+# overpass_time
+post<-which(abs(x$data$DateTime - after) == min(abs(x$data$DateTime - after)))+length(before)
+after_time<-p$profile_dates[post]
+
+
+
+x$profiles_before<-before
+x$profiles_after<-before
+return(x)
+}
+
+
+
+
+
 
 #temp 
 
-x<-bud_match[[2]]
-year_begin<-bud_match[[1]]$year_begin
+p<-bud_match[[2]]
+# year_begin<-bud_match[[1]]$year_begin
 
-data.select<-x$data %>% filter(., year(DateTime)>=year_begin) %>%
-  select(., Key, Name, DateTime, lon, lat) %>% st_drop_geometry(.)
-p<-vector(mode="list")
-p$events<-vector(mode="list", length=nrow(data.select))
+data.select<-p$data %>% filter(., year(DateTime)>=year_begin) %>%
+  select(., Key, Name, DateTime, lon, lat, Wind) %>% st_drop_geometry(.)%>%
+  remove_rownames(.)
+# data.select<-remove_rownames(data.select)
+# p<-vector(mode="list")
 names(p$events)<-data.select$Key
+p$events<-vector(mode="list", length=nrow(data.select))
+for(i in 1:length(p$events)){
+p$events[[i]]$data<-data.select[i,]}
+rm(data.select)
 
-# needs to be an in function for each element
-overpass_time<-test$data$DateTime[18]
+x<-
+f.closest(p$events){
+  x<-p$events
+}
+
+
+temp_list<-lapply(p f.closest)
+
+
+
+# p$events$data<-split(data.select, seq(nrow(data.select)))
+
+
+
 
 # xbase::findInterval(overpass_time, x$profile_dates )
 
