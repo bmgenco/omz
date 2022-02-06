@@ -271,12 +271,14 @@ start_date, end_date, sensor=function_variables$argo_sensor, outside="both")}
 
 ```{r}
 setwd(robj)
-# save(function_variables, m.coast, database,  file="20220201_temp_workspace.RData")
+bud_match<-readRDS("bud_match.R")
+# match<-readRDS("match.R")
 # load("20220201_temp_workspace.RData")
 
+
+# save(function_variables, m.coast, database,  file="20220201_temp_workspace.RData")
 # saveRDS(match, "match.R")
-# match<-readRDS("match.R")
-saveRDS(bud_match, "bud_match.R")
+# saveRDS(bud_match, "bud_match.R")
 ```
 
 Import BioArgo metadata (requires submodule install):

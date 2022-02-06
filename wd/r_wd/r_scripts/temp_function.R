@@ -112,24 +112,45 @@ f.closest<-function(data.select){
 
 #temp 
 
-test<-match[[2]]
-year_begin<-match[[1]]$year_begin
-test2<-test$data
-test3<-test2 %>% filter(., year(DateTime)>=year_begin) %>%
+x<-bud_match[[2]]
+year_begin<-bud_match[[1]]$year_begin
+
+data.select<-x$data %>% filter(., year(DateTime)>=year_begin) %>%
   select(., Key, Name, DateTime, lon, lat) %>% st_drop_geometry(.)
+p<-vector(mode="list")
+p$events<-vector(mode="list", length=nrow(data.select))
+names(p$events)<-data.select$Key
+
+# needs to be an in function for each element
+overpass_time<-test$data$DateTime[18]
+
+# xbase::findInterval(overpass_time, x$profile_dates )
+
+before<-x$profile_dates[x$profile_dates<=overpass_time]
+after<-x$profile_dates[x$profile_dates>=overpass_time]
 
 
+prior<-which(abs(overpass_time - before) == min(abs(overpass_time - before)))
+before_time<-x$profile_dates[prior]
+# overpass_time
+post<-which(abs(overpass_time - after) == min(abs(overpass_time - after)))+length(before)
+after_time<-x$profile_dates[post]
 
 
-data.select<-test2 %>% filter(., year(DateTime)>=(year_begin-1)) %>% 
-  select(., Key, Name, DateTime, lon, lat) %>% st_drop_geometry(.)
+### adjust 'prior' and 'post' selection index
 
 
+which(abs(x$profile_dates - overpass_time) == (min(abs(x$profile_dates - overpass_time)) & overpass_time))
+before<-x$profiles_dates[
+  
 
+before
+overpass_time
+after
 
-closest<-which(abs(dates-overpass_time) == min(abs(dates - overpass_time)))
-date_closet<-dates[closest]
 profile<-match$'41272'$profiles[closest]
-cl
+
 window<-match$'41272'$profiles[c((closest-5):(closest+5))]
 print(paste0("overpass: ", overpass_time, " profile: ", profile, " at ", date_closet))
+
+
