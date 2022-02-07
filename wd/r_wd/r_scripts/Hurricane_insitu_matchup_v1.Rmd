@@ -161,12 +161,14 @@ rm(x,z,cl.buf)
 
 ## match up functions
 
+
 f.argo_by_database_w_selection_options<-function(database, year_begin, function_variables, spatial_box){
 
   #                USER defined variables and defaults:                                   #
   # year begin = year begin form hurricanes, profies will be function_variables$hprior b4 #                                                                               #
   # spatial_box = c(xmin,ymin, xmax, ymax). vector of 4 integers. nothing else            #
   # if function_variables$argo_sensor==NA THEN no sensor limits on profile return         #
+  # profiles may only be index value will need to update mathc fo each use of Sprof
 
   #### default values if not defined: #### In FUTURE make spatial_box and year begin function variables
   
@@ -204,9 +206,8 @@ f.argo_by_database_w_selection_options<-function(database, year_begin, function_
         #cell_floats from bioargo submodule:
         if(is.na(function_variables$argo_sensor)==TRUE) {cell_floats<-select_profiles(lon_lim,lat_lim,start_date, end_date, outside="both",
           sensor=NULL)} else {cell_floats<-select_profiles(lon_lim,lat_lim,
-start_date, end_date, sensor=function_variables$argo_sensor, outside="both")}  
-    
-        #
+          start_date, end_date, sensor=function_variables$argo_sensor, outside="both")}  
+        
         # 'outside', 'none' 'time' 'space' 'both': By default, only float profiles
         #           that are within both the temporal and spatial constraints are
         #           returned ('none'); specify to also maintain profiles outside
@@ -222,26 +223,103 @@ start_date, end_date, sensor=function_variables$argo_sensor, outside="both")}
     
         p<-vector(mode="list")
         p$data<-data
+        
+        data.select<-p$data %>% filter(., year(DateTime)>=year_begin) %>%
+          select(., Key, Name, DateTime, lon, lat, Wind) %>% st_drop_geometry(.)%>%
+          remove_rownames(.)
+      
+        
+        p$events<-vector(mode="list", length=nrow(data.select))
+        for(i in 1:length(p$events)){
+          p$events[[i]]$data<-data.select[i,]}
+        names(p$events)<-data.select$Key
+        rm(data.select)
+        
         p$profiles<-cell_floats$profiles
         p$floats<-cell_floats$floats
         p$profile_dates<-Sprof$date[cell_floats$profiles]
+        
+        p$profiles_postions ### need to do this for adjusting events data
+        p$floats_slection ## tmeproary thing for matching floats to profiles??
+        
+        # f.window<-function(p){p}
+        # p$individual_tracks<-vector()
+        # p$match<-f.wind(p)
+        
+        
+        f.closest<-function(x){
+            f.distance<-function(y){
+              pts<-SpatialPoints(coords=cbind(y$lon, y$lat), proj4string=CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"), bbox = NULL)
+              hpt<- SpatialPoints(coords=cbind(x$data$lon, x$data$lat), proj4string=CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"), bbox = NULL)
+              y$distance_km<-round(spDistsN1(pts, hpt, longlat = TRUE), 0)
+              return(y)
+              }
+          
+          before<-p$profile_dates[p$profile_dates<=x$data$DateTime]
+          after<-p$profile_dates[p$profile_dates>=x$data$DateTime]
+          
+          if(length(before)==0){x$prior<-NA} else {
+            
+            before_window<-before[which(date(before) >= date(x$data$DateTime)-function_variables$h.prior)]
+            
+              if(length(before_window)==0){x$prior<-NA} else {
+            
+              x$prior<-data.frame(matrix(ncol=7, nrow=length(before_window))) # profiles withins user define function_
+              names(x$prior)<-c("wmo", "profile_index",  "DateTime", "lat", "lon", "distance_km", "days_prior")
+              x$prior$DateTime<-before_window
+              before_p<-p$profiles[p$profile_dates<=x$data$DateTime]
+              x$prior$profile_index<-before_p[which(date(before) >= date(x$data$DateTime)-function_variables$h.prior)]
+              x$prior$wmo<-Sprof$wmo[c(x$prior$profile_index[1]:x$prior$profile_index[length(x$prior$profile_index)])]
+              # change here for date/lubridate object if need be
+              x$prior$days_prior<-as.integer((date(x$prior$DateTime) - date(x$data$DateTime)) *-1)
+              x$prior$lat<-Sprof$lat[c(x$prior$profile_index[1]:x$prior$profile_index[length(x$prior$profile_index)])]
+              x$prior$lon<-Sprof$lon[c(x$prior$profile_index[1]:x$prior$profile_index[length(x$prior$profile_index)])]
+              rm(before,  before_p, before_window)
+              x$prior<-f.distance(y=x$prior)
+              }
+          }
+          
+          if(length(after)==0){x$post<-NA} else {
+            
+            after_window<-after[which(date(after) <= date(x$data$DateTime)+function_variables$h.post)]
+            
+              if(length(after_window)==0){x$post<-NA} else{
+            
+              x$post<-data.frame(matrix(ncol=7, nrow=length(after_window)))
+              names(x$post)<-c("wmo", "profile_index","DateTime", "lat", "lon", "distance_km", "days_after")
+              x$post$DateTime<-after_window
+              after_p<-p$profiles[p$profile_dates>=x$data$DateTime]
+              x$post$profile_index<-after_p[which(date(after) <= date(x$data$DateTime)+function_variables$h.post)] 
+              x$post$wmo<-Sprof$wmo[c(x$post$profile_index[1]:x$post$profile_index[length(x$post$profile_index)])]
+              # change here for date/lubridate object if need be
+              x$post$days_after<-as.integer(date(x$post$DateTime)-date(x$data$DateTime))
+              x$post$lat<-Sprof$lat[c(x$post$profile_index[1]:x$post$profile_index[length(x$post$profile_index)])]
+              x$post$lon<-Sprof$lon[c(x$post$profile_index[1]:x$post$profile_index[length(x$post$profile_index)])]
+              rm(after, after_p, after_window)
+              x$post<-f.distance(y=x$post)
+              }
+          }
+          
+          return(x)}
+        
+        p$events<-lapply(p$events, f.closest)
+        p$events<-p$events[!sapply(p$events,is.null)]
+        
         return(p)
-    # f.window<-function(p){p}
-    # p$individual_tracks<-vector()
-    # p$match<-f.wind(p)
+ 
         }
   
     cell_list<-lapply(function_list, y=y, f.get)
     rm(function_list)
     names(cell_list)<-id
-      f.rm<-function(x){if(length(x$profiles)==0){x<-NULL} 
+      f.rm<-function(x){if(length(p$profiles)==0){x<-NULL} 
         return(x)}
   
   cell_list<-lapply(cell_list, f.rm)
   cell_list<-cell_list[!sapply(cell_list,is.null)]
   rm(f.get, f.rm)
 
-    f.order<-function(cell_list){
+      f.order<-function(cell_list){
       x<-cell_list %>% lapply(.,'[[',1 ) %>% lapply(., dim) %>% lapply(., function(x){return(x[1])})
       y<-x[order(as.vector(unlist(x)), decreasing=TRUE)]
       cell_list<-cell_list[names(y)]
@@ -263,7 +341,6 @@ start_date, end_date, sensor=function_variables$argo_sensor, outside="both")}
 }
 
 
-
 ```
 
 # Important objects and data sets
@@ -271,12 +348,12 @@ start_date, end_date, sensor=function_variables$argo_sensor, outside="both")}
 
 ```{r}
 setwd(robj)
-bud_match<-readRDS("bud_match.R")
+# bud_match<-readRDS("bud_match.R")
 # match<-readRDS("match.R")
-# load("20220201_temp_workspace.RData")
+load("20220201_temp_workspace.RData")
+rm(function_variables)
 
-
-# save(function_variables, m.coast, database,  file="20220201_temp_workspace.RData")
+save(function_variables, m.coast, database,  file="20220207_temp_workspace.RData")
 # saveRDS(match, "match.R")
 # saveRDS(bud_match, "bud_match.R")
 ```
@@ -284,7 +361,7 @@ bud_match<-readRDS("bud_match.R")
 Import BioArgo metadata (requires submodule install):
 
 ```{r}
-# initialize_argo() # downloads meat dat for argo
+# initialize_argo() # downloads meta data for argo
 # setwd(robj)
 # save(Float, Setting, Sprof, sprof_update, file="init_argo.RData")
 setwd(robj)
@@ -325,13 +402,13 @@ function_variables$h.post<-NA
 
 # Mike's  delineations: Only need to go to 30 N and 150 W on one corner.  Also 80 W is far enough. .. (implied = 0 south so just use 0.00)
 function_variables$h.lon_max<--90 # need to improve here
-function_variables$h.lon_min<--150
+# function_variables$h.lon_min<--150
 function_variables$h.lat_max<-30
 # function_variables$h.lat_min<-0
 
 # radius around TS in m
-function_variables$h.radi<-NA
-function_variables$land_buffer<-NA
+function_variables$h.radi<-100000
+function_variables$land_buffer<- 20000
 
 #fraction maxFODZ
 
@@ -345,7 +422,7 @@ function_variables$argo_sensor<-NA
 # function_variables$h.lat_max<-max(h$Lat)
 # function_variables$h.lat_min<-min(h$Lat)
 # function_variables$h.lon_max<-max(h$Lon[h$Lon < 0])
-# function_variables$h.lon_min<-min(h$Lon)
+function_variables$h.lon_min<-min(h$Lon)
 # function_variables$h.lat_max<-max(h$Lat)
 
 f.function_vars_fill<-function(function_variables, h){
@@ -489,18 +566,19 @@ m.map
 ### buffer
 
 ```{r}
-function_variables$land_buffer<-100000
-function_variables$h.radi<-100000
+# function_variables$land_buffer<-100000
+# function_variables$land_buffer<-20000
+# function_variables$h.radi<-100000
 h.buf<-f.buffer_select(h.pts, function_variables, cl)
 #see https://r-spatial.github.io/sf/reference/geos_unary.html
-rm(h.pts)
+h.pts
 ```
 
 #### plotting h.buf 
 ```{r}
 m.map<-ggplot()+geom_sf(data=h.pts[1,], size= .25)+geom_sf(data =h.buf[1,], fill = NA, color = gray(.5)) + ggtitle("100 km radius")
 # + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
-# m.map
+ m.map
 
 #  cropt hurricane points by  buffered land:
 temp<-h.buf 
@@ -533,7 +611,7 @@ rm(temp)
 
 ```{r}
 #create raster from buffers
-function_variables$land_buffer<-100000
+# function_variables$land_buffer<-100000
 
 y<-f.cl_buffer(function_variables, cl) %>% st_as_sf(.) %>%
 fasterize(., numobs_raster.odz, field=y$field, fun="sum")
@@ -720,10 +798,115 @@ print(end-start)
 print(paste0("number of grid cells with matches is ", length(match)-1))
 
 #
-bud_match<-match %>% keep(names(.) %in% c("input_variables", "38294")) # most hurricanes in hurdat
+# bud_match<-match %>% keep(names(.) %in% c("input_variables", "38294")) # most hurricanes in hurdat
 
 
 ```
+
+temproarry bud match
+```{r}
+setwd(robj)
+bud_match<-readRDS("bud_match.R")
+p<-bud_match[[2]]
+year_begin<-bud_match$input_variables$year_begin
+
+function_variables$h.prior<-90
+function_variables$h.post<-90
+
+
+data.select<-p$data %>% filter(., year(DateTime)>=year_begin) %>%
+select(., Key, Name, DateTime, lon, lat, Wind) %>% st_drop_geometry(.)%>%
+remove_rownames(.)
+    
+p$events<-vector(mode="list", length=nrow(data.select))
+for(i in 1:length(p$events)){
+      p$events[[i]]$data<-data.select[i,]}
+names(p$events)<-data.select$Key
+rm(data.select)
+
+
+ f.closest<-function(x){
+      f.distance<-function(y){
+        pts<-SpatialPoints(coords=cbind(y$lon, y$lat), proj4string=CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"), bbox = NULL)
+        hpt<- SpatialPoints(coords=cbind(x$data$lon, x$data$lat), proj4string=CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"), bbox = NULL)
+        y$distance_km<-round(spDistsN1(pts, hpt, longlat = TRUE), 0)
+        return(y)
+      }
+      
+      before<-p$profile_dates[p$profile_dates<=x$data$DateTime]
+      after<-p$profile_dates[p$profile_dates>=x$data$DateTime]
+      
+      if(length(before)==0){x$prior<-NA} else {
+        
+        before_window<-before[which(date(before) >= date(x$data$DateTime)-function_variables$h.prior)]
+        
+        if(length(before_window)==0){x$prior<-NA} else {
+          
+          x$prior<-data.frame(matrix(ncol=6, nrow=length(before_window))) # profiles withins user define function_
+          # names(x$prior)<-c("wmo", "profile_index",  "DateTime", "lat", "lon", "distance_km", "days_prior")
+          names(x$prior)<-c("profile_index",  "DateTime", "lat", "lon", "distance_km", "days_prior")
+          x$prior$DateTime<-before_window
+          before_p<-p$profiles[p$profile_dates<=x$data$DateTime]
+          x$prior$profile_index<-before_p[which(date(before) >= date(x$data$DateTime)-function_variables$h.prior)]
+          # need to figure out profile wmos
+          # x$prior$wmo<-Sprof$wmo[c(x$prior$profile_index[1]:x$prior$profile_index[length(x$prior$profile_index)])]
+          # change here for date/lubridate object if need be
+          x$prior$days_prior<-as.integer((date(x$prior$DateTime) - date(x$data$DateTime)) *-1)
+          x$prior$lat<-Sprof$lat[c(x$prior$profile_index[1]:x$prior$profile_index[length(x$prior$profile_index)])]
+          x$prior$lon<-Sprof$lon[c(x$prior$profile_index[1]:x$prior$profile_index[length(x$prior$profile_index)])]
+          rm(before,  before_p, before_window)
+          x$prior<-f.distance(y=x$prior)
+        }
+      }
+      
+      if(length(after)==0){x$post<-NA} else {
+        
+        after_window<-after[which(date(after) <= date(x$data$DateTime)+function_variables$h.post)]
+        
+        if(length(after_window)==0){x$post<-NA} else{
+          
+          x$post<-data.frame(matrix(ncol=6, nrow=length(after_window)))
+          # names(x$post)<-c("wmo", "profile_index","DateTime", "lat", "lon", "distance_km", "days_after")
+          names(x$post)<-c("profile_index","DateTime", "lat", "lon", "distance_km", "days_after")
+          x$post$DateTime<-after_window
+          after_p<-p$profiles[p$profile_dates>=x$data$DateTime]
+          x$post$profile_index<-after_p[which(date(after) <= date(x$data$DateTime)+function_variables$h.post)] 
+          # need to figure out profile wmos
+          # x$post$wmo<-Sprof$wmo[c(x$post$profile_index[1]:x$post$profile_index[length(x$post$profile_index)])]
+          # change here for date/lubridate object if need be
+          x$post$days_after<-as.integer(date(x$post$DateTime)-date(x$data$DateTime))
+          x$post$lat<-Sprof$lat[c(x$post$profile_index[1]:x$post$profile_index[length(x$post$profile_index)])]
+          x$post$lon<-Sprof$lon[c(x$post$profile_index[1]:x$post$profile_index[length(x$post$profile_index)])]
+          rm(after, after_p, after_window)
+          x$post<-f.distance(y=x$post)
+        }
+      }
+      
+      return(x)}
+    
+p$events<-lapply(p$events, f.closest)
+# p
+
+bud_keep<-list(bud_match[[1]], p$data, p$profiles, p$floats, p$profile_dates, p$events$EP032018)
+names(bud_keep)<-c("input_variables", "data", "profile_index", "floats", "profile_date", "bud_window")
+# saveRDS(bud_keep, "bud_keep.R")
+
+# temp:
+
+data.select<-bud_keep$data %>% filter(., year(DateTime)>=year_begin) %>%
+      select(., Key, Name, DateTime, lon, lat, Wind) %>% st_drop_geometry(.)%>%
+      remove_rownames(.)
+
+bud_keep$data[c(12:18),]
+data.select
+
+bud_keep$bud_window
+
+```
+
+
+
+
 
 ## searching through match object
 ```{r}
@@ -760,14 +943,32 @@ print(paste0("overpass: ", overpass_time, " profile: ", profile, " at ", date_cl
 ```
 
 ```{r}
+# 
+# match$'41272'$floats
+# download_multi_floats(match$'41272'$floats)  
+# 
+# show_profiles(window, variables = c("DOXY"))
+# show_sections("5903888", variables = c("DOXY"))
+# show_sections("5903888", variables = c("DOXY"))
+# show_sections("5903888", variables = c("DOXY"))
 
-match$'41272'$floats
-download_multi_floats(match$'41272'$floats)  
 
-show_profiles(window, variables = c("DOXY"))
-show_sections("5903888", variables = c("DOXY"))
-show_sections("5903888", variables = c("DOXY"))
-show_sections("5903888", variables = c("DOXY"))
+download_multi_floats(bud_keep$floats)
+
+show_profiles(bud_keep$bud_window$prior$profile_index, variables = c("DOXY"))
+show_profiles(bud_keep$bud_window$prior$profile_index, variables = c("TEMP"))
+
+
+show_profiles(bud_keep$bud_window$post$profile_index, variables = c("DOXY"))
+show_profiles(bud_keep$bud_window$post$profile_index, variables = c("TEMP"))
+
+show_trajectories("5905068")
+show_sections("5905068", variables = c("TEMP"))
+show_sections("5905068", variables = c("DOXY"))
+
+
+
+
 ```
 
 
@@ -779,62 +980,6 @@ sink()
 ```
 
 
-
-## atemp 2
-
-```{r}
-
-#  # for(i in 1:nrow(y)){
-#  #   box[[i]]<-st_bbox(y[i,])
-#  #   start[i]<-date(y[i,]$DateTime) - 90
-#  #   end[i]<-date(y[i,]$DateTime) + 90
-#  # }
-# 
-# year_begin=2000
-# f.argo_by_hbuf<-function(h.buf, year_begin){
-#   y<-filter(h.buf, year(DateTime) >= year_begin)
-#  
-#   box<-vector(mode="list", length=nrow(y))
-#   start<-vector(mode="character", length=nrow(y))
-#   end<-vector(mode="character", length=nrow(y)) 
-#   
-# 
-#    
-#     
-#   f.get<-function(x, y){
-#   
-#         z<-x
-#         lat_lim=c(z$ymin[[1]], z$ymin[[1]])
-#         lon_lim=c(z$xmin[[1]], z$xmax[[1]])
-#         start_date=date(min(y$DateTime)) - 90
-#         end_date=date(max(y$DateTime)) + 90
-#   
-#   cell_floats= select_profiles(lon_lim,lat_lim,start_date, end_date,
-#                 sensor=c(), 
-#                 outside="both" #  All floats that cross into time/space limits
-#                             )
-#   
-# # 'DOXY'  
-# p<-vector(mode="list")
-# p$data<-data
-# p$profiles<-cell_floats$profiles
-# p$floats<-cell_floats$floats
-# return(p)
-# 
-# 
-# 
-# }
-# 
-# cell_list<-lapply(function_list, y=y, f.get)
-# names(cell_list)<-id
-# return(cell_list)
-# }
-# 
-# test<-lapply(match,'[[',2)
-# 
-# st_bbox(test)
-
-```
 
 
 ## select insitu by h_meta.sp
