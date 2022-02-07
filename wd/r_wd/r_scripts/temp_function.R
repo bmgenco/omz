@@ -4,6 +4,7 @@ f.argo_by_database_w_selection_options<-function(database, year_begin, function_
   # year begin = year begin form hurricanes, profies will be function_variables$hprior b4 #                                                                               #
   # spatial_box = c(xmin,ymin, xmax, ymax). vector of 4 integers. nothing else            #
   # if function_variables$argo_sensor==NA THEN no sensor limits on profile return         #
+  # profiles may only be index value will need to update mathc fo each use of Sprof
 
   #### default values if not defined: #### In FUTURE make spatial_box and year begin function variables
   
@@ -118,20 +119,24 @@ start_date, end_date, sensor=function_variables$argo_sensor, outside="both")}
 }
 
 
+## testing:
+p<-bud_match[[2]]
+year_begin<-bud_match$input_variables$year_begin
 
-data.select<-data %>% filter(., year(DateTime)>=(year_begin-1)) %>% 
+data.select<-p$data %>% filter(., year(DateTime)>=(year_begin-1)) %>% 
   select(., Key, Name, DateTime, lon, lat) %>% st_drop_geometry(.)
 p$events<-vector(mode="list", length=nrow(data.select))
 names(p$events)<-data.select$Key
 
-## testing:
+for(i in 1:length(p$events)){
+  p$events[[i]]$data<-data.select[i,]}
+rm(data.select)
 
-
-q
 
 x<-p$events[[18]]
 function_variables$h.prior<-90
 function_variables$h.post<-90
+
 f.closest<-function(x){
   
   
@@ -149,15 +154,35 @@ after<-p$profile_dates[p$profile_dates>=x$data$DateTime]
 before_window<-before[which(date(before) >= date(x$data$DateTime)-function_variables$h.prior)]
 after_window<-after[which(date(after) <= date(x$data$DateTime)+function_variables$h.post)] 
 
-x$prior<-data.frame(matrix(ncol=5, nrow=length(before_window))) # profiles withins user define function_
-x$post<-data.frame(matrix(ncol=5, nrow=length(after_window)))
+x$prior<-data.frame(matrix(ncol=7, nrow=length(before_window))) # profiles withins user define function_
+x$post<-data.frame(matrix(ncol=7, nrow=length(after_window)))
 
-names(x$prior)<-c("float", "profiles", "DateTime", "distance", "time_prior")
-names(x$post)<-c("float", "profiles", "DateTime", "distance", "time_after")
+names(x$prior)<-c("float", "profiles", "DateTime", "lat", "lon", "distance", "days_prior")
+names(x$post)<-c("float", "profiles", "DateTime", "lat", "lon", "distance", "days_after")
 
 x$prior$DateTime<-before_window
 x$post$DateTime<-after_window
-print(x)
+
+before_p<-p$profiles[p$profile_dates<=x$data$DateTime]
+after_p<-p$profiles[p$profile_dates>=x$data$DateTime]
+
+x$prior$profiles<-before_p[which(date(before) >= date(x$data$DateTime)-function_variables$h.prior)]
+x$post$profiles<-after_p[which(date(after) <= date(x$data$DateTime)+function_variables$h.post)] 
+
+# change here for date/lubridate object if need be
+x$prior$days_prior<-as.integer((date(x$prior$DateTime) - date(x$data$DateTime)) *-1)
+x$post$days_after<-as.integer(date(x$post$DateTime)-date(x$data$DateTime))
+
+x$prior$lat<-Sprof$lat[c(x$prior$profiles[1]:x$prior$profiles[length(x$prior$profiles)])]
+x$prior$lon<-Sprof$lon[c(x$prior$profiles[1]:x$prior$profiles[length(x$prior$profiles)])]
+
+x$post$lat<-Sprof$lat[c(x$post$profiles[1]:x$post$profiles[length(x$post$profiles)])]
+x$post$lon<-Sprof$lon[c(x$post$profiles[1]:x$post$profiles[length(x$post$profiles)])]
+
+rm(before, after, before_p, before_window, after_p, after_window)
+
+
+rint(x)
 
 
 # add if staemnets here
