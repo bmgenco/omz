@@ -1,0 +1,587 @@
+---
+title: "Hurricane_insitu_matchup_v2"
+author: "Brandon M. Genco"
+date: "1/11/2022"
+output: html_document
+---
+can use v1 code as need
+
+# Setup
+## Directories and defaults
+Use r proj file for relative directories
+see: https://yihui.org/knitr/options/
+
+```{r setup}
+rm(list=ls())
+# relative directories
+robj<-"r_objects"
+fig<-"../../figures"
+gis_data<-"../../data/gis_data"
+# data_d<-"../../data/2018_data"
+data_d<-"../../data"
+ocean_color<-"../../data/ocean_color_bud"
+bathy_d<-"../../data/bathy" # edit this
+
+#absolute directory
+drop_img<-"/home/brandon/Dropbox/MERCED/dissertation/presentations/images"
+
+knitr::opts_chunk$set(echo =FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+## Packages
+Installed custom hurdat package using r markdown menu
+* download  tar from archive as no longer maintained on cran repository
+* https://cran.r-project.org/src/contrib/Archive/HURDAT/
++ include as git submodule instead
+
+```{r}
+f.ipak <- function(pkg){
+  # loads packages, quietly, given by a vector of package names e.g., pkg<-c("ggplot", "tidyverse")
+  # will install  packages listed , and their dependencies, if needed.
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg))
+    install.packages(new.pkg, dependencies = TRUE, quiet=T, verbose = F)
+  sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
+}
+
+# packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "RColorBrewer", "marmap", "extrafont", "oce", "MODIS", "measurements")  # set packages here
+
+# tidyverse: is all of the following packages: ggplot2, dplyr, tidyr, readr, purr, tibble, sringr, & forcats.
+
+packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr")
+
+# "HURDAT",
+
+f.ipak(packages)
+# lapply(packages, require, character.only = TRUE)
+# rm(f.ipak, packages)
+print(paste0("Current Working Directory is ", getwd()))
+```
+## Load submodule for bio-argo floats
+
+```{r argo submodule}
+path_code = "r_scripts/submodules/BGC-ARGO_R_WORKSHOP/"
+
+source(paste0(path_code, "initialize_argo.R"))
+source(paste0(path_code, "try_download.R"))
+source(paste0(path_code, "do_download.R"))
+source(paste0(path_code, "download_float.R"))
+source(paste0(path_code, "download_multi_floats.R"))
+source(paste0(path_code, "check_dir.R"))
+source(paste0(path_code, "get_var_name_units.R"))
+source(paste0(path_code, "select_profiles.R"))
+source(paste0(path_code, "load_float_data.R"))
+source(paste0(path_code, "plot_trajectories.R"))
+source(paste0(path_code, "get_lon_lat_lims.R"))
+source(paste0(path_code, "show_trajectories.R"))
+source(paste0(path_code, "do_pause.R"))
+source(paste0(path_code, "depth_interp.R"))
+source(paste0(path_code, "calc_auxil.R"))
+source(paste0(path_code, "get_multi_profile_mean.R"))
+source(paste0(path_code, "show_profiles.R"))
+source(paste0(path_code, "plot_profiles.R"))
+source(paste0(path_code, "show_sections.R"))
+source(paste0(path_code, "plot_sections.R"))
+
+packages<-c("gsw", "R.utils","Matrix")
+f.ipak(packages)
+rm(f.ipak, packages, path_code)
+```
+
+## Functions
+
+```{r}
+
+
+### function to select an individual storm by name OR  key from hurdat, "h" datsetset  ####
+# f.select_ts<-function(key_id){
+# # can use or operator io incle storm name
+# x<-filter(h, Key == key_id)
+# # assign(key_id, x)
+# # rm(x, key_id)
+# # x<-ls()
+# # return(x[1])
+# }
+
+### function to convert depth when reading in nc files ####
+
+#### function to create buffer around hurricane points ####
+
+f.cl_buffer<-function(function_variables, cl){
+  if(is.na(function_variables$land_buffer)==TRUE){
+                      function_variables$land_buffer<-100000}
+  y<-st_geometry(cl)
+  y<-st_union(y, is_coverage = T)
+  z<-st_centroid(y)
+  land_buffer<-function_variables$land_buffer
+  
+  lat0<-z[[1]][2]
+  lon0<-z[[1]][1]
+  center.reproj<-paste0("+proj=aeqd +lat_0=", lat0, " ", "+lon_0=", lon0)
+  flat<-sf::st_transform(y, center.reproj )
+  buffered_land<-sf::st_buffer(flat, dist=land_buffer)%>%sf::st_transform(., "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") 
+  return(buffered_land)
+  }
+f.buffer_select<-function(h.pts, function_variables ,cl){
+if(is.na(function_variables$h.radi)==TRUE){
+                      function_variables$h.radi<-100000}
+if(is.na(function_variables$land_buffer)==TRUE){
+                      function_variables$land_buffer<-100000}
+
+radi.m<-function_variables$h.radi
+Land_buffer<-function_variables$land_buffer
+x<-h.pts  
+#CL buffer:
+  cl.buf<-f.cl_buffer(function_variables, cl)
+  
+  #polygon buffer:  
+  f.circle<-function(x, radi.m){
+  y<-st_geometry(x)
+  lat0<-y[[1]][2]
+  lon0<-y[[1]][1]
+  center.reproj<-paste0("+proj=aeqd +lat_0=", lat0, " ", "+lon_0=", lon0)
+  flat<-sf::st_transform(y, center.reproj )
+  circle<-sf::st_buffer(flat, dist=radi.m)%>%sf::st_transform(., "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") 
+  return(circle)
+  }
+  
+  circle<-sf::st_as_sf(f.circle(x, radi.m))
+  names(circle)<-"buffer"
+  st_geometry(circle)<-"buffer"
+  z<-cbind(x, circle)
+  names(z)[names(z) == "geometry"] <- "points"
+  st_geometry(z)<-"buffer"
+
+  y<-st_difference(z, cl.buf)
+
+rm(x,z,cl.buf)
+
+  
+  return(y)
+}
+
+## match up functions
+
+
+f.argo_by_database_w_selection_options<-function(database, year_begin, function_variables, spatial_box){
+
+  #                USER defined variables and defaults:                                   #
+  # year begin = year begin form hurricanes, profies will be function_variables$hprior b4 #                                                                               #
+  # spatial_box = c(xmin,ymin, xmax, ymax). vector of 4 integers. nothing else            #
+  # if function_variables$argo_sensor==NA THEN no sensor limits on profile return         #
+  # profiles may only be index value will need to update mathc fo each use of Sprof
+
+  #### default values if not defined: #### In FUTURE make spatial_box and year begin function variables
+  
+  if(missing(year_begin)){
+    year_begin<-year(min(database$DateTime)) %>% as.integer(.)
+    
+  }
+  if(missing(spatial_box)) {
+    y<-database
+    spatial_box<-c(unname(st_bbox(database)$xmin), unname(st_bbox(database)$ymin), unname(st_bbox(database)$xmax), unname(st_bbox(database)$ymax))
+  } else {y<-st_crop(database,  xmin=spatial_box[1], ymin=spatial_box[2], xmax=spatial_box[3], ymax=spatial_box[4])}
+  
+  if(is.na(function_variables$fraction_fodz)==TRUE){function_variables$fraction_fodz<-0}
+  if(is.na(function_variables$h.prior)==TRUE){function_variables$h.prior<-90}
+  if(is.na(function_variables$h.post)==TRUE){function_variables$h.post<-90}
+  
+  names(spatial_box)<-c("xmin", "ymin", "xmax", "ymax")
+  
+  #### Function : ####
+  y<-filter(y, year(DateTime) >= year_begin, maxFODZ >= function_variables$fraction_fodz)
+  y<-y[order(y$grid_id, decreasing = F),]
+  id<-unique(y$grid_id)
+  function_list<-as.list(id)
+  names(function_list)<-id
+  
+      f.get<-function(x, y){
+        y.id<-x
+        data<-filter(y, grid_id == y.id)
+        z<-st_bbox(unique(data))
+        lat_lim=c(z$ymin[[1]], z$ymax[[1]])
+        lon_lim=c(z$xmin[[1]], z$xmax[[1]])
+        start_date=date(min(y$DateTime)) - function_variables$h.prior
+        end_date=date(max(y$DateTime)) + function_variables$h.post
+    
+        #cell_floats from bioargo submodule:
+        if(is.na(function_variables$argo_sensor)==TRUE) {cell_floats<-select_profiles(lon_lim,lat_lim,start_date, end_date, outside="both",
+          sensor=NULL)} else {cell_floats<-select_profiles(lon_lim,lat_lim,
+          start_date, end_date, sensor=function_variables$argo_sensor, outside="both")}  
+        
+        # 'outside', 'none' 'time' 'space' 'both': By default, only float profiles
+        #           that are within both the temporal and spatial constraints are
+        #           returned ('none'); specify to also maintain profiles outside
+        #           the temporal constraints ('time'), spatial constraints
+        #           ('space'), or both constraints ('both')
+        # 
+        # 'sensor', 'SENSOR_TYPE': By default, all floats within the lon/lat/time
+        #           limits are considered. This option allows the selection by 
+        #           sensor type. Available are: DOXY, CHLA, BBP700, 
+        #           PH_IN_SITU_TOTAL, NITRATE, DOWN_IRRADIANCE380,
+        #           DOWN_IRRADIANCE412, DOWN_IRRADIANCE490, DOWNWELLING_PAR
+        #           (Currently, only one sensor type can be selected.)
+    
+        p<-vector(mode="list")
+        p$data<-data
+        
+        data.select<-p$data %>% filter(., year(DateTime)>=year_begin) %>%
+          select(., Key, Name, DateTime, lon, lat, Wind) %>% st_drop_geometry(.)%>%
+          remove_rownames(.)
+      
+        
+        p$events<-vector(mode="list", length=nrow(data.select))
+        for(i in 1:length(p$events)){
+          p$events[[i]]$data<-data.select[i,]}
+        names(p$events)<-data.select$Key
+        rm(data.select)
+        
+        p$profiles<-cell_floats$profiles
+        p$floats<-cell_floats$floats
+        p$profile_dates<-Sprof$date[cell_floats$profiles]
+        
+        p$profiles_postions ### need to do this for adjusting events data
+        p$floats_slection ## tmeproary thing for matching floats to profiles??
+        
+        # f.window<-function(p){p}
+        # p$individual_tracks<-vector()
+        # p$match<-f.wind(p)
+        
+        
+        f.closest<-function(x){
+            f.distance<-function(y){
+              pts<-SpatialPoints(coords=cbind(y$lon, y$lat), proj4string=CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"), bbox = NULL)
+              hpt<- SpatialPoints(coords=cbind(x$data$lon, x$data$lat), proj4string=CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"), bbox = NULL)
+              y$distance_km<-round(spDistsN1(pts, hpt, longlat = TRUE), 0)
+              return(y)
+              }
+          
+          before<-p$profile_dates[p$profile_dates<=x$data$DateTime]
+          after<-p$profile_dates[p$profile_dates>=x$data$DateTime]
+          
+          if(length(before)==0){x$prior<-NA} else {
+            
+            before_window<-before[which(date(before) >= date(x$data$DateTime)-function_variables$h.prior)]
+            
+              if(length(before_window)==0){x$prior<-NA} else {
+            
+              x$prior<-data.frame(matrix(ncol=7, nrow=length(before_window))) # profiles withins user define function_
+              names(x$prior)<-c("wmo", "profile_index",  "DateTime", "lat", "lon", "distance_km", "days_prior")
+              x$prior$DateTime<-before_window
+              before_p<-p$profiles[p$profile_dates<=x$data$DateTime]
+              x$prior$profile_index<-before_p[which(date(before) >= date(x$data$DateTime)-function_variables$h.prior)]
+              x$prior$wmo<-Sprof$wmo[c(x$prior$profile_index[1]:x$prior$profile_index[length(x$prior$profile_index)])]
+              # change here for date/lubridate object if need be
+              x$prior$days_prior<-as.integer((date(x$prior$DateTime) - date(x$data$DateTime)) *-1)
+              x$prior$lat<-Sprof$lat[c(x$prior$profile_index[1]:x$prior$profile_index[length(x$prior$profile_index)])]
+              x$prior$lon<-Sprof$lon[c(x$prior$profile_index[1]:x$prior$profile_index[length(x$prior$profile_index)])]
+              rm(before,  before_p, before_window)
+              x$prior<-f.distance(y=x$prior)
+              }
+          }
+          
+          if(length(after)==0){x$post<-NA} else {
+            
+            after_window<-after[which(date(after) <= date(x$data$DateTime)+function_variables$h.post)]
+            
+              if(length(after_window)==0){x$post<-NA} else{
+            
+              x$post<-data.frame(matrix(ncol=7, nrow=length(after_window)))
+              names(x$post)<-c("wmo", "profile_index","DateTime", "lat", "lon", "distance_km", "days_after")
+              x$post$DateTime<-after_window
+              after_p<-p$profiles[p$profile_dates>=x$data$DateTime]
+              x$post$profile_index<-after_p[which(date(after) <= date(x$data$DateTime)+function_variables$h.post)] 
+              x$post$wmo<-Sprof$wmo[c(x$post$profile_index[1]:x$post$profile_index[length(x$post$profile_index)])]
+              # change here for date/lubridate object if need be
+              x$post$days_after<-as.integer(date(x$post$DateTime)-date(x$data$DateTime))
+              x$post$lat<-Sprof$lat[c(x$post$profile_index[1]:x$post$profile_index[length(x$post$profile_index)])]
+              x$post$lon<-Sprof$lon[c(x$post$profile_index[1]:x$post$profile_index[length(x$post$profile_index)])]
+              rm(after, after_p, after_window)
+              x$post<-f.distance(y=x$post)
+              }
+          }
+          
+          return(x)}
+        
+        p$events<-lapply(p$events, f.closest)
+        p$events<-p$events[!sapply(p$events,is.null)]
+        
+        return(p)
+ 
+        }
+  
+    cell_list<-lapply(function_list, y=y, f.get)
+    rm(function_list)
+    names(cell_list)<-id
+      f.rm<-function(x){if(length(p$profiles)==0){x<-NULL} 
+        return(x)}
+  
+  cell_list<-lapply(cell_list, f.rm)
+  cell_list<-cell_list[!sapply(cell_list,is.null)]
+  rm(f.get, f.rm)
+
+      f.order<-function(cell_list){
+      x<-cell_list %>% lapply(.,'[[',1 ) %>% lapply(., dim) %>% lapply(., function(x){return(x[1])})
+      y<-x[order(as.vector(unlist(x)), decreasing=TRUE)]
+      cell_list<-cell_list[names(y)]
+      return(cell_list)}
+  
+  cell_list<-f.order(cell_list)
+
+  # names(year_begin)<-"year_begin"
+  input_variables<-function_variables %>% purrr::keep(names(.) %in% c("argo_sensor","fraction_fodz","h.prior","h.post"))
+  input_variables$spatial_box<-spatial_box
+  input_variables<-append(input_variables, year_begin, after=0) 
+  names(input_variables)[1]<-"year_begin"
+  cell_list<-append(cell_list, list(input_variables), after=0)
+  names(cell_list)[1]<-"input_variables"
+
+  # function_variables<<-function_variables # would update function variables
+  return(cell_list)
+  
+}
+
+
+```
+
+# Important objects and data sets
+## temp load/save works save for next steps
+
+```{r}
+setwd(robj)
+# bud_match<-readRDS("bud_match.R")
+# match<-readRDS("match.R")
+load("20220201_temp_workspace.RData")
+rm(function_variables)
+
+# save(function_variables, m.coast, database,  file="20220207_temp_workspace.RData")
+# saveRDS(match, "match.R")
+# saveRDS(bud_match, "bud_match.R")
+```
+
+## Import BioArgo metadata (requires submodule install):
+
+```{r}
+# initialize_argo() # downloads meta data for argo
+# setwd(robj)
+# save(Float, Setting, Sprof, sprof_update, file="init_argo.RData")
+setwd(robj)
+load("init_argo.RData")
+```
+
+## Read in "Best Track Data (HURDAT2)" hurricane data
+Using/used 'hurdat package'
+* Data source: [hurdat2](https://www.nhc.noaa.gov/data/#text) 
++ current version download 2022-01-11
++ "This dataset was provided on 30 April 2021 to include the best tracks for 
+  the 2020 hurricane season, 2019's Ema (CP012019), and an update for 2019's 
+  Erick (EP062019) within the North Central Pacific basin."
+
+```{r}
+# download from online. Basin is eastern pacific
+# h<-get_hurdat(basin="EP")
+# saveRDS(h, "r_objects/hurdat.R")
+
+h<-readRDS("r_objects/hurdat.R")
+h$DateTime<-with_tz(h$DateTime, tz="UTC")
+# h<-filter(h, between(Lon,-113,-108)) %>% filter(., between(Lat, 18,22))
+```
+
+# function_variables (INCLUDES DYNAMIC VARIABLES based on Hurdat (h)):
+Appending 'function_variables' with dynamic variables from hurdat 'h' data set
+* define here as opposed to within function or sub blocks
++ add hurdat coordinates as bbox feature
+Note importance of "function_variables<-vector(mode="list")"
+
+```{r}
+function_variables<-vector(mode="list") # for storing all function variables that may be dynamic or other wise
+
+### user defined: ####
+# prior and post for time frame of woa or ODZ in days
+function_variables$h.prior<-NA
+function_variables$h.post<-NA 
+
+# Mike's  delineations: Only need to go to 30 N and 150 W on one corner.  Also 80 W is far enough. .. (implied = 0 south so just use 0.00)
+function_variables$h.lon_max<--90 # need to improve here
+# function_variables$h.lon_min<--150
+function_variables$h.lat_max<-30
+# function_variables$h.lat_min<-0
+
+# radius around TS in m
+function_variables$h.radi<-100000
+function_variables$land_buffer<- 20000
+
+#fraction maxFODZ
+
+function_variables$fraction_fodz<-NA
+function_variables$argo_sensor<-NA 
+#c("DOXY") #pick a single argo sensor, "TEMP", etc.)
+### dynamic #### with if e
+#from hurdat dataset
+
+
+# function_variables$h.lat_max<-max(h$Lat)
+# function_variables$h.lat_min<-min(h$Lat)
+# function_variables$h.lon_max<-max(h$Lon[h$Lon < 0])
+function_variables$h.lon_min<-min(h$Lon)
+# function_variables$h.lat_max<-max(h$Lat)
+
+f.function_vars_fill<-function(function_variables, h){
+  if(missing(h)) {function_variables$h.lat_min<<-0} else{function_variables$h.lat_min<<-min(h$Lat)}
+  }
+
+f.function_vars_fill(function_variables)
+
+function_variables$selection<-paste0("Lat (", function_variables$h.lat_min, ", ", function_variables$h.lat_max, ") Lon 
+(", function_variables$h.lon_min, ", ", function_variables$h.lon_max,  ")")
+rm(f.function_vars_fill)
+```
+
+## ploting and coastal subsetting objects 
+- see script "GRL_Main_Figures.Rmd"
+```{r}
+setwd(gis_data)
+coastline<-st_read("./ne_50m_land/ne_50m_land.shp") 
+# ocean<-st_read("./ne_50m_ocean/ne_50m_ocean.shp") 
+cl<-st_crop(coastline, xmin=function_variables$h.lon_min, ymin=function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax=function_variables$h.lat_max)
+rm(coastline)
+
+m.coast <- ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+
+  theme_bw()+ theme(text = element_text(size =12)) 
+# cl<-st_crop(coastline, xmin=-170, ymin=-20, xmax=-80, ymax=40) # change here based on desired figure size
+# cl<-st_crop(coastline, xmin=min(h$Lon), ymin=min(h$Lat), xmax=max(h$Lon), ymax=max(h$Lat))
+# oc<-st_crop(ocean, xmin=function_variables$h.lon_min, ymin=function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax=function_variables$h.lat_max)
+```
+
+# Initial data subsetting
+## spatial h reformation & Hurricanes only
+* may be redundant with large clipping
+* may have many points at land/sea interface
++ Hurdat2 intentional includes landfall data points
+
+```{r}
+x<-filter(h, Status == "HU") # save 'h' in order to adjust function variables if needed.
+h.pts<- sf::st_as_sf(x, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>% 
+sf::st_crop(., c(xmin=function_variables$h.lon_min, ymin=function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax=function_variables$h.lat_max)) #subset by user defined 
+
+h.pts<-st_difference(h.pts, st_combine(st_geometry(cl))) # remove all points over land
+rm(x)
+```
+
+Plotting basic
+double check re projecting issues: 
+*https://geocompr.robinlovelace.net/reproj-geo-data.html
+
+### buffer
+
+```{r}
+# function_variables$land_buffer<-100000
+# function_variables$land_buffer<-20000
+# function_variables$h.radi<-100000
+h.buf<-f.buffer_select(h.pts, function_variables, cl)
+#see https://r-spatial.github.io/sf/reference/geos_unary.html
+# h.pts
+```
+
+
+#### match up with hurricane
+# create match up
+* create bounding box from center point (same resolution as raster)
+* sort by date
+* append to 
+
+```{r}
+# define selection criteria. if not see function defaults:
+# function_variables$fraction_fodz<-0.10 # 10 percent 
+# year_begin = 1997 #argo began in 1998.. but
+function_variables$argo_sensor<-"DOXY"
+# spatial_box<-c(-115,0, -100,23) #(xmin,ymin, xmax, ymax)
+
+start<-Sys.time()
+# match<-f.argo_by_database_w_clipFODZ(database, year_begin, function_variables)
+# match<-f.argo_by_database_w_selection_options(database, year_begin, function_variables, spatial_box)
+
+match<-f.argo_by_database_w_selection_options(database, function_variables=function_variables)
+
+end<-Sys.time()
+print(end-start)
+print(paste0("number of grid cells with matches is ", length(match)-1))
+
+#
+# bud_match<-match %>% keep(names(.) %in% c("input_variables", "38294")) # most hurricanes in hurdat
+
+
+```
+
+```{r}
+# 
+# match$'41272'$floats
+# download_multi_floats(match$'41272'$floats)  
+# 
+# show_profiles(window, variables = c("DOXY"))
+# show_sections("5903888", variables = c("DOXY"))
+# show_sections("5903888", variables = c("DOXY"))
+# show_sections("5903888", variables = c("DOXY"))
+
+
+download_multi_floats(bud_keep$floats)
+
+show_profiles(bud_keep$bud_window$prior$profile_index, variables = c("DOXY"))
+show_profiles(bud_keep$bud_window$prior$profile_index, variables = c("TEMP"))
+
+
+show_profiles(bud_keep$bud_window$post$profile_index, variables = c("DOXY"))
+show_profiles(bud_keep$bud_window$post$profile_index, variables = c("TEMP"))
+
+show_trajectories("5905068")
+show_sections("5905068", variables = c("TEMP"))
+show_sections("5905068", variables = c("DOXY"))
+
+
+
+
+```
+
+
+#### saveing outout
+```{r}
+sink("argo_match_up.txt")
+print(print)
+sink()
+```
+
+
+
+
+## select insitu by h_meta.sp
+
+# misc:
+
+## Storms specific data from h
+#### find storms near areas with high
+#### Specific storms
+Improve this for actually use
+
+```{r}
+# list unique identifiers by storm name
+# 
+storm_name<-"OHO"
+print(filter(h, Name == storm_name) %>% select(., Key) %>% unique(.))
+# 
+# # retun a specific storm by unique key
+key_id<-"EP032018"
+
+x<-f.select_ts(key_id)
+assign(key_id, x)
+rm(x)
+
+
+OHO<-filter(h, Name == storm_name)
+
+
+```
+
+#### Storm selction space and time
+TODO: Create spatial database of poygons with data from f date set
+
