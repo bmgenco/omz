@@ -973,28 +973,114 @@ y$time
 y$speed<-(y$distance*1000)/(as.numeric(y$delta)*3600)
 y<-y[-1,]
 y<-na.omit(y)
-          
+
 # https://mhallwor.github.io/_pages/basics_SpatialPoints
 
 z<-subset(y, select=c(date, max_sustained_wind_knots))
 z<-subset(y, select=c(time, max_sustained_wind_knots))
 z$max_sustained_wind_knots<-z$max_sustained_wind_knots/1.94384
 names(z)<-c("time", "wind")
-
-a<-z[09:20,]
-a<-z[16:26,]
+# 
+# a<-z[09:20,]
+# a<-z[16:26,]
 
 ```
+## added 2022-02-09
+
+```{r}
+
+setwd(robj)
+stations_positions_list<-readRDS("OC1806A_stations_positions_list.R")
+# 
+#  setDT(f)
+#   setDT(t)
+#   setkey(f, time)
+#   setkey(t, time)
+#   f<-f[t, roll='nearest']
+#   
+
+y<-select(y,  time, lat,lon, max_sustained_wind_knots, speed, delta) # time is MDT
+row.names(y)<-1:dim(y)[1]
+op<-st_as_sf(y, coords = c("lon", "lat"),crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+st<-st_as_sf(stations_positions_list$ctd_centroids, coords = c("longitude", "latitude"),crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") 
+# test<-st_nearest_points(st, op) #closest paire points might be usefule for 
+
+# test2<-cbind(op[st_nearest_feature(st, op),], st)
+
+
+# make belo a function
+
+op.f<-filter(op, time<=st$time[1])
+st.f<-st[1,]
+match1<-cbind(op[st_nearest_feature(st.f, op.f),], st.f) 
+match1$distance_km<-round(as.integer(st_distance(match1$geometry, match1$geometry.1)/1000), 0)
+match1<-match1 %>% st_drop_geometry(.) 
+
+op.f<-filter(op, time<=st$time[2])
+st.f<-st[2,]
+match2<-cbind(op[st_nearest_feature(st.f, op.f),], st.f) 
+match2$distance_km<-round(as.integer(st_distance(match2$geometry, match2$geometry.1)/1000), 0)
+match2<-match2 %>% st_drop_geometry(.) 
+
+
+op.f<-filter(op, time<=st$time[3])
+st.f<-st[3,]
+match3<-cbind(op[st_nearest_feature(st.f, op.f),], st.f)
+match3$distance_km<-round(as.integer(st_distance(match3$geometry, match3$geometry.1)/1000), 0)
+match3<-match3 %>% st_drop_geometry(.) 
+
+op.f<-filter(op, time<=st$time[4])
+st.f<-st[4,]
+match3.5<-cbind(op[st_nearest_feature(st.f, op.f),], st.f) 
+match3.5$distance_km<-round(as.integer(st_distance(match3.5$geometry, match3.5$geometry.1)/1000), 0)
+match3.5<-match3.5 %>% st_drop_geometry(.) 
+
+op.f<-filter(op, time<=st$time[5])
+st.f<-st[5,]
+match4<-cbind(op[st_nearest_feature(st.f, op.f),], st.f)
+match4$distance_km<-round(as.integer(st_distance(match4$geometry, match4$geometry.1)/1000), 0)
+match4<-match4 %>% st_drop_geometry(.)  
+
+op.f<-filter(op, time<=st$time[6])
+st.f<-st[6,]
+match5<-cbind(op[st_nearest_feature(st.f, op.f),], st.f)
+match5$distance_km<-round(as.integer(st_distance(match5$geometry, match5$geometry.1)/1000), 0)
+match5<-match5 %>% st_drop_geometry(.) 
+
+matched<-rbind(match1, match2, match3, match3.5, match4, match5)
+matched$hours_after<-as.integer(round((matched$time.1-matched$time), 1))
+
+matched<-(select(matched, -geometry.1, time.1))
+
+
+print(matched)# 
+# matched$hrs_after<-(
+#   
+# hours(matched$time.1)-hours(matched$date)
+
+# 
+# match<-cbind(op[st_nearest_feature(st, op),], st) %>% st_drop_geometry(.) 
+# 
+# 
+# 
+# match<-select(match,  time, max_sustained_wind_knots, speed, max_sustained_wind_knots, delta, station, distance)
+
+
+
+```
+
+
 # Inertial wave stuff
 
 ## basic maths
 ```{r}
 lat<-16
+rads<-lat*(pi/180)
 omega<-7.2921e-5
-f<-2*omega*sin(lat)
+f<-2*omega*sin(rads)
 # shoukld be in ceniters
-u<-40
-v<-40
+u<-.6
+v<-.6
 V<-sqrt((u^2)+(v^2))
 t<-36*3600
 u<-V*sin(f*t)

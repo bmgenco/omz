@@ -571,7 +571,7 @@ m.map
 # function_variables$h.radi<-100000
 h.buf<-f.buffer_select(h.pts, function_variables, cl)
 #see https://r-spatial.github.io/sf/reference/geos_unary.html
-h.pts
+# h.pts
 ```
 
 #### plotting h.buf 
@@ -667,6 +667,11 @@ y<-st_as_sf(y)
 temp<-h.buf
 st_geometry(temp)<-"points"
 temp<-st_difference(temp, y)
+
+# eary dat base reads
+
+temp<-temp %>% filter(., year(DateTime) >= 1995)
+
 
 grid<-st_sf(grid) %>% mutate(grid_id = 1:length(grid))
 grid$num_h = lengths(st_intersects(grid, temp))
