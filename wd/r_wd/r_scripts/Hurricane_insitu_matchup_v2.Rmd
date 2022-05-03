@@ -623,7 +623,7 @@ return(matched)}
 # function_variables$fraction_fodz<-0.10 # 10 percent 
 year_begin = 1997 #argo began in 1998.. but
 function_variables$argo_sensor<-"DOXY"
-function_variables$argo.length<-(450*1000)
+function_variables$argo.length<-(600*1000)
 
 # spatial_box<-c(-115,0, -100,23) #(xmin,ymin, xmax, ymax)
 
@@ -660,17 +660,22 @@ after_dates<-x$post_dates[1:3]
 #notes cyce 169 
 
 show_profiles(before, variables = c("DOXY"))
+setwd(robj)
+
 
 
 ```
 
 ```{r}
 # explore(nc)
+# file<-"Profiles/5905068_Sprof.nc"
+# x<-tidync(file)
+# %>% hyper_tibble(select_var = "numObs")
+# 
+# setwd(robj)
+# saveRDS(matched, "600_km_matched.RDs")
+# 
 
-
-file<-"Profiles/5905068_Sprof.nc"
-x<-tidync(file)
-%>% hyper_tibble(select_var = "numObs")
 
 ```
 
