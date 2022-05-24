@@ -30,6 +30,7 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
 ## Packages
+
 Installed custom hurdat package using r markdown menu
 * download  tar from archive as no longer maintained on cran repository
 * https://cran.r-project.org/src/contrib/Archive/HURDAT/
@@ -345,6 +346,7 @@ f.argo_by_database_w_selection_options<-function(database, year_begin, function_
 
 ```
 
+
 # Important objects and data sets
 ## temp load/save works save for next steps
 
@@ -387,6 +389,7 @@ h<-readRDS("r_objects/hurdat.R")
 h$DateTime<-with_tz(h$DateTime, tz="UTC")
 # h<-filter(h, between(Lon,-113,-108)) %>% filter(., between(Lat, 18,22))
 ```
+
 
 # function_variables (INCLUDES DYNAMIC VARIABLES based on Hurdat (h)):
 Appending 'function_variables' with dynamic variables from hurdat 'h' data set
@@ -483,6 +486,7 @@ h.buf<-f.buffer_select(h.pts, function_variables, cl)
 #see https://r-spatial.github.io/sf/reference/geos_unary.html
 rm(h, h.pts)
 ```
+
 # new function
 ```{r}
 f.argo_by_hurdat_w_selection_options<-function(h.buf, year_begin, function_variables, spatial_box){

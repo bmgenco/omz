@@ -35,17 +35,61 @@ to do:
 @author: brandon
 """
 import os
-import pyhdf
-from pyhdf.SD import SD, SDC
+import mpl_toolkits
+
+#from mpl_toolkits.basemap import Basemap # no longer compatible
+#https://github.com/matplotlib/basemap/issues/494
+import cartopy
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-"from mpl_toolkits.basemap import Basemap"
 import numpy as np  
+
+#import pyhdf
+
+from pyhdf.SD import SD, SDC
+from natsort import natsorted
+
+import netCDF4 as nc
+
+#import re #regular expressions 
+
+
+
+# file import and slection
 
 data_d='/home/brandon/vestawd/omz/data/POC_Flux_data_sets/4km_derived_daily_export_flux/ef_2018/2018'
 os.chdir(data_d)
 
-file_name = "M2018174_par_VGPM-CAL_EfStukelYork.hdf" 
+files=os.listdir(data_d)
+#since number of files = 365 can pick date by indexing this list. need nat_sore
+files=natsorted(files)
+
+t0=166
+t0=t0-1
+
+window=files[(t0-31):(t0+90)] #change window size as needed
+del files
+
+#in future use regeular expressions
+
+#lopp here:
+
+i=40
+file_name=window[i]
+
 hdf = SD(file_name, SDC.READ)
-print(hdf.datasets())
+
+#print(hdf.datasets())
+#print(hdf.attributes())
+
+data=hdf.select('EF_2018_175')
+
+lat = hdf.select('fakeDim0')
+latitude = lat[:,:]
+lon = hdf.select('fakeDim1')
+longitude = lon[:,:]
+
+hdf.end()
+
+m.pcolormesh(x, y, data)

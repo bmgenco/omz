@@ -1,0 +1,272 @@
+---
+title: "ODZ statisics"
+author: "Brandon M. Genco"
+date: "5/16/2022"
+output: html_document
+---
+"modifed from huricane in situ matchup 2" 
+
+# Setup
+## Directories and defaults
+Use r proj file for relative directories
+see: https://yihui.org/knitr/options/
+
+```{r setup}
+rm(list=ls())
+# relative directories
+robj<-"r_objects"
+# fig<-"../../figures"
+# gis_data<-"../../data/gis_data"
+# data_d<-"../../data/2018_data"
+data_d<-"../../data"
+# ocean_color<-"../../data/ocean_color_bud"
+# bathy_d<-"../../data/bathy" # edit this
+output<-"../../output"
+
+knitr::opts_chunk$set(echo =FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+## Packages
+
+Installed custom hurdat package using r markdown menu
+* download  tar from archive as no longer maintained on cran repository
+* https://cran.r-project.org/src/contrib/Archive/HURDAT/
++ include as git submodule instead
+
+```{r}
+f.ipak <- function(pkg){
+  # loads packages, quietly, given by a vector of package names e.g., pkg<-c("ggplot", "tidyverse")
+  # will install  packages listed , and their dependencies, if needed.
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg))
+    install.packages(new.pkg, dependencies = TRUE, quiet=T, verbose = F)
+  sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
+}
+
+# packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "RColorBrewer", "marmap", "extrafont", "oce", "MODIS", "measurements")  # set packages here
+
+# tidyverse: is all of the following packages: ggplot2, dplyr, tidyr, readr, purr, tibble, sringr, & forcats.
+
+packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "nngeo")
+
+# "HURDAT",
+
+f.ipak(packages)
+# lapply(packages, require, character.only = TRUE)
+# rm(f.ipak, packages)
+print(paste0("Current Working Directory is ", getwd()))
+
+wd<-getwd()
+```
+# read in fucntion variables:
+
+```{r}
+setwd(robj)
+# bud_match<-readRDS("bud_match.R")
+# match<-readRDS("match.R")
+load("20220201_temp_workspace.RData")
+# rm(function_variables, m.coast)
+
+# save(function_variables, m.coast, database,  file="20220207_temp_workspace.RData")
+# saveRDS(match, "match.R")
+# saveRDS(bud_match, "bud_match.R")
+```
+# read in station postions:
+
+```{r}
+setwd(robj)
+stations_positions_list<-readRDS("OC1806A_stations_positions_list.R")
+stations<-stations_positions_list$ctd_centroids
+rm(stations_positions_list)
+
+stations<-stations %>%select(., station, longitude, latitude ) %>% sf::st_as_sf(., coords = c("longitude","latitude"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84")
+
+# i<- # c(1:6) = st1, st2, st3, st3.5 ...
+# st<-stations_positions_list[[3]][i,cbind(2,3)]
+
+
+# create rounded slection object:
+
+x<-vector(mode="integer", length =length(stations$station))
+y<-vector(mode="integer", length =length(stations$station))
+for(i in 1:length(stations$station)){
+  x[i]<-plyr::round_any(stations$geometry[[i]][1],.5)
+  y[i]<-plyr::round_any(stations$geometry[[i]][2],.5)
+}
+pts<-as.data.frame(cbind(x,y))
+pts<-pts%>% sf::st_as_sf(.,coords = c("x","y"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84")
+stations_r<-stations 
+stations_r$geometry<-pts$geometry
+rm(x,y, pts)
+
+```
+
+# top of ODZ
+
+## read in ODZ interoplated depth ->"nc_depth_DIVA.nc"
+ 
+-depth in meters
+
+```{r}
+file<-(file.path(data_d, "odz_atlas/nc_depth_DIVA.nc"))
+# q<-c("maxFODZ", "topDepth", "thickness", "botDepth")
+q<-c("topDepth")
+diva_depth.odz<-tidync(file)%>% activate(c("D0,D1")) %>% hyper_tibble(select_var =q)
+rm(file, q)
+
+odz<-diva_depth.odz %>% sf::st_as_sf(., coords = c("Longitude","Latitude"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84")%>%
+st_crop(., xmin = function_variables$h.lon_min,ymin= function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax= function_variables$h.lat_max )
+
+rm(diva_depth.odz, file) # for now
+gc()
+
+
+```
+
+## calcluate top of ODZ
+
+```{r}
+
+top_ODZ<-st_join(stations, odz, join=st_nearest_feature)
+rm(odz)
+
+```
+
+
+# other staitics from pressue vlaues
+
+## ODZ actual depth->"nc_depth.nc"
+```{r}
+file<-(file.path(data_d, "odz_atlas/nc_depth.nc"))
+# q<-c("maxFODZ", "topDepth", "thickness", "botDepth")
+# q<-c("topDepth")
+# depth.odz<-tidync(file)
+# q<-depth.odz$variable$name
+# q<-q[4:length(q)]
+depth.odz<-tidync(file)%>% activate(c("D0,D1")) %>% hyper_tibble()
+
+# depth.odz<-depth.odz%>% activate(c("D0,D1")) %>% hyper_tibble(select_var =q)
+# rm(file, q)
+# 
+odz<-depth.odz %>% sf::st_as_sf(., coords = c("Longitude","Latitude"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84")%>%
+st_crop(., xmin = function_variables$h.lon_min,ymin= function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax= function_variables$h.lat_max )
+# 
+rm(depth.odz) # for now
+gc()
+
+
+```
+
+
+
+# create nearest points with data
+```{r}
+
+x<-st_nn(stations, odz, k = 1, returnDist = T)
+nn_distance<-unlist(x$dist) # give distance from staion to near center of neaer grid cell with data
+
+x<-st_nn(stations_r, odz, k = 1, returnDist = T) # neded to find enear grid cell wit data
+
+p<-unlist(x$nn)
+rm(x)
+pts<-c(odz$geometry[p[1]], odz$geometry[p[2]], odz$geometry[p[3]], odz$geometry[p[4]], odz$geometry[p[5]], odz$geometry[p[6]]) 
+
+x<-vector(mode="numeric", length =length(pts))
+y<-vector(mode="numeric", length =length(pts))
+for(i in 1:length(pts)){
+  x[i]<-pts[[i]][1]
+  y[i]<-pts[[i]][2]
+}
+pts<-as.data.frame(cbind(x,y))
+pts<-pts%>% sf::st_as_sf(.,coords = c("x","y"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84")
+
+pts<-st_join(pts, odz)
+pts$distance_km<-round((nn_distance/1000),1)
+pts$station<-stations$station
+
+
+for(i in 1:length(stations$station)){
+  x[i]<-signif(stations$geometry[[i]][1],10)
+  y[i]<-signif(stations$geometry[[i]][2],10)
+}
+
+
+pts$station_lon<-x
+pts$station_lat<-y
+
+for(i in 1:length(stations$station)){
+  x[i]<-round(pts$geometry[[i]][1],2)
+  y[i]<-round(pts$geometry[[i]][2],2)
+}
+
+pts$grid_lon<-x
+pts$grid_lat<-y
+
+row.names(pts)<-pts$station # needed for slection 
+
+rm(odz, p, nn_distance, i, x, y)
+
+```
+
+
+```{r}
+
+# x<-pts[rownames(pts)=="3.5", ] 
+# x<-z[rownames(z)==z$station[i], ]
+# x<-pts[rownames(pts)=="3.5", ]  
+
+```
+
+
+# depth profiles for each staiton
+```{r}
+setwd(wd)
+file<-(file.path(data_d, "odz_atlas/nc_depth.nc"))
+# depth.odz<-tidync(file)
+
+
+z<-st_drop_geometry(pts)
+y<-vector(mode="list", length= dim(pts)[1])
+
+for(i in 1:(dim(pts)[1])){
+y[[i]]<-tidync(file)%>%hyper_filter(Longitude = Longitude==z$grid_lon[i], Latitude = Latitude==z$grid_lat[i]) %>% hyper_tibble() 
+}
+names(y)<-pts$station
+
+# rm(z) leep for making table
+
+```
+
+
+
+```{r}
+# names(top_ODZ)[names(top_ODZ) == '"topDepth"'] <- "INTERPOLATED_topDepth"
+# temp<-pts
+# pts<-drop
+z$interpolated_topDepth_m<-top_ODZ$topDepth
+names(z)[names(z) == "topDepth"] <- "actual_topDepth_m"
+names(z)[names(z) == "maxDerivDepth"] <- "actual_maxDerivDepth_m"
+names(z)[names(z) == "thickness"] <- "actual_odz_thickness_m"
+
+z<-z %>% relocate(station, .before=actual_topDepth_m)
+z<-z %>% relocate(interpolated_topDepth_m, .after = station)
+
+```
+
+
+## write csvs
+
+```{r}
+setwd( "/home/brandon/vestawd/omz/wd/r_wd")
+setwd(output)
+
+fn<-"2d_odz_statistics.csv"
+readr::write_csv(z, fn, na = "NaN")
+
+for(i in 1:length(y)){
+fn<-paste0(names(y)[[i]], "_depth_profiles_ODZ_atlas_actual_data", ".csv")
+# write.csv(data[[i]], fn, row.names = FALSE)}
+readr::write_csv(y[[i]], fn, na = "NaN")}
+```
+

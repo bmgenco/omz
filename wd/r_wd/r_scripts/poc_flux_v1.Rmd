@@ -33,6 +33,7 @@ output<-"../../output"
 
 knitr::opts_chunk$set(echo =FALSE, warning = FALSE)
 knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+
 ```
 
 ## packages
@@ -64,8 +65,9 @@ f.ipak(packages)
 # lapply(packages, require, character.only = TRUE)
 # rm(f.ipak, packages)
 print(paste0("Current Working Directory is ", getwd()))
-```
 
+wd<-getwd()
+```
 
 ## subset
 copied from graphing , should make a  function....
@@ -360,6 +362,14 @@ t.end<-Sys.time()
 
 ### save csv's
 
+### read in data file, so as not have to re run code
+```{r}
+setwd(robj)
+data<-read_rds("vgpm_integrated_20220512.R")
+
+```
+
+
 ```{r}
 
 setwd( "/home/brandon/vestawd/omz/wd/r_wd")
@@ -368,7 +378,7 @@ setwd(output)
 for(i in 1:length(data)){
 fn<-paste0(names(data)[i], "_8day_vgpm_to_export_flux", ".csv")
 # write.csv(data[[i]], fn, row.names = FALSE)}
-write_csv2(data[[i]], fn)}
+readr::write_csv(data[[i]], fn)}
 # write_excel_csv2(data[[i]], fn)}
 # 
 
@@ -400,10 +410,11 @@ close(fileConn)
 
 # plotting 
 ```{r}
+setwd(wd)
 setwd(robj)
 data<-read_rds("vgpm_integrated_20220512.R")
 
-x<-data$st3.5
+x<-data$st5
 x$date<-ymd(x$date)
 
 x<-select(x, date, `mean_export_flux (mgC/m^2/day) for_window_area (total/sum_grid_area)`, `total_export_flux (mgC/day)`)
@@ -437,6 +448,41 @@ average<- ggplot(x, aes(x=date, y=avg)) +
 
 ```
 
+plotting (old cod fro chl, tmep and staion boxes) suplemtary figure
+
+```{r}
+
+f3<-f1 +
+  geom_line(aes(y=chlorophyll * scale.chla), color=fcolor) +
+  geom_line(aes(y=celsius), color=tcolor) +
+  xlab("Date") +
+  ggtitle("SST and Chlorophyll-a") +
+  scale_x_datetime(date_breaks=('2 days'))+
+  scale_y_continuous(name ="SST (°C)", sec.axis = sec_axis(~./scale.chla,name="Chlorophyll-a [μg/L]"))+
+  #scale_y_continuous(name ="Chlorophyll-a [μg/L]", sec.axis = sec_axis(~./scale.chla,name="°C")) + 
+  theme(
+    panel.background = element_rect(fill = NA),
+    panel.ontop = FALSE
+  ) + 
+  scale_x_datetime(date_labels = "%m/%d", date_breaks="2 days", date_minor_breaks = "1 days") +
+  theme(plot.title = element_text(hjust = 0.5))+
+  theme(axis.ticks.y.left = element_line(color = tcolor),
+        axis.text.y.left = element_text(color = tcolor), 
+        axis.title.y.left = element_text(color = tcolor)
+  ) +
+  
+  theme(axis.ticks.y.right = element_line(color = fcolor),
+        axis.text.y.right = element_text(color = fcolor), 
+        axis.title.y.right = element_text(color = fcolor)
+  )+
+
+  theme(
+    panel.background = element_rect(fill = NA),
+    panel.ontop = FALSE
+  )
+
+
+```
 
 
 ## temp - for testing
