@@ -24,7 +24,7 @@ fig<-"../../figures"
 
 # data_poc<-"../../data/POC_Flux_data_sets/4km_derived_daily_export_flux/ef_2018/2018"
 data_poc<-"/home/brandon/vestawd/omz/data/POC_Flux_data_sets/8_day_VGPM_NPP_xyz/window"
-
+data_poc_all<-"../../data/POC_Flux_data_sets/annual_vgpm_NPP_hdf4"
 
 output<-"../../output"
 
@@ -360,6 +360,26 @@ t.end<-Sys.time()
 
 ```
 
+## 2nd attempt - data & saving
+
+
+```{r}
+file<-(file.path(data_d, "odz_atlas/nc_depth_DIVA.nc"))
+# q<-c("maxFODZ", "topDepth", "thickness", "botDepth")
+q<-c("topDepth")
+diva_depth.odz<-tidync(file)%>% activate(c("D0,D1")) %>% hyper_tibble(select_var =q)
+rm(file, q)
+
+odz<-diva_depth.odz %>% sf::st_as_sf(., coords = c("Longitude","Latitude"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84")%>%
+st_crop(., xmin = function_variables$h.lon_min,ymin= function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax= function_variables$h.lat_max )
+
+rm(diva_depth.odz, file) # for now
+gc()
+
+
+```
+
+
 ### save csv's
 
 ### read in data file, so as not have to re run code
@@ -408,11 +428,14 @@ close(fileConn)
 
 ```
 
-# plotting 
+
+# plotting v1
 ```{r}
 setwd(wd)
 setwd(robj)
-data<-read_rds("vgpm_integrated_20220512.R")
+
+# data<-read_rds("vgpm_integrated_20220512.R")
+data<-read_rds("vgpm_integrated_all_years_202200607.R")
 
 x<-data$st5
 x$date<-ymd(x$date)
@@ -422,7 +445,6 @@ x<-select(x, date, `mean_export_flux (mgC/m^2/day) for_window_area (total/sum_gr
 
 names(x)<-c("date", "avg", "ef")
 x$ef<-x$ef/1000000
-
 
 # x$l<-log10(x$ef)
 total<- ggplot(x, aes(x=date, y=ef)) +
@@ -448,38 +470,261 @@ average<- ggplot(x, aes(x=date, y=avg)) +
 
 ```
 
-plotting (old cod fro chl, tmep and staion boxes) suplemtary figure
+
+
+#plotting v2
 
 ```{r}
 
-f3<-f1 +
-  geom_line(aes(y=chlorophyll * scale.chla), color=fcolor) +
-  geom_line(aes(y=celsius), color=tcolor) +
-  xlab("Date") +
-  ggtitle("SST and Chlorophyll-a") +
-  scale_x_datetime(date_breaks=('2 days'))+
-  scale_y_continuous(name ="SST (°C)", sec.axis = sec_axis(~./scale.chla,name="Chlorophyll-a [μg/L]"))+
-  #scale_y_continuous(name ="Chlorophyll-a [μg/L]", sec.axis = sec_axis(~./scale.chla,name="°C")) + 
-  theme(
-    panel.background = element_rect(fill = NA),
-    panel.ontop = FALSE
-  ) + 
-  scale_x_datetime(date_labels = "%m/%d", date_breaks="2 days", date_minor_breaks = "1 days") +
-  theme(plot.title = element_text(hjust = 0.5))+
-  theme(axis.ticks.y.left = element_line(color = tcolor),
-        axis.text.y.left = element_text(color = tcolor), 
-        axis.title.y.left = element_text(color = tcolor)
-  ) +
-  
-  theme(axis.ticks.y.right = element_line(color = fcolor),
-        axis.text.y.right = element_text(color = fcolor), 
-        axis.title.y.right = element_text(color = fcolor)
-  )+
 
-  theme(
-    panel.background = element_rect(fill = NA),
-    panel.ontop = FALSE
-  )
+# setwd(wd)
+# setwd(robj)
+# 
+# # data<-read_rds("vgpm_integrated_20220512.R")
+# data<-read_rds("vgpm_integrated_all_years_202200607.R")
+
+
+# f.poc_plots<-function(x){}
+# see https://stackoverflow.com/questions/9469504/access-and-preserve-list-names-in-lapply-function
+
+
+plots_avg<-vector(mode="list", length(data))
+plots_total<-vector(mode="list", length(data))
+station_number<-c("1", "2", "3", "3.5", "4", "5")
+window_area<-c(round((data$st1$`window_area (m^2)`[1]*1e-6),0), round((data$st2$`window_area (m^2)`[1]*1e-6),0), round((data$st3$`window_area (m^2)`[1]*1e-6),0), round((data$st3.5$`window_area (m^2)`[1]*1e-6),0), round((data$st4$`window_area (m^2)`[1]*1e-6),0), round((data$st5$`window_area (m^2)`[1]*1e-6),0))
+
+
+
+rects<- data.frame(x1=seq(as.Date('2002-05-15'), length.out=20, by="years"),
+        x2=seq(as.Date('2002-11-30'),length.out=20, by="years"))
+
+rects$y1<-Inf
+rects$y2<-Inf
+
+# rectangel parameters:
+rect_color<-NA
+sz<-0.25
+alph<-.25
+rect_fill<-"cornsilk1"
+
+
+for(i in 1:length(data)) {
+
+  
+# x<-data$st5
+x<-data[[i]]
+lab_avg<-paste0("Station ", station_number[i], ":", " Average Export Flux - ", window_area[i], " km^2 area")
+lab_total<-paste0("Station ", station_number[i], ":", " Total Export Flux - ", window_area[i], " km^2 area")
+
+x$date<-ymd(x$date)
+x<-select(x, date, `mean_export_flux (mgC/m^2/day) for_window_area (total/sum_grid_area)`, `total_export_flux (mgC/day)`)
+# x<-select(x, date, `total_export_flux (mgC/day)` )
+
+names(x)<-c("date", "avg", "ef")
+x$ef<-x$ef/1000000
+
+# x$l<-log10(x$ef)
+plots_total[[i]]<- ggplot(x, aes(x=date, y=ef)) +
+  geom_rect(data =x ,  aes(xmin =rects$x1[1], xmax = rects$x2[1] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[2], xmax = rects$x2[2] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[3], xmax = rects$x2[3] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[4], xmax = rects$x2[4] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[5], xmax = rects$x2[5] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[6], xmax = rects$x2[6] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[7], xmax = rects$x2[7] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[8], xmax = rects$x2[8] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[9], xmax = rects$x2[9] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[10], xmax = rects$x2[10] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[11], xmax = rects$x2[11] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[12], xmax = rects$x2[12] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[13], xmax = rects$x2[13] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[14], xmax = rects$x2[14] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[15], xmax = rects$x2[15] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[16], xmax = rects$x2[16] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[17], xmax = rects$x2[17] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[18], xmax = rects$x2[18] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[19], xmax = rects$x2[19] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[20], xmax = rects$x2[20] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_point()+
+  theme_bw()+
+  ylab("Export flux (kg C/day)")+
+  labs(title=lab_total,
+  caption = "8-Day resolution: Non-lagged EF. Colored boxes: Climatological Cyclone Season (05-15 to 11-30)")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  theme(plot.caption =element_text(hjust = 0.5))+
+  scale_y_continuous(labels = function(x) format(x, scientific = TRUE))+
+  scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months")+
+  theme(axis.title.x=element_blank())
+ 
+
+#, date_minor_breaks = "1 month"
+
+ # xlab("8-day Integration")+
+plots_avg[[i]]<- ggplot(x, aes(x=date, y=avg)) +
+  geom_rect(data =x ,  aes(xmin =rects$x1[1], xmax = rects$x2[1] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[2], xmax = rects$x2[2] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[3], xmax = rects$x2[3] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[4], xmax = rects$x2[4] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[5], xmax = rects$x2[5] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[6], xmax = rects$x2[6] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[7], xmax = rects$x2[7] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[8], xmax = rects$x2[8] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[9], xmax = rects$x2[9] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[10], xmax = rects$x2[10] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[11], xmax = rects$x2[11] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[12], xmax = rects$x2[12] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[13], xmax = rects$x2[13] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[14], xmax = rects$x2[14] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[15], xmax = rects$x2[15] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[16], xmax = rects$x2[16] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[17], xmax = rects$x2[17] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[18], xmax = rects$x2[18] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[19], xmax = rects$x2[19] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_rect(data =x ,  aes(xmin =rects$x1[20], xmax = rects$x2[20] , ymin = -Inf, ymax = Inf), fill=rect_fill, colour=rect_color, size=sz, alpha=alph)+
+  geom_point()+
+  theme_bw()+
+  ylab("Mean export flux (mgC/m^2/day)")+
+  scale_y_continuous(labels = function(x) format(x, scientific = TRUE))+
+  scale_x_date(date_breaks = "2 years", date_labels = "%Y", date_minor_breaks = "6 months")+
+  labs(title=lab_avg, caption = "8-Day resolution: Non-lagged EF. Colored boxes: Climatological Cyclone Season (05-15 to 11-30)")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  theme(plot.caption =element_text(hjust = 0.5))+
+  scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months")+
+  theme(axis.title.x=element_blank())
+   
+rm(x)         
+                       
+}
+
+```
+
+
+```{r}
+library(cowplot)
+setwd(wd)
+setwd(fig)
+a1<-list(plots_avg[[1]], plots_avg[[2]], plots_avg[[3]])
+a2<-list(plots_avg[[4]], plots_avg[[5]], plots_avg[[6]])
+
+pdf("poc_averages_1.pdf", height=8.5 , width =11)
+cowplot::plot_grid(plotlist = a1, nrow=3, ncol=1)
+dev.off()
+
+pdf("poc_averages_2.pdf", height=8.5 , width =11)
+cowplot::plot_grid(plotlist = a2, nrow=3, ncol=1)
+dev.off()
+
+t1<-list(plots_total[[1]], plots_total[[2]], plots_total[[3]])
+t2<-list(plots_total[[4]], plots_total[[5]], plots_total[[6]])
+
+pdf("poc_totals_1.pdf", height=8.5 , width =11)
+cowplot::plot_grid(plotlist = t1, nrow=3, ncol=1)
+dev.off()
+
+pdf("poc_totals_2.pdf", height=8.5 , width =11)
+cowplot::plot_grid(plotlist = t2, nrow=3, ncol=1)
+dev.off()
+
+
+
+```
+
+
+
+
+creating boxes
+
+```{r}
+
+
+
+rects<- data.frame(x1=seq(as.Date('2002-05-15'), length.out=20, by="years"),
+        x2=seq(as.Date('2002-11-30'),length.out=20, by="years"))
+
+rects$y1<-Inf
+rects$y2<-Inf
+rects$x1[1]<-as.Date("2002-07-05")
+
+rect_color<-"grey89"
+
+
+ggplot(x, aes(x = time)) + 
+  
+geom_rect(data =x ,  aes(xmin =rects$x1[1], xmax = rects$x2[1] , ymin = -Inf, ymax = Inf), fill=rect_color)
+geom_rect(data =x ,  aes(xmin =rects$x1[2], xmax = rects$x2[2] , ymin = -Inf, ymax = Inf), fill=rect_color) +
+geom_rect(data =x ,  aes(xmin =rects$x1[3], xmax = rects$x2[3] , ymin = -Inf, ymax = Inf), fill=rect_color) +
+geom_rect(data =x ,  aes(xmin =rects$x1[4], xmax = rects$x2[4] , ymin = -Inf, ymax = Inf), fill=rect_color) +
+geom_rect(data =x ,  aes(xmin =rects$x1[5], xmax = rects$x2[5] , ymin = -Inf, ymax = Inf), fill=rect_color) +
+geom_rect(data =x ,  aes(xmin =rects$x1[6], xmax = rects$x2[6] , ymin = -Inf, ymax = Inf), fill=rect_color) +
+theme_bw()
+
+
+
+#old
+
+# rects<-dplyr::inner_join(start, end, by="station")
+# names(rects)<-c("x1", "station", "x2")
+# rm(start, end)
+# 
+# rects$y1<-Inf
+# rects$y2<-Inf
+# centered<-((rects$x2-rects$x1)/2)+rects$x1
+# rects$station<-c("Sta 1", "Sta 2", "Sta 3", "Sta 3.5", "Sta 4", "Sta 5" )
+# rm(stations)
+# 
+# RECTS:
+
+#                  x1 station                  x2  y1  y2
+# 1 2018-06-09 20:00:00   Sta 1 2018-06-11 04:00:00 Inf Inf
+# 2 2018-06-14 00:00:00   Sta 2 2018-06-15 18:00:00 Inf Inf
+# 3 2018-06-16 10:00:00   Sta 3 2018-06-18 10:00:00 Inf Inf
+# 4 2018-06-19 04:00:00 Sta 3.5 2018-06-20 02:00:00 Inf Inf
+# 5 2018-06-20 20:00:00   Sta 4 2018-06-21 16:00:00 Inf Inf
+# 6 2018-06-22 22:00:00   Sta 5 2018-06-23 16:00:00 Inf Inf
+# > 
+# 
+# mayy 15
+# 
+# Nov 30
+# 
+# st<-as.charcter(year(min(data$st1$date))
+# max(data$st1$date)
+
+
+
+
+
+```
+
+
+
+plotting (old cod fro chl, tmep and staion boxes) suplemtary figure
+
+```{r}
+i<-4
+x<-data[[i]]
+x$date<-ymd(x$date)
+x<-select(x, date, `mean_export_flux (mgC/m^2/day) for_window_area (total/sum_grid_area)`, `total_export_flux (mgC/day)`)
+# x<-select(x, date, `total_export_flux (mgC/day)` )
+
+rect_color<-"red"
+
+names(x)<-c("date", "avg", "ef")
+x$ef<-x$ef/1000000
+
+t<- ggplot(x, aes(x=date, y=ef)) +
+  geom_rect(data =x ,  aes(xmin =rects$x1[1], xmax = rects$x2[1] , ymin = -Inf, ymax = Inf), fill=NA, colour=rect_color, size=0.5, alpha=0.2)+
+  geom_point()+
+  ylab("Export flux (kg C/day)")+
+  labs(title=lab_total,
+  caption = "8-Day resolution: non-lagged EF")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  theme(plot.caption =element_text(hjust = 0.5))+
+  scale_y_continuous(labels = function(x) format(x, scientific = TRUE))+
+  scale_x_date(date_breaks = "2 years", date_labels = "%Y", date_minor_breaks = "6 months")+
+  theme(axis.title.x=element_blank())
+
+
 
 
 ```
