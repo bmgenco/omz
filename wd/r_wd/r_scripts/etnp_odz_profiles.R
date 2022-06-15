@@ -51,7 +51,6 @@ setwd(other_crusies)
 data<-read_delim("All 8 Cruises_adjusted including KM1919 .csv", skip=3, col_names = T, delim =",")
 data<-Filter(function(x)!all(is.na(x)), data) # reove emopt data columns
 
-
 ## for use in remote working stations:
 setwd(wd)
 setwd(robj)
