@@ -59,8 +59,7 @@ data<-readRDS("etnp_odz_vertical_profiles.R")
 ############################  notes on data: ############################ 
 # "this dataset set O2 = 0 when O2 < 10 μmol kg-1 and NO2 > 0.1 μmol kg-1."
 #
-# 
-
+#
 
 cid<-unique(data$Cruise)
 cid<-as.vector(na.omit(cid))
