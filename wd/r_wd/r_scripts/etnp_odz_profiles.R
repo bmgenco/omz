@@ -4,8 +4,8 @@ rm(list=ls())
 
 #### directories ####
 
-# wd<-"/home/brandon/vestawd/omz/wd/r_wd"
-wd<-"/home/brandon/callistowd/omz/wd/r_wd"
+wd<-"/home/brandon/vestawd/omz/wd/r_wd"
+# wd<-"/home/brandon/callistowd/omz/wd/r_wd"
 setwd(wd)  
 robj<-"r_objects"
 fig<-"../../figures"
@@ -108,6 +108,18 @@ odz_st3.5<-lapply(cruises, f.closest, y=y)
 
 # saveRDS(data, "etnp_odz_vertical_profiles.R")
 
+setwd(wd)
+setwd(robj)
+d.sec<-readRDS("OC1806A_ctd_sections.R")
+d4<-d.sec$st4
+
+
+t1<-d4@data$station[1][[1]]
+t2<-d4@data$station[2][[1]]
+t3<-d4@data$station[3][[1]]
+t4<-d4@data$station[4][[1]]
+t5<-d4@data$station[5][[1]]
+t6<-d4@data$station[6][[1]]
 
 f.ctd<-function(x){
 names(x)<-tolower(names(x))
@@ -115,7 +127,12 @@ x<-as.oce(x) %>% as.ctd(.,)}
 
 y<-lapply(odz_st4, f.ctd)
 ramp<-c("#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33", "#a65628", "#f781bf", "#999999")
-plotProfile(y$TT66, xtype = "oxygen", ytype="depth", col=ramp[1], ylim=c(500,0))
+
+setwd(wd)
+setwd(fig)
+pdf("Station_4.pdf", height = 10, width = 7)
+
+plotProfile(y$TT66, xtype = "oxygen", ytype="depth", col=ramp[1], ylim=c(500,0),xlim=c(5,260))
 plotProfile(y$WOCE, xtype = "oxygen", ytype="depth", col=ramp[2],ylim=c(500,0), add=T)
 plotProfile(y$CLIVAR, xtype = "oxygen", ytype="depth", col=ramp[3], ylim=c(500,0),add=T)
 plotProfile(y$TN278, xtype = "oxygen", ytype="depth", col=ramp[4], ylim=c(500,0), add=T)
@@ -129,6 +146,14 @@ plotProfile(t3, xtype = "oxygen2", ytype="depth", col=ramp[9], ylim=c(500,0), ad
 plotProfile(t4, xtype = "oxygen2", ytype="depth", col=ramp[9], ylim=c(500,0), add=T)
 plotProfile(t5, xtype = "oxygen2", ytype="depth", col=ramp[9], ylim=c(500,0), add=T)
 plotProfile(t6, xtype = "oxygen2", ytype="depth", col=ramp[9], ylim=c(500,0), add=T)
+legend(175, 300, legend=c(names(y), "Station 4"),col=ramp, lty=1, cex=0.95)
+dev.off()
+
+
+lat<-lapply(y, function(x){x<-unlist(unique(x@data$latitude)[[1]])})
+lon<-lapply(y, function(x){x<-unlist(unique(x@data$longitude)[[1]])})
+st<-lapply(y, function(x){x<-unlist(unique(x@data$station))})
+
 text("Station 4")
 
 plotProfile(d4, xtype = "oxygen2", ytype="depth", col=ramp[9], add=T)
@@ -139,12 +164,6 @@ plot(d4, which="oxygen2", ztype="image", xtype="time")
 
 # Making average
 
-t1<-d4@data$station[1][[1]]
-t2<-d4@data$station[2][[1]]
-t3<-d4@data$station[3][[1]]
-t4<-d4@data$station[4][[1]]
-t5<-d4@data$station[5][[1]]
-t6<-d4@data$station[6][[1]]
 
 ml<-length(t1@data$pressure)
 
