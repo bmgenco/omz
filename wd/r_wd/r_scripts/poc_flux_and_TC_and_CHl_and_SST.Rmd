@@ -4,7 +4,7 @@ author: "Brandon M. Genco"
 date: "06/15/2022"
 output: html_document
 ---
-
+code repurposed from "Hurricane 0instu_matchup_2.rmd"
 
 # Setup
 ## Directories and defaults
@@ -17,7 +17,7 @@ rm(list=ls())
 # relative directories
 robj<-"r_objects"
 fig<-"../../figures"
-
+gis_data<-"../../data/gis_data"
 output<-"../../output"
 
 #absolute directory
@@ -49,7 +49,7 @@ f.ipak <- function(pkg){
 
 # tidyverse: is all of the following packages: ggplot2, dplyr, tidyr, readr, purr, tibble, sringr, & forcats.
 
-packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr")
+packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT")
 
 # "HURDAT",
 
@@ -61,57 +61,260 @@ print(paste0("Current Working Directory is ", getwd()))
 wd<-getwd()
 ```
 
-# load basic
+## functions
 
 ```{r}
-h<-readRDS("r_objects/hurdat.R")
+
+```
+
+
+# Important objects and data sets
+## temp load/save works save for next steps
+
+# dont nessacrilt need this... do for coastline
+```{r}
+setwd(robj)
+# bud_match<-readRDS("bud_match.R")
+
+# match<-readRDS("match.R")
+load("20220201_temp_workspace.RData")
+rm(m.coast, database)
+
+# save(function_variables, m.coast, database,  file="20220207_temp_workspace.RData")
+# saveRDS(match, "match.R")
+# saveRDS(bud_match, "bud_match.R")
+```
+
+
+## load basic hurdat
+
+```{r}
+setwd(wd)
+setwd(robj)
+h<-get_hurdat(basin="EP")
+# saveRDS(h, "r_objects/hurdat.R")
+
+# h<-readRDS("r_objects/hurdat.R")
 h$DateTime<-with_tz(h$DateTime, tz="UTC")
 ```
 
-# plotting v1
+
+##loading  coastal subsetting objects 
+- see script "GRL_Main_Figures.Rmd"
+```{r}
+setwd(gis_data)
+coastline<-st_read("./ne_50m_land/ne_50m_land.shp") 
+# ocean<-st_read("./ne_50m_ocean/ne_50m_ocean.shp") 
+cl<-st_crop(coastline, xmin=function_variables$h.lon_min, ymin=function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax=function_variables$h.lat_max)
+rm(coastline)
+ m.coast <- ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+
+  theme_bw()+ theme(text = element_text(size =12)) 
+# cl<-st_crop(coastline, xmin=-170, ymin=-20, xmax=-80, ymax=40) # change here based on desired figure size
+# cl<-st_crop(coastline, xmin=min(h$Lon), ymin=min(h$Lat), xmax=max(h$Lon), ymax=max(h$Lat))
+# oc<-st_crop(ocean, xmin=function_variables$h.lon_min, ymin=function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax=function_variables$h.lat_max)
+
+```
+## stations and buffer
+
+```{r}
+setwd(wd)
+setwd(robj)
+
+radii<-100000 ## radius in km for POC select
+
+radii<-2*radii ## for selecting TC that intesect
+
+stations_positions_list<-readRDS("OC1806A_stations_positions_list.R")
+
+# st<-stations_positions_list[[3]][1,cbind(2,3)]
+# st<-sf::st_as_sf(st, coords =c("longitude", "latitude"),  crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+# flat<-sf::st_transform(st, "+proj=aeqd +lat_0=20.50006 +lon_0=-106.5006" )
+# circle_1<-sf::st_buffer(flat, dist=radii)%>%sf::st_transform(., "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+# rm(flat, st)
+
+# st<-stations_positions_list[[3]][2,cbind(2,3)]
+# st<-sf::st_as_sf(st, coords =c("longitude", "latitude"),  crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+# flat<-sf::st_transform(st, "+proj=aeqd +lat_0=16.49850 +lon_0=-107.2007" )
+# circle_2<-sf::st_buffer(flat, dist=radii)%>%sf::st_transform(., "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+# rm(flat, st)
+
+# st<-stations_positions_list[[3]][3,cbind(2,3)]
+# st<-sf::st_as_sf(st, coords =c("longitude", "latitude"),  crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+# flat<-sf::st_transform(st, "+proj=aeqd +lat_0=15.99901 +lon_0=-108.5020" )
+# circle_3<-sf::st_buffer(flat, dist=radii)%>%sf::st_transform(., "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+
+st<-stations_positions_list[[3]][4,cbind(2,3)]
+st<-sf::st_as_sf(st, coords =c("longitude", "latitude"),  crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+flat<-sf::st_transform(st, "+proj=aeqd +lat_0=18.5005 +lon_0=-108.502" )
+circle_3.5<-sf::st_buffer(flat, dist=radii)%>%sf::st_transform(., "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+
+# st<-stations_positions_list[[3]][5,cbind(2,3)]
+# st<-sf::st_as_sf(st, coords =c("longitude", "latitude"),  crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+# flat<-sf::st_transform(st, "+proj=aeqd +lat_0=21.50061 +lon_0=-109.4999" )
+# circle_4<-sf::st_buffer(flat, dist=radii)%>%sf::st_transform(., "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+# 
+# st<-stations_positions_list[[3]][6,cbind(2,3)]
+# st<-sf::st_as_sf(st, coords =c("longitude", "latitude"),  crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+# flat<-sf::st_transform(st, "+proj=aeqd +lat_0=24.69887 +lon_024.69887" )
+# circle_5<-sf::st_buffer(flat, dist=radii)%>%sf::st_transform(., "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+
+rm(st, flat, stations_positions_list)
+
+# save all
+# station_circle_list<-list(circle_1, circle_2, circle_3, circle_3.5, circle_4, circle_5 )
+# rm(circle_1, circle_2, circle_3, circle_3.5, circle_4, circle_5)
+```
+
+
+# loading POC
+
 ```{r}
 setwd(wd)
 setwd(robj)
 
 # data<-read_rds("vgpm_integrated_20220512.R")
 data<-read_rds("vgpm_integrated_all_years_202200607.R")
-
-x<-data$st5
-x$date<-ymd(x$date)
-
-x<-select(x, date, `mean_export_flux (mgC/m^2/day) for_window_area (total/sum_grid_area)`, `total_export_flux (mgC/day)`)
-# x<-select(x, date, `total_export_flux (mgC/day)` )
-
-names(x)<-c("date", "avg", "ef")
-x$ef<-x$ef/1000000
-
-# x$l<-log10(x$ef)
-total<- ggplot(x, aes(x=date, y=ef)) +
-  geom_point()+
-  ylab("Export flux (kg C/day)")+
-  xlab("8-day Integration")+
-  labs(title="Station 3.5 Total Export flux for 40,000 km^2 area",
-  caption = "2018- Tropical Cyclone Season: non-lagged EF")+
-  theme(plot.title = element_text(hjust = 0.5))+
-  theme(plot.caption =element_text(hjust = 0.5))+
-  scale_y_continuous(labels = function(x) format(x, scientific = TRUE))
-
-
-average<- ggplot(x, aes(x=date, y=avg)) +
-  geom_point()+
-  ylab("Mean export flux (mgC/m^2/day)")+
-  xlab("8-day Integration")+
-  labs(title="Station 3.5 Average Export flux for 40,000 km^2 area",
-       caption = "2018- Tropical Cyclone Season: non-lagged EF")+
-  theme(plot.title = element_text(hjust = 0.5))+
-  theme(plot.caption =element_text(hjust = 0.5))+
-  scale_y_continuous(labels = function(x) format(x, scientific = TRUE))
+poc<-data$st3.5
+rm(data)
 
 ```
 
 
 
-# plotting v2
+#selecting TCs by space and time
+-requries POC for time window
+```{r}
+
+bbox<-st_bbox(circle_3.5)
+
+
+# x<-filter(h, Status == "HU") %>% filter(., DateTime >=date(min(poc$date))-60) # save 'h' in order to adjust function variables if needed.
+x<-filter(h, DateTime >=date(min(poc$date))-60) # save 'h' in order to adjust function variables if needed.
+h.pts<- sf::st_as_sf(x, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>% 
+sf::st_crop(., c(xmin=bbox$xmin[[1]], ymin=bbox$ymin[[1]], xmax=bbox$xmax[[1]], ymax=bbox$ymax[[1]])) #subset by user defined 
+
+h.pts<-st_difference(h.pts, st_combine(st_geometry(cl))) # remove all points over land
+rm(x)
+
+```
+
+#testing
+
+```{r}
+m.map<-m.coast+geom_sf(mapping = aes(col=Wind), data=h.pts, size=.25)+scale_color_cmocean(name="dense", direction= 1)+ggtitle(paste0("Hurricanes: ", function_variables$selection)) + labs(color = "Wind speed (m/s)")+theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
+m.map
+```
+
+split and recombine
+```{r}
+
+t<-h.pts 
+st_geometry(t)<-NULL
+t$ymin<--Inf
+t$ymax<-Inf
+
+t$DateTime<-as.Date(t$DateTime)
+t<-t[order(t$DateTime, decreasing = FALSE), ]
+t<-t%>% group_by(Key)
+
+h<-filter(t, Status == "HU")
+p<-filter(t, Status != "HU")
+
+t<-group_split(t)
+t<-lapply(t, as.data.frame)
+
+h<-group_split(h)
+h<-lapply(h, as.data.frame)
+
+
+# need to convert above using to this-> https://stackoverflow.com/questions/29648907/using-geom-rect-for-time-series-shading-in-r
+
+start<-vector(mode="character", length=length(h))
+end<-vector(mode="character", length=length(h))
+
+for(i in 1:length(h)){
+  start[[i]]<-as.character(min(h[[i]]$DateTime))
+  end[[i]]<-as.character(max(h[[i]]$DateTime))
+}
+h_rect<-data.frame(start=date(start), end=date(end), y1=-Inf, y2=Inf)
+
+start<-vector(mode="character", length=length(t))
+end<-vector(mode="character", length=length(t))
+
+for(i in 1:length(t)){
+  start[[i]]<-as.character(min(t[[i]]$DateTime))
+  end[[i]]<-as.character(max(t[[i]]$DateTime))
+}
+
+t_rect<-data.frame(start=date(start), end=date(end), y1=-Inf, y2=Inf)
+rm(t,h)
+
+```
+
+
+
+
+#plotting with tcs @ st3.5
+
+```{r}
+x<-poc
+window_area<-round((x$`window_area (m^2)`[1]*1e-6),0)
+
+lab_avg<-paste0("Station ", "3.5", ":", " Average Export Flux - ", window_area, " km^2 area")
+lab_total<-paste0("Station ", "3.5", ":", " Total Export Flux - ", window_area, " km^2 area")
+
+x$date<-ymd(x$date)
+x<-select(x, date, `mean_export_flux (mgC/m^2/day) for_window_area (total/sum_grid_area)`, `total_export_flux (mgC/day)`)
+# x<-select(x, date, `total_export_flux (mgC/day)` )
+
+names(x)<-c("date", "avg", "ef")
+x$ef<-x$ef/1000000
+  
+ # rectangel parameters:
+rect_color<-"white"
+sz<-0.25
+alph<-.25
+# rect_fill<-"cornsilk1" 
+rect_fill<-"#fc8d62"
+rect_fill_non<-"#8da0cb"
+line_col<-"#66c2a5"
+line_col<-"black"
+
+
+```
+
+```{r}
+
+plot<- ggplot()+
+geom_rect(data=t_rect, mapping=aes(xmin=start, xmax=end, ymin=y1, ymax=y2), color=rect_fill_non, fill=rect_fill_non, alpha=0.5)+
+geom_rect(data=h_rect, mapping=aes(xmin=start, xmax=end, ymin=y1, ymax=y2), color=rect_fill, fill=rect_fill, alpha=0.5)+
+geom_line(data=x, aes(date, avg), color=line_col, lwd=1)+
+theme_bw()+
+ylab("Mean export flux (mgC/m^2/day)")+
+scale_y_continuous(labels = function(x) format(x, scientific = TRUE))+
+scale_x_date(date_breaks = "2 years", date_labels = "%Y", date_minor_breaks = "6 months")+
+labs(title=lab_avg, caption = '8-Day resolution: Non-lagged EF. Colored lines are cyclones that pass within 400km^2 box around station 3.5: Orange = Hurricane strength,  Blue = less than " " ')+
+theme(plot.title = element_text(hjust = 0.5))+
+theme(plot.caption =element_text(hjust = 0.5))+
+scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months")+
+theme(axis.title.x=element_blank())
+
+```
+
+```{r}
+setwd(wd)
+setwd(fig)
+
+pdf("poc_averages_st3.5_with_TCs.pdf", height=8.5 , width =16)
+plot
+dev.off()
+
+```
+
+
+
+
+# plotting v2 fx here f needed
 
 ```{r}
 
@@ -271,39 +474,10 @@ dev.off()
 
 
 
-creating boxes
-
-```{r}
 
 
 
-rects<- data.frame(x1=seq(as.Date('2002-05-15'), length.out=20, by="years"),
-        x2=seq(as.Date('2002-11-30'),length.out=20, by="years"))
-
-rects$y1<-Inf
-rects$y2<-Inf
-rects$x1[1]<-as.Date("2002-07-05")
-
-rect_color<-"grey89"
-
-
-ggplot(x, aes(x = time)) + 
-  
-geom_rect(data =x ,  aes(xmin =rects$x1[1], xmax = rects$x2[1] , ymin = -Inf, ymax = Inf), fill=rect_color)
-geom_rect(data =x ,  aes(xmin =rects$x1[2], xmax = rects$x2[2] , ymin = -Inf, ymax = Inf), fill=rect_color) +
-geom_rect(data =x ,  aes(xmin =rects$x1[3], xmax = rects$x2[3] , ymin = -Inf, ymax = Inf), fill=rect_color) +
-geom_rect(data =x ,  aes(xmin =rects$x1[4], xmax = rects$x2[4] , ymin = -Inf, ymax = Inf), fill=rect_color) +
-geom_rect(data =x ,  aes(xmin =rects$x1[5], xmax = rects$x2[5] , ymin = -Inf, ymax = Inf), fill=rect_color) +
-geom_rect(data =x ,  aes(xmin =rects$x1[6], xmax = rects$x2[6] , ymin = -Inf, ymax = Inf), fill=rect_color) +
-theme_bw()
-
-
-
-```
-
-
-
-plotting (old cod fro chl, tmep and staion boxes) suplemtary figure
+ #plotting (old cod fro chl, tmep and staion boxes) suplemtary figure
 
 ```{r}
 i<-4

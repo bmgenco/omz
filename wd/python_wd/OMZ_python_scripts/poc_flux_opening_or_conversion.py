@@ -41,8 +41,20 @@ from datetime import datetime
 
 # file import and slection
 
-data_d="/home/brandon/vestawd/omz/data/POC_Flux_data_sets/annual_vgpm_NPP_hdf4"
-out_d="/home/brandon/vestawd/omz/data/POC_Flux_data_sets/annual_vgpm_NPP_netcdf"
+# data_d="/home/brandon/vestawd/omz/data/POC_Flux_data_sets/annual_vgpm_NPP_hdf4"
+# out_d="/home/brandon/vestawd/omz/data/POC_Flux_data_sets/annual_vgpm_NPP_netcdf"
+
+# data_d="/home/brandon/vestawd/omz/data/POC_Flux_data_sets/annual_vgpm_modis_chl_hdf4"
+# out_d="/home/brandon/vestawd/omz/data/POC_Flux_data_sets/annual_vgpm_modis_chl_netcdf"
+
+#data_d="/home/brandon/vestawd/omz/data/POC_Flux_data_sets/annual_vgpm_modis_sst_hdf4"
+data_d="/media/brandon/8160add2-78ae-4cdd-a1c5-792e889fb0b6/home/brandon/Desktop/temp"
+
+
+out_d="/home/brandon/vestawd/omz/data/POC_Flux_data_sets/annual_vgpm_modis_sst_netcdf"
+
+
+
 os.chdir(data_d)
 
 files=os.listdir(data_d)
