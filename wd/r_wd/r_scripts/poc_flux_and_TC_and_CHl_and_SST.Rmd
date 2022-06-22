@@ -21,13 +21,18 @@ gis_data<-"../../data/gis_data"
 output<-"../../output"
 
 sst_data<-"../../data/POC_Flux_data_sets/annual_vgpm_modis_sst_netcdf"
-
+ 
 #absolute directory
 # drop_img<-"/home/brandon/Dropbox/MERCED/dissertation/presentations/images"
 
 knitr::opts_chunk$set(echo =FALSE, warning = FALSE)
 knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 
+```
+
+
+```{r}
+wd<-getwd()
 ```
 
 ## packages
@@ -51,7 +56,7 @@ f.ipak <- function(pkg){
 
 # tidyverse: is all of the following packages: ggplot2, dplyr, tidyr, readr, purr, tibble, sringr, & forcats.
 
-packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT")
+packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT", "")
 
 # "HURDAT",
 
@@ -167,10 +172,10 @@ rm(m.coast, database)
 ```{r}
 setwd(wd)
 setwd(robj)
-h<-get_hurdat(basin="EP")
+# h<-get_hurdat(basin="EP")
 # saveRDS(h, "r_objects/hurdat.R")
 
-# h<-readRDS("r_objects/hurdat.R")
+h<-readRDS("hurdat.R")
 h$DateTime<-with_tz(h$DateTime, tz="UTC")
 ```
 
@@ -432,7 +437,7 @@ for(i in 1:length(t)){
 }
 
 t_rect<-data.frame(start=date(start), end=date(end), y1=-Inf, y2=Inf)
-rm(t,h)
+# rm(t,h)
 
 ```
 
@@ -486,11 +491,30 @@ theme(axis.title.x=element_blank())
 
 ```
 
+
+```{r}
+plot<- ggplot()+
+geom_rect(data=t_rect, mapping=aes(xmin=start, xmax=end, ymin=y1, ymax=geom_line(data=x, aes(date, avg))), color=rect_fill_non, fill=rect_fill_non, alpha=0.5)+
+geom_rect(data=h_rect, mapping=aes(xmin=start, xmax=end, ymin=y1, ymax=geom_line(data=x, aes(date, avg))), color=rect_fill, fill=rect_fill, alpha=0.5)+
+geom_line(data=x, aes(date, avg), color=line_col, lwd=1)+
+theme_bw()+
+ylab("Mean export flux (mgC/m^2/day)")+
+scale_y_continuous(labels = function(x) format(x, scientific = TRUE))+
+scale_x_date(date_breaks = "2 years", date_labels = "%Y", date_minor_breaks = "6 months")+
+labs(title=lab_avg, caption = '8-Day resolution: Non-lagged EF. Colored lines are cyclones that pass within 400km^2 box around station 3.5: Orange = Hurricane strength,  Blue = less than " " ')+
+theme(plot.title = element_text(hjust = 0.5))+
+theme(plot.caption =element_text(hjust = 0.5))+
+scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months")+
+theme(axis.title.x=element_blank())
+
+```
+
+
 ```{r}
 setwd(wd)
 setwd(fig)
 
-pdf("poc_averages_st3.5_with_TCs.pdf", height=8.5 , width =16)
+pdf("poc_averages_st3.5_with_TCs_within_200km.pdf", height=8.5 , width =16)
 plot
 dev.off()
 
@@ -532,10 +556,7 @@ rects$y2<-Inf
 rect_color<-NA
 sz<-0.25
 alph<-.25
-rect_fill<-"cornsilk1"
-
-
-for(i in 1:length(data)) {
+rect_fill<-"cornsilk1"   
 
   
 # x<-data$st5
