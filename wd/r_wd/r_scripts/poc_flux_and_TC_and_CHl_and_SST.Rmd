@@ -21,6 +21,7 @@ gis_data<-"../../data/gis_data"
 output<-"../../output"
 
 sst_data<-"../../data/POC_Flux_data_sets/annual_vgpm_modis_sst_netcdf"
+chl_data<-"../../data/POC_Flux_data_sets/annual_vgpm_modis_chl_netcdf"
  
 #absolute directory
 # drop_img<-"/home/brandon/Dropbox/MERCED/dissertation/presentations/images"
@@ -30,12 +31,7 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 
 ```
 
-
-```{r}
-wd<-getwd()
-```
-
-## packages
+## packages and work direcorty
 
 Installed custom hurdat package using r markdown menu
 * download  tar from archive as no longer maintained on cran repository
@@ -43,6 +39,8 @@ Installed custom hurdat package using r markdown menu
 + include as git submodule instead
 
 ```{r}
+wd<-getwd()
+
 f.ipak <- function(pkg){
   # loads packages, quietly, given by a vector of package names e.g., pkg<-c("ggplot", "tidyverse")
   # will install  packages listed , and their dependencies, if needed.
@@ -51,6 +49,8 @@ f.ipak <- function(pkg){
     install.packages(new.pkg, dependencies = TRUE, quiet=T, verbose = F)
   sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
 }
+
+
 
 # packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "RColorBrewer", "marmap", "extrafont", "oce", "MODIS", "measurements")  # set packages here
 
@@ -65,7 +65,6 @@ f.ipak(packages)
 # rm(f.ipak, packages)
 print(paste0("Current Working Directory is ", getwd()))
 
-wd<-getwd()
 ```
 
 ## functions
@@ -146,6 +145,59 @@ f.sst_data_nc<-function(z){
   # vgpm_integrated<-dplyr::select(vgpm_integrated, n[1], n[12], n[13], n[6], n[7], n[9], n[10], n[8],n[2], n[3],  n[11], n[4], n[5] )
   
   return(sst_integrated)}
+
+f.chl_data_nc<-function(z){
+  
+  chl_integrated<-as.data.frame(matrix(ncol = 7, nrow =length(files)))
+  names(chl_integrated)<-c("date",  "chl_mean (area weighted)", "chl_mean (basic)", "chl_median", "chl_variance", "window_area (m^2)", "sum_grid_area (m^2)")
+  
+  for(i in 1:length(files)){
+    file<-files[i]
+    t<-tidync(file)%>% hyper_filter(lat = lat >= min(z$lat) & lat <= max(z$lat), lon = lon>= min(z$lon) & lon<= max(z$lon)) %>% hyper_tibble()
+    # t$sst[t$sst == -9999] <- NA
+    x<-t$chl
+    x.sf<-t%>%st_as_sf(., coords = c("lon", "lat" ), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+    
+    bbox<-st_bbox(x.sf)
+    box<-vector(mode="numeric", length=4)
+    names(box)<-c("xmin","ymin","ymax", "xmax")
+    box$ymin<-round(bbox$ymin[[1]]-(5/120),3)
+    box$ymax<-round(bbox$ymax[[1]]+(5/120),3)
+    box$xmin<-round(bbox$xmin[[1]] +-(5/120),3)
+    box$xmax<-round(bbox$xmax[[1]] +(5/120),3)
+    
+    area <- rgeos::bbox2SP(n = box$ymax[[1]], s = box$ymin[[1]], w = box$xmin[[1]], e = box$xmax[[1]],
+                           proj4string = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")) %>% st_as_sf(.,) %>% st_area(.,)
+    rm(box, bbox)
+    
+    t<-str_split(file, '\\.')
+    t<-t[[1]][2]
+    t<-str_split(t, "")
+    y<-c(t[[1]][1:4])%>% toString(.) %>% gsub(",","",.) %>% gsub(" ","",.)   
+    yd<-c(t[[1]][5:7])%>% toString(.) %>% gsub(",","",.) %>% gsub(" ","",.)
+    origin<-toString(c(y,"-01-01")) %>% gsub(",","",.) %>% gsub(" ","",.)
+    
+    
+    names(x.sf)<-c("value", "geometry")
+    y<-f.grid_square_area2(x.sf)
+    q<-y$grid_area$value/y$sum_grid_area
+    wa<-sum(q*x)
+    
+    chl_integrated[i,1]<-as.character(as.Date(as.numeric(yd), origin=origin)) # date  
+    chl_integrated[i,2]<-wa
+    chl_integrated[i,3]<-mean(x) # vgpm_median
+    chl_integrated[i,4]<-median(x) # vgpm_mean
+    chl_integrated[i,5]<-var(x) # vgpm_variance
+    chl_integrated[i,6]<-as.numeric(area) # window_area (m^2) 
+    chl_integrated[i,7]<-y$sum_grid_area # sum_grid_area (m^2)
+    
+  }
+  
+  
+  # n<-names(vgpm_integrated)
+  # vgpm_integrated<-dplyr::select(vgpm_integrated, n[1], n[12], n[13], n[6], n[7], n[9], n[10], n[8],n[2], n[3],  n[11], n[4], n[5] )
+  
+  return(chl_integrated)}
 ```
 
 
@@ -332,7 +384,8 @@ rm(station_circle_list)
 
 ```{r}
 setwd(wd)
-setwd(sst_data)
+# setwd(sst_data)
+setwd(chl_data)
 files<-list.files()
 file<-files[1]
 
@@ -343,19 +396,19 @@ file<-files[1]
 
 t.start<-Sys.time()
 setwd(wd)
-setwd(sst_data)
+# setwd(sst_data)
+setwd(chl_data)
+
 files<-list.files()
 
-
-
 z<-station_box_list[[4]]
-st35_sst_modis<-f.sst_data_nc(z)
-
+# st35_sst_modis<-f.sst_data_nc(z)
+st35_chl_modis<-f.chl_data_nc(z)
 
 setwd(wd)
 setwd(robj)
-saveRDS(st35_sst_modis, "st35_sst_modis.R")
-
+# saveRDS(st35_sst_modis, "st35_sst_modis.R")
+saveRDS(st35_chl_modis, "st35_chl_modis.R")
 
 t.end<-Sys.time()
 r1.time<-t.end-t.start
@@ -364,9 +417,14 @@ f<-(paste0("data run time is ", as.character(r1.time)," and finshed at ", as.cha
 setwd(wd)
 
 fileConn<-file("run_time.txt")
-writeLines(vars, fileConn)
+writeLines(f, fileConn)
 close(fileConn)
 
+system(poweroff)
+
+```
+
+```{r}
 
 ```
 
@@ -469,8 +527,6 @@ rect_fill<-"#fc8d62"
 rect_fill_non<-"#8da0cb"
 line_col<-"#66c2a5"
 line_col<-"black"
-
-
 ```
 
 ```{r}
