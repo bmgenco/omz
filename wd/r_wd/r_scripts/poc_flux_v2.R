@@ -9,6 +9,8 @@ setwd(wd)
 robj<-"r_objects"
 fig<-"../../figures"
 data_poc_all<-"../../data/POC_Flux_data_sets/annual_vgpm_NPP_netcdf"
+sst_data<-"../../data/POC_Flux_data_sets/annual_vgpm_modis_sst_netcdf"
+
 
 
 #### packages ####
