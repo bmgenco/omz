@@ -50,13 +50,10 @@ f.ipak <- function(pkg){
   sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
 }
 
-
-
 # packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "RColorBrewer", "marmap", "extrafont", "oce", "MODIS", "measurements")  # set packages here
-
 # tidyverse: is all of the following packages: ggplot2, dplyr, tidyr, readr, purr, tibble, sringr, & forcats.
 
-packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT", "")
+packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT")
 
 # "HURDAT",
 
@@ -208,7 +205,6 @@ f.chl_data_nc<-function(z){
 ```{r}
 setwd(robj)
 # bud_match<-readRDS("bud_match.R")
-
 # match<-readRDS("match.R")
 load("20220201_temp_workspace.RData")
 rm(m.coast, database)
@@ -224,10 +220,10 @@ rm(m.coast, database)
 ```{r}
 setwd(wd)
 setwd(robj)
-# h<-get_hurdat(basin="EP")
+ h<-get_hurdat(basin="EP")
 # saveRDS(h, "r_objects/hurdat.R")
 
-h<-readRDS("hurdat.R")
+# h<-readRDS("hurdat.R")
 h$DateTime<-with_tz(h$DateTime, tz="UTC")
 ```
 
@@ -308,6 +304,9 @@ setwd(robj)
 # data<-read_rds("vgpm_integrated_20220512.R")
 data<-read_rds("vgpm_integrated_all_years_202200607.R")
 poc<-data$st3.5
+sst<-readRDS("st35_sst_modis.R")
+chl<-readRDS("st35_chl_modis.R")
+
 rm(data)
 
 ```
@@ -380,17 +379,7 @@ rm(station_circle_list)
 ```
 
 
-## data selction
-
-```{r}
-setwd(wd)
-# setwd(sst_data)
-setwd(chl_data)
-files<-list.files()
-file<-files[1]
-
- t<-tidync(file)%>% hyper_filter(lat = lat >= min(z$lat) & lat <= max(z$lat), lon = lon>= min(z$lon) & lon<= max(z$lon)) %>% hyper_tibble()
-```
+## file read in and slection form NC files
 
 ```{r}
 
@@ -420,17 +409,14 @@ fileConn<-file("run_time.txt")
 writeLines(f, fileConn)
 close(fileConn)
 
-system(poweroff)
+system("poweroff")
 
 ```
 
-```{r}
+`
 
-```
-
-
-#selecting TCs by space and time
--requries POC for time window
+# selecting TCs by space and time
+-requires POC for time window
 ```{r}
 
 bbox<-st_bbox(circle_3.5)
@@ -446,14 +432,14 @@ rm(x)
 
 ```
 
-#testing
+## testing map
 
 ```{r}
 m.map<-m.coast+geom_sf(mapping = aes(col=Wind), data=h.pts, size=.25)+scale_color_cmocean(name="dense", direction= 1)+ggtitle(paste0("Hurricanes: ", function_variables$selection)) + labs(color = "Wind speed (m/s)")+theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
 m.map
 ```
 
-split and recombine
+## split and recombine
 ```{r}
 
 t<-h.pts 
@@ -479,22 +465,28 @@ h<-lapply(h, as.data.frame)
 
 start<-vector(mode="character", length=length(h))
 end<-vector(mode="character", length=length(h))
+pres<-vector(mode="integer", length=length(h))
 
 for(i in 1:length(h)){
   start[[i]]<-as.character(min(h[[i]]$DateTime))
   end[[i]]<-as.character(max(h[[i]]$DateTime))
+  pres[[i]]<-min(h[[i]]$Pressure)
 }
-h_rect<-data.frame(start=date(start), end=date(end), y1=-Inf, y2=Inf)
+
+
+h_rect<-data.frame(start=date(start), end=date(end), y1=-Inf, y2=pres)
 
 start<-vector(mode="character", length=length(t))
 end<-vector(mode="character", length=length(t))
+pres<-vector(mode="integer", length=length(t))
 
 for(i in 1:length(t)){
   start[[i]]<-as.character(min(t[[i]]$DateTime))
   end[[i]]<-as.character(max(t[[i]]$DateTime))
+  pres[[i]]<-min(t[[i]]$Pressure)
 }
 
-t_rect<-data.frame(start=date(start), end=date(end), y1=-Inf, y2=Inf)
+t_rect<-data.frame(start=date(start), end=date(end), y1=-Inf, y2=pres)
 # rm(t,h)
 
 ```
@@ -539,30 +531,142 @@ theme_bw()+
 ylab("Mean export flux (mgC/m^2/day)")+
 scale_y_continuous(labels = function(x) format(x, scientific = TRUE))+
 scale_x_date(date_breaks = "2 years", date_labels = "%Y", date_minor_breaks = "6 months")+
-labs(title=lab_avg, caption = '8-Day resolution: Non-lagged EF. Colored lines are cyclones that pass within 400km^2 box around station 3.5: Orange = Hurricane strength,  Blue = less than " " ')+
+labs(title=lab_avg, caption = '8-Day resolution: Non-lagged EF. Colored lines are cyclones that pass within export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " " ')+
 theme(plot.title = element_text(hjust = 0.5))+
 theme(plot.caption =element_text(hjust = 0.5))+
 scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months")+
 theme(axis.title.x=element_blank())
 
+# labs(title=lab_avg, caption = '8-Day resolution: Non-lagged EF. Colored lines are cyclones that pass within 400km^2 box around station 3.5: Orange = Hurricane strength,  Blue = less than " " ')+
+
+
 ```
+
+
+# scaling following grl suplmentarty figure
+
+
+```{r}
+setwd(fig)
+# options(device ="X11")# for viewing graphs on large window
+
+###plot options ##
+# best thing is tho calculate hour average from raw data
+
+x<-cruise_data # to make typing easier 
+
+# x$wind<-x$wind*0.514444 # knots ->m/s
+# x = x[seq(1, nrow(x), 15), ] # subset every 15 minutes for cleaner image
+# x = x[seq(1, nrow(x), 30), ] #
+#x = x[seq(1, nrow(x), 60), ] # subset every 60 minutes
+
+mydates <- interval(start = min(x$time), end = "2018-06-25") # subset x-axis
+x<- x[which(time %within% mydates),]
+rm(mydates)
+
+scale.wind<-max(x$celsius) / max(x$wind)
+scale.chla<-max(x$celsius) / max(x$chlorophyll)
+
+rect_color<-"grey89"
+tcolor<-"red"
+fcolor<-"darkgreen"
+#wcolor<-"cyan"
+
+#### f1 rectangles #####
+# adjust geom etx for various plots
+
+# change the geom text value to change position of lables
+
+# high for wind:
+# geom_text(data=rects, x=centered, label=rects[,2], y =32.5, angle =90) +
+
+# centered for clophyll 
+# geom_text(data=rects, x=centered, label=rects[,2], y =16.5, angle =90) +
+
+
+# 3.5 for wind plot
+
+
+f1 <- ggplot(x, aes(x = time)) + geom_rect(data =x ,  aes(xmin =rects$x1[1], xmax = rects$x2[1] , ymin = -Inf, ymax = Inf), fill=rect_color) +
+  geom_rect(data =x ,  aes(xmin =rects$x1[2], xmax = rects$x2[2] , ymin = -Inf, ymax = Inf), fill=rect_color) +
+  geom_rect(data =x ,  aes(xmin =rects$x1[3], xmax = rects$x2[3] , ymin = -Inf, ymax = Inf), fill=rect_color) +
+  geom_rect(data =x ,  aes(xmin =rects$x1[4], xmax = rects$x2[4] , ymin = -Inf, ymax = Inf), fill=rect_color) +
+  geom_rect(data =x ,  aes(xmin =rects$x1[5], xmax = rects$x2[5] , ymin = -Inf, ymax = Inf), fill=rect_color) +
+  geom_rect(data =x ,  aes(xmin =rects$x1[6], xmax = rects$x2[6] , ymin = -Inf, ymax = Inf), fill=rect_color) +
+  geom_text(data=rects, x=centered, label=rects[,2], y =34, angle =0) +
+  theme_bw()
+
+
+#### f3 temp & chl-a ####
+f3<-f1 +
+  geom_line(aes(y=chlorophyll * scale.chla), color=fcolor) +
+  geom_line(aes(y=celsius), color=tcolor) +
+  xlab("Date") +
+  ggtitle("SST and Chlorophyll-a") +
+  scale_x_datetime(date_breaks=('2 days'))+
+  scale_y_continuous(name ="SST (°C)", sec.axis = sec_axis(~./scale.chla,name="Chlorophyll-a [μg/L]"))+
+  #scale_y_continuous(name ="Chlorophyll-a [μg/L]", sec.axis = sec_axis(~./scale.chla,name="°C")) + 
+  theme(
+    panel.background = element_rect(fill = NA),
+    panel.ontop = FALSE
+  ) + 
+  scale_x_datetime(date_labels = "%m/%d", date_breaks="2 days", date_minor_breaks = "1 days") +
+  theme(plot.title = element_text(hjust = 0.5))+
+  theme(axis.ticks.y.left = element_line(color = tcolor),
+        axis.text.y.left = element_text(color = tcolor), 
+        axis.title.y.left = element_text(color = tcolor)
+  ) +
+  
+  theme(axis.ticks.y.right = element_line(color = fcolor),
+        axis.text.y.right = element_text(color = fcolor), 
+        axis.title.y.right = element_text(color = fcolor)
+  )+
+
+  theme(
+    panel.background = element_rect(fill = NA),
+    panel.ontop = FALSE
+  )
+
+
+
+# add panel text
+
+
+
+
+```   
+
+```{r}
+
+
+scale.wind<-max(x$celsius) / max(x$wind)
+scale.chla<-max(x$celsius) / max(x$chlorophyll)
+
+geom_line(aes(y=chlorophyll * scale.chla), color=fcolor) +
+  geom_line(aes(y=celsius), color=tcolor) +
+  xlab("Date") +
+  ggtitle("SST and Chlorophyll-a") +
+  scale_x_datetime(date_breaks=('2 days'))+
+  scale_y_continuous(name ="SST (°C)", sec.axis = sec_axis(~./scale.chla,name="Chlorophyll-a [μg/L]"))+
+
+```
+
 
 
 ```{r}
 plot<- ggplot()+
-geom_rect(data=t_rect, mapping=aes(xmin=start, xmax=end, ymin=y1, ymax=geom_line(data=x, aes(date, avg))), color=rect_fill_non, fill=rect_fill_non, alpha=0.5)+
-geom_rect(data=h_rect, mapping=aes(xmin=start, xmax=end, ymin=y1, ymax=geom_line(data=x, aes(date, avg))), color=rect_fill, fill=rect_fill, alpha=0.5)+
+geom_rect(data=t_rect, mapping=aes(xmin=start, xmax=end, ymin=y1, ymax=y2), color=rect_fill_non, fill=rect_fill_non, alpha=0.5)+
+geom_rect(data=h_rect, mapping=aes(xmin=start, xmax=end, ymin=y1, ymax=y2), color=rect_fill, fill=rect_fill, alpha=0.5)+
 geom_line(data=x, aes(date, avg), color=line_col, lwd=1)+
 theme_bw()+
 ylab("Mean export flux (mgC/m^2/day)")+
 scale_y_continuous(labels = function(x) format(x, scientific = TRUE))+
 scale_x_date(date_breaks = "2 years", date_labels = "%Y", date_minor_breaks = "6 months")+
-labs(title=lab_avg, caption = '8-Day resolution: Non-lagged EF. Colored lines are cyclones that pass within 400km^2 box around station 3.5: Orange = Hurricane strength,  Blue = less than " " ')+
+labs(title=lab_avg, caption = '8-Day resolution: Non-lagged EF. Colored lines are cyclones that pass within export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " " ')+
 theme(plot.title = element_text(hjust = 0.5))+
 theme(plot.caption =element_text(hjust = 0.5))+
 scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months")+
 theme(axis.title.x=element_blank())
-
 ```
 
 
