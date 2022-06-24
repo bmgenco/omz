@@ -379,7 +379,7 @@ rm(station_circle_list)
 ```
 
 
-## file read in and slection form NC files
+## file read in and selection form NC files
 
 ```{r}
 
@@ -413,14 +413,12 @@ system("poweroff")
 
 ```
 
-`
 
 # selecting TCs by space and time
 -requires POC for time window
 ```{r}
 
 bbox<-st_bbox(circle_3.5)
-
 
 # x<-filter(h, Status == "HU") %>% filter(., DateTime >=date(min(poc$date))-60) # save 'h' in order to adjust function variables if needed.
 x<-filter(h, DateTime >=date(min(poc$date))-60) # save 'h' in order to adjust function variables if needed.
@@ -441,7 +439,6 @@ m.map
 
 ## split and recombine
 ```{r}
-
 t<-h.pts 
 st_geometry(t)<-NULL
 t$ymin<--Inf
@@ -460,7 +457,6 @@ t<-lapply(t, as.data.frame)
 h<-group_split(h)
 h<-lapply(h, as.data.frame)
 
-
 # need to convert above using to this-> https://stackoverflow.com/questions/29648907/using-geom-rect-for-time-series-shading-in-r
 
 start<-vector(mode="character", length=length(h))
@@ -472,7 +468,6 @@ for(i in 1:length(h)){
   end[[i]]<-as.character(max(h[[i]]$DateTime))
   pres[[i]]<-min(h[[i]]$Pressure)
 }
-
 
 h_rect<-data.frame(start=date(start), end=date(end), y1=-Inf, y2=pres)
 
@@ -488,6 +483,9 @@ for(i in 1:length(t)){
 
 t_rect<-data.frame(start=date(start), end=date(end), y1=-Inf, y2=pres)
 # rm(t,h)
+
+
+
 
 ```
 
@@ -510,6 +508,16 @@ x<-select(x, date, `mean_export_flux (mgC/m^2/day) for_window_area (total/sum_gr
 names(x)<-c("date", "avg", "ef")
 x$ef<-x$ef/1000000
   
+
+y<-select(chl, date, 'chl_mean (area weighted)')
+names(y)<-c("date", "chl")
+y$date<-ymd(y$date)
+
+z<-select(sst, date, `SST_mean (area weighted)`)
+names(z)<-c("date", "sst")
+z$date<-ymd(z$date)
+
+
  # rectangel parameters:
 rect_color<-"white"
 sz<-0.25
@@ -519,7 +527,93 @@ rect_fill<-"#fc8d62"
 rect_fill_non<-"#8da0cb"
 line_col<-"#66c2a5"
 line_col<-"black"
+
+tcolor<-"red"
+chcolor<-"darkgreen"
+
+# scale.sst<-max(x$avg) / max(z$sst)
+# scale.chl<-max(x$avg) / max(y$chl)
+
+
+p.breaks<-c(0, 872, 900, 920, (944+920)/2, (964+945)/2, (979+965)/2, 980, 995) %>% round(., 0)
+p.breaks<-c(0, 250, 500, 872, 900, 920, 940, 960, 980, 1000) %>% round(., 0)
+
+
+scale.pres<-(max(x$avg)/max(c(t_rect$y2, h_rect$y2)))
+
+# scale.pres<-scale.pres*5
+
+plot_1<- ggplot()+
+geom_line(data=x, aes(date, avg), color=line_col, lwd=1)+
+geom_rect(data=t_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.pres), color=rect_fill_non, fill=rect_fill_non, alpha=0.5)+
+geom_rect(data=h_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf*scale.pres, ymax=y2*scale.pres), color=rect_fill, fill=rect_fill, alpha=0.5)+
+
+scale_y_continuous(name ="Mean export flux (mgC/m^2/day)", labels = function(x) format(x, scientific = TRUE), sec.axis = sec_axis(~./scale.pres,name="Cyclone eye pressure - millibars (mb)",  breaks = p.breaks))+
+
+labs(title=lab_avg, caption = '8-Day resolution: Non-lagged EF. Colored lines are cyclones that pass within export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " " ')+
+theme(plot.title = element_text(hjust = 0.5))+
+theme(plot.caption =element_text(hjust = 0.5))+
+scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months", position = "top")+
+theme(axis.title.x=element_blank())
+
+
+
+
+Plot_2<-ggplot()+
+geom_line(aes(y=chl * scale.chl, x=date), color=chcolor, data=y)+
+geom_line(aes(y=sst * scale.sst, x=date), color=tcolor, data=z)+
+
+
+
+
+# 
+# plot_2<- ggplot()+
+# # geom_line(data=x, aes(date, avg), color=line_col, lwd=1)+
+# # geom_point(data=h_rect, aes(start, y2*scale.pres), color=rect_fill)+
+# # geom_point(data=t_rect, aes(start, y2*scale.pres), color=rect_fill_non)+ 
+# # 
+# # scale_y_continuous(name ="Mean export flux (mgC/m^2/day)", labels = function(x) format(x, scientific = TRUE), sec.axis = sec_axis(~./scale.pres,name="eye atmospheric pressure"))+
+# # 
+# # labs(title=lab_avg, caption = '8-Day resolution: Non-lagged EF. Colored lines are cyclones that pass within export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " " ')+
+# # theme(plot.title = element_text(hjust = 0.5))+
+# # theme(plot.caption =element_text(hjust = 0.5))+
+# # scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months")+
+# # theme(axis.title.x=element_blank()) 
+# geom_line(data=x, aes(date, avg), color=line_col, lwd=1)+
+# geom_rect(data=t_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.pres), color=rect_fill_non, fill=rect_fill_non, alpha=0.5)+
+# geom_rect(data=h_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf*scale.pres, ymax=y2*scale.pres), color=rect_fill, fill=rect_fill, alpha=0.5)+
+# 
+# scale_y_continuous(name ="Mean export flux (mgC/m^2/day)", labels = function(x) format(x, scientific = TRUE), sec.axis = sec_axis(~./scale.pres, scale_y_reverse(),name="eye atmospheric pressure"), guide = guide_axis(order = 4))+
+# 
+# labs(title=lab_avg, caption = '8-Day resolution: Non-lagged EF. Colored lines are cyclones that pass within export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " " ')+
+# theme(plot.title = element_text(hjust = 0.5))+
+# theme(plot.caption =element_text(hjust = 0.5))+
+# scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months")+
+# theme(axis.title.x=element_blank()) 
+
+
+
+
+plot_3<-ggplot()+
+geom_line(aes(y=chl * scale.chl, x=date), color=chcolor, data=y)+
+geom_line(aes(y=sst * scale.sst, x=date), color=tcolor, data=z)+
+
+
 ```
+
+
+```{r}
+
+
+
+geom_line(aes(y=chlorophyll * scale.chla), color=fcolor) +
+  geom_line(aes(y=celsius), color=tcolor) +
+  xlab("Date") +
+  ggtitle("SST and Chlorophyll-a") +
+  scale_x_datetime(date_breaks=('2 days'))+
+  scale_y_continuous(name ="SST (°C)", sec.axis = sec_axis(~./scale.chla,name="Chlorophyll-a [μg/L]"))+
+```
+
 
 ```{r}
 
@@ -593,7 +687,7 @@ f1 <- ggplot(x, aes(x = time)) + geom_rect(data =x ,  aes(xmin =rects$x1[1], xma
   geom_rect(data =x ,  aes(xmin =rects$x1[4], xmax = rects$x2[4] , ymin = -Inf, ymax = Inf), fill=rect_color) +
   geom_rect(data =x ,  aes(xmin =rects$x1[5], xmax = rects$x2[5] , ymin = -Inf, ymax = Inf), fill=rect_color) +
   geom_rect(data =x ,  aes(xmin =rects$x1[6], xmax = rects$x2[6] , ymin = -Inf, ymax = Inf), fill=rect_color) +
-  geom_text(data=rects, x=centered, label=rects[,2], y =34, angle =0) +
+  geom_text(data=rects, x=centered, label=rects[,2], y =34, angcle =0) +
   theme_bw()
 
 
@@ -638,16 +732,6 @@ f3<-f1 +
 
 ```{r}
 
-
-scale.wind<-max(x$celsius) / max(x$wind)
-scale.chla<-max(x$celsius) / max(x$chlorophyll)
-
-geom_line(aes(y=chlorophyll * scale.chla), color=fcolor) +
-  geom_line(aes(y=celsius), color=tcolor) +
-  xlab("Date") +
-  ggtitle("SST and Chlorophyll-a") +
-  scale_x_datetime(date_breaks=('2 days'))+
-  scale_y_continuous(name ="SST (°C)", sec.axis = sec_axis(~./scale.chla,name="Chlorophyll-a [μg/L]"))+
 
 ```
 
@@ -868,7 +952,6 @@ t<- ggplot(x, aes(x=date, y=ef)) +
   scale_y_continuous(labels = function(x) format(x, scientific = TRUE))+
   scale_x_date(date_breaks = "2 years", date_labels = "%Y", date_minor_breaks = "6 months")+
   theme(axis.title.x=element_blank())
-
 
 
 
