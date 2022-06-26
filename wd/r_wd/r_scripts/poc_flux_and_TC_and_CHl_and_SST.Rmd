@@ -220,10 +220,10 @@ rm(m.coast, database)
 ```{r}
 setwd(wd)
 setwd(robj)
- h<-get_hurdat(basin="EP")
+ # h<-get_hurdat(basin="EP")
 # saveRDS(h, "r_objects/hurdat.R")
 
-# h<-readRDS("hurdat.R")
+h<-readRDS("hurdat.R")
 h$DateTime<-with_tz(h$DateTime, tz="UTC")
 ```
 
@@ -443,13 +443,25 @@ t<-h.pts
 st_geometry(t)<-NULL
 t$ymin<--Inf
 t$ymax<-Inf
+# t$DateTime<-as.Date(t$DateTime)
+t$DateTime<-as_datetime(t$DateTime)
 
-t$DateTime<-as.Date(t$DateTime)
-t<-t[order(t$DateTime, decreasing = FALSE), ]
-t<-t%>% group_by(Key)
+ unique(t$Status)
+ 
+ # see:  https://www.nhc.noaa.gov/data/hurdat/hurdat2-format-atl-1851-2021.pdf
+ 
 
-h<-filter(t, Status == "HU")
-p<-filter(t, Status != "HU")
+ 
+#"TS" tropical cyclone of tropical storm intensity (34-63 knots)
+# "TD" Tropical cyclone of tropical depression intensity (< 34 knots)
+# LO – A low that is neither a tropical cyclone, a subtropical cyclone, nor an extratropical cyclone (of any intensity)
+# DB – Disturbance (of any intensity)
+ 
+ 
+# splits in invidiaudla storms to hurricanes and all else. If an individual storm was bot bleow and a husrrcian and a hurricane in teh subste it mark it as a hurricane
+
+h<-t%>% group_by(Key) %>% filter(any(Status== "HU"))
+t<-t %>% subset(., !(Key %in% unique(h$Key)))%>% group_by(Key)
 
 t<-group_split(t)
 t<-lapply(t, as.data.frame)
@@ -466,7 +478,8 @@ pres<-vector(mode="integer", length=length(h))
 for(i in 1:length(h)){
   start[[i]]<-as.character(min(h[[i]]$DateTime))
   end[[i]]<-as.character(max(h[[i]]$DateTime))
-  pres[[i]]<-min(h[[i]]$Pressure)
+  pres[[i]]<-median(h[[i]]$Pressure)
+  # pres[[i]]<-min(h[[i]]$Pressure)
 }
 
 h_rect<-data.frame(start=date(start), end=date(end), y1=-Inf, y2=pres)
@@ -478,13 +491,15 @@ pres<-vector(mode="integer", length=length(t))
 for(i in 1:length(t)){
   start[[i]]<-as.character(min(t[[i]]$DateTime))
   end[[i]]<-as.character(max(t[[i]]$DateTime))
-  pres[[i]]<-min(t[[i]]$Pressure)
+  pres[[i]]<-median(t[[i]]$Pressure)
+  #   
 }
 
 t_rect<-data.frame(start=date(start), end=date(end), y1=-Inf, y2=pres)
 # rm(t,h)
 
 
+#standar atmospheirc presures in millibars
 
 
 ```
@@ -535,33 +550,69 @@ chcolor<-"darkgreen"
 # scale.chl<-max(x$avg) / max(y$chl)
 
 
-p.breaks<-c(0, 872, 900, 920, (944+920)/2, (964+945)/2, (979+965)/2, 980, 995) %>% round(., 0)
-p.breaks<-c(0, 250, 500, 872, 900, 920, 940, 960, 980, 1000) %>% round(., 0)
+# scaling prees
+
+stdp<-1013.25
+adj<-stdp+3.45*(stdp-min(h_rect$y2))
+
+h_rect$y2<-abs(h_rect$y2-adj)
+t_rect$y2<-abs(t_rect$y2-adj)
+
+#1 > 980
+#2 965 to 979
+#3 945 to 964
+#4 920 to 944
+#5  < 920 
+
+p.breaks<-c( 872, 900, 920, plyr::round_any((944+920)/2, 5, f=floor), plyr::round_any((964+945)/2, 5, f=ceiling), plyr::round_any((979+965)/2,5, f=floor), 980, 1000) %>% round(., 0) %>% append(., c(round(stdp,2),  round(adj,2)))
+# p.breaks<-c(872, 900, 920, 940, 960, 980, 1000, stdp, adj)
+
+# labs<-p.breaks
+
+labs<-(p.breaks)
+
+p.breaks<-abs(p.breaks-adj)
 
 
 scale.pres<-(max(x$avg)/max(c(t_rect$y2, h_rect$y2)))
+# poc_lim<-mean(x$avg)-sd(x$avg)
+poc_lim<-mean(x$avg)
+# scale.pres<-(max(x$avg)-min(x$avg))/max(c(t_rect$y2, h_rect$y2)) # puts bars in midlle of graph
+# poc_lim<-NA
+# 
+# x<-0.1
+# scale.pres<-scale.pres+x
 
 # scale.pres<-scale.pres*5
 
+
+capt<-'8-Day resolution: Non-lagged EF. Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " " '
+
 plot_1<- ggplot()+
-geom_line(data=x, aes(date, avg), color=line_col, lwd=1)+
+
+geom_hline(yintercept=(mean(x$avg)+sd(x$avg)), data=x, linetype="dashed", color ="grey")+
 geom_rect(data=t_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.pres), color=rect_fill_non, fill=rect_fill_non, alpha=0.5)+
-geom_rect(data=h_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf*scale.pres, ymax=y2*scale.pres), color=rect_fill, fill=rect_fill, alpha=0.5)+
+geom_rect(data=h_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.pres), color=rect_fill, fill=rect_fill, alpha=0.5)+
+# geom_line(data=x, aes(date, avg), color=line_col, lwd=1)+
+geom_point(data=x, aes(date, avg), color=line_col, lwd=1)+
+  
+  
+# scale_y_continuous(name ="Mean export flux (mgC/m^2/day)", labels = function(x) format(x, scientific = TRUE),
+scale_y_continuous(name ="Mean export flux (mgC/m^2/day)", sec.axis = sec_axis(~./scale.pres,name="Cyclone eye pressure - millibars (mb)",  breaks = p.breaks , labels=labs), limits = c(poc_lim, NA))+
+  
 
-scale_y_continuous(name ="Mean export flux (mgC/m^2/day)", labels = function(x) format(x, scientific = TRUE), sec.axis = sec_axis(~./scale.pres,name="Cyclone eye pressure - millibars (mb)",  breaks = p.breaks))+
-
-labs(title=lab_avg, caption = '8-Day resolution: Non-lagged EF. Colored lines are cyclones that pass within export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " " ')+
+labs(title=lab_avg, caption = capt)+
 theme(plot.title = element_text(hjust = 0.5))+
 theme(plot.caption =element_text(hjust = 0.5))+
 scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months", position = "top")+
 theme(axis.title.x=element_blank())
 
 
-
-
-Plot_2<-ggplot()+
-geom_line(aes(y=chl * scale.chl, x=date), color=chcolor, data=y)+
-geom_line(aes(y=sst * scale.sst, x=date), color=tcolor, data=z)+
+# 
+# 
+# Plot_2<-ggplot()+
+# geom_line(aes(y=chl * scale.chl, x=date), color=chcolor, data=y)+
+# geom_line(aes(y=sst * scale.sst, x=date), color=tcolor, data=z)+
 
 
 
@@ -591,12 +642,12 @@ geom_line(aes(y=sst * scale.sst, x=date), color=tcolor, data=z)+
 # scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months")+
 # theme(axis.title.x=element_blank()) 
 
-
-
-
-plot_3<-ggplot()+
-geom_line(aes(y=chl * scale.chl, x=date), color=chcolor, data=y)+
-geom_line(aes(y=sst * scale.sst, x=date), color=tcolor, data=z)+
+# 
+# 
+# 
+# plot_3<-ggplot()+
+# geom_line(aes(y=chl * scale.chl, x=date), color=chcolor, data=y)+
+# geom_line(aes(y=sst * scale.sst, x=date), color=tcolor, data=z)+
 
 
 ```
