@@ -53,7 +53,7 @@ f.ipak <- function(pkg){
 # packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "RColorBrewer", "marmap", "extrafont", "oce", "MODIS", "measurements")  # set packages here
 # tidyverse: is all of the following packages: ggplot2, dplyr, tidyr, readr, purr, tibble, sringr, & forcats.
 
-packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT")
+packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT", "ggpattern")
 
 # "HURDAT",
 
@@ -203,7 +203,9 @@ f.chl_data_nc<-function(z){
 
 # dont nessacrilt need this... do for coastline
 ```{r}
+setwd(wd)
 setwd(robj)
+
 # bud_match<-readRDS("bud_match.R")
 # match<-readRDS("match.R")
 load("20220201_temp_workspace.RData")
@@ -231,6 +233,7 @@ h$DateTime<-with_tz(h$DateTime, tz="UTC")
 ##loading  coastal subsetting objects 
 - see script "GRL_Main_Figures.Rmd"
 ```{r}
+setwd(wd)
 setwd(gis_data)
 coastline<-st_read("./ne_50m_land/ne_50m_land.shp") 
 # ocean<-st_read("./ne_50m_ocean/ne_50m_ocean.shp") 
@@ -307,7 +310,31 @@ poc<-data$st3.5
 sst<-readRDS("st35_sst_modis.R")
 chl<-readRDS("st35_chl_modis.R")
 
-rm(data)
+x<-poc
+window_area<-round((x$`window_area (m^2)`[1]*1e-6),0)
+
+
+# lab_avg<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " " '
+lab_total<-paste0("Station ", "3.5", ":", " Total Export Flux - ", window_area, " km^2 area")
+
+x$date<-ymd(x$date)
+x<-select(x, date, `mean_export_flux (mgC/m^2/day) for_window_area (total/sum_grid_area)`, `total_export_flux (mgC/day)`)
+
+names(x)<-c("date", "avg", "ef")
+x$ef<-x$ef/1000000
+
+
+y<-select(chl, date, 'chl_mean (area weighted)')
+names(y)<-c("date", "chl")
+y$date<-ymd(y$date)
+
+z<-select(sst, date, `SST_mean (area weighted)`)
+names(z)<-c("date", "sst")
+z$date<-ymd(z$date)
+
+
+
+rm(data, sst, chl)
 
 ```
 
@@ -421,12 +448,12 @@ system("poweroff")
 bbox<-st_bbox(circle_3.5)
 
 # x<-filter(h, Status == "HU") %>% filter(., DateTime >=date(min(poc$date))-60) # save 'h' in order to adjust function variables if needed.
-x<-filter(h, DateTime >=date(min(poc$date))-60) # save 'h' in order to adjust function variables if needed.
-h.pts<- sf::st_as_sf(x, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>% 
+g<-filter(h, DateTime >=date(min(poc$date))-60) # save 'h' in order to adjust function variables if needed.
+h.pts<- sf::st_as_sf(g, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>% 
 sf::st_crop(., c(xmin=bbox$xmin[[1]], ymin=bbox$ymin[[1]], xmax=bbox$xmax[[1]], ymax=bbox$ymax[[1]])) #subset by user defined 
 
 # h.pts<-st_difference(h.pts, st_combine(st_geometry(cl))) # remove all points over land
-rm(x)
+rm(g)
 
 ```
 
@@ -448,18 +475,16 @@ t$DateTime<-as_datetime(t$DateTime)
 
  unique(t$Status)
  
- # see:  https://www.nhc.noaa.gov/data/hurdat/hurdat2-format-atl-1851-2021.pdf
- 
-
- 
+# see:  https://www.nhc.noaa.gov/data/hurdat/hurdat2-format-atl-1851-2021.pdf
 #"TS" tropical cyclone of tropical storm intensity (34-63 knots)
 # "TD" Tropical cyclone of tropical depression intensity (< 34 knots)
 # LO – A low that is neither a tropical cyclone, a subtropical cyclone, nor an extratropical cyclone (of any intensity)
 # DB – Disturbance (of any intensity)
- 
- 
 # splits in invidiaudla storms to hurricanes and all else. If an individual storm was bot bleow and a husrrcian and a hurricane in teh subste it mark it as a hurricane
 
+ 
+ remove_200<-unique(t$Key)
+ 
 h<-t%>% group_by(Key) %>% filter(any(Status== "HU"))
 t<-t %>% subset(., !(Key %in% unique(h$Key)))%>% group_by(Key)
 
@@ -496,7 +521,8 @@ for(i in 1:length(t)){
 }
 
 t_rect<-data.frame(start=date(start), end=date(end), y1=-Inf, y2=pres)
-# rm(t,h)
+rm(t,h)
+
 
 
 #standar atmospheirc presures in millibars
@@ -505,34 +531,92 @@ t_rect<-data.frame(start=date(start), end=date(end), y1=-Inf, y2=pres)
 ```
 
 
+# 400 km storms only
+
+_so 440 with 200 excluded.. prob
 
 
-#plotting with tcs @ st3.5
-
-## plot A
 
 ```{r}
-x<-poc
-window_area<-round((x$`window_area (m^2)`[1]*1e-6),0)
+setwd(wd)
+setwd(robj)
 
-lab_avg<-paste0("Station ", "3.5", ":", " Average Export Flux - ", window_area, " km^2 area")
-lab_total<-paste0("Station ", "3.5", ":", " Total Export Flux - ", window_area, " km^2 area")
 
-x$date<-ymd(x$date)
-x<-select(x, date, `mean_export_flux (mgC/m^2/day) for_window_area (total/sum_grid_area)`, `total_export_flux (mgC/day)`)
-# x<-select(x, date, `total_export_flux (mgC/day)` )
+h<-readRDS("hurdat.R")
+h$DateTime<-with_tz(h$DateTime, tz="UTC")
 
-names(x)<-c("date", "avg", "ef")
-x$ef<-x$ef/1000000
-  
+radii<-100000 ## radius in km for POC select
 
-y<-select(chl, date, 'chl_mean (area weighted)')
-names(y)<-c("date", "chl")
-y$date<-ymd(y$date)
+radii<-2*radii ## for selecting TC that intesect
 
-z<-select(sst, date, `SST_mean (area weighted)`)
-names(z)<-c("date", "sst")
-z$date<-ymd(z$date)
+stations_positions_list<-readRDS("OC1806A_stations_positions_list.R")
+
+st<-stations_positions_list[[3]][4,cbind(2,3)]
+st<-sf::st_as_sf(st, coords =c("longitude", "latitude"),  crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+flat<-sf::st_transform(st, "+proj=aeqd +lat_0=18.5005 +lon_0=-108.502" )
+circle_3.5_400km<-sf::st_buffer(flat, dist=radii)%>%sf::st_transform(., "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+
+bbox<-st_bbox(circle_3.5_400km)
+
+# x<-filter(h, Status == "HU") %>% filter(., DateTime >=date(min(poc$date))-60) # save 'h' in order to adjust function variables if needed.
+g<-filter(h, DateTime >=date(min(poc$date))-60) # save 'h' in order to adjust function variables if needed.
+h.pts<- sf::st_as_sf(g, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>% 
+sf::st_crop(., c(xmin=bbox$xmin[[1]], ymin=bbox$ymin[[1]], xmax=bbox$xmax[[1]], ymax=bbox$ymax[[1]])) #subset by user defined 
+
+# h.pts<-st_difference(h.pts, st_combine(st_geometry(cl))) # remove all points over land
+rm(g, poc)
+
+t_4<-h.pts 
+st_geometry(t_4)<-NULL
+t_4$ymin<--Inf
+t_4$ymax<-Inf
+# t$DateTime<-as.Date(t$DateTime)
+t_4$DateTime<-as_datetime(t_4$DateTime)
+
+t_4<-t_4 %>% subset(., !(Key %in% remove_200))%>% group_by(Key)
+
+
+
+
+t_4<-group_split(t_4)
+t_4<-lapply(t_4, as.data.frame)
+
+start<-vector(mode="character", length=length(t_4))
+end<-vector(mode="character", length=length(t_4))
+pres<-vector(mode="integer", length=length(t_4))
+
+for(i in 1:length(t_4)){
+  start[[i]]<-as.character(min(t_4[[i]]$DateTime))
+  end[[i]]<-as.character(max(t_4[[i]]$DateTime))
+  pres[[i]]<-median(t_4[[i]]$Pressure)
+  #
+}
+
+t_4_rect<-data.frame(start=date(start), end=date(end), y1=-Inf, y2=pres)
+
+rm(remove_200)
+
+
+```
+
+
+
+# plotting with tcs @ st3.5
+
+
+
+variables for a ---> ? and sime seris plots
+
+```{r}
+
+w<-inner_join(x,y, by='date') %>% inner_join(., z,  by='date' ) %>% select(., - ef)
+# rm(poc, chl, sst)
+
+#save original for scale etc
+rects<-vector(mode="list")
+rects$t<-t_rect
+rects$h<-h_rect
+rects$t_4<-t_4_rect
 
 
  # rectangel parameters:
@@ -542,23 +626,95 @@ alph<-.25
 # rect_fill<-"cornsilk1" 
 rect_fill<-"#fc8d62"
 rect_fill_non<-"#8da0cb"
+# rect_fill_outside<-"#66c2a5"
+ rect_fill_outside<-"darkgrey"
+
+
+# line colors
+
 line_col<-"#66c2a5"
 line_col<-"black"
-
 tcolor<-"red"
 chcolor<-"darkgreen"
 
-# scale.sst<-max(x$avg) / max(z$sst)
-# scale.chl<-max(x$avg) / max(y$chl)
+
+title<-paste0("Station ", "3.5", ": ", "Positive Anomaly Average Export Flux - ", window_area, " km^2 area")
+capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). Positve aanomalies only (above or eqaul to mean). Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5 \nOrange = Hurricane strength,  Blue = less than " ". Grey dashed line is 1 SD (σ) above mean export flux for time series. 1013.25 mb is standard atmospheric pressue at sea level for reference.'
+ylab<-"Mean export flux (mgC/m^2/day)"
+ylab2<-"Cyclone eye pressure - millibars (mb)"
+panel<-"a"
+atxt<-list(title, capt, ylab, ylab2, panel)
+names(atxt)<-c("title", "capt", "ylab", "ylab2", "panel")
+
+title<-paste0("Station ", "3.5", ": ", "Average Export Flux and Chlorophyll-a - ", window_area, " km^2 area")
+capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). MODIS derived Chl-a in green. Input of VGPM NPP model. \nDashed lines are 1 SD (σ) above mean for time series (EF = grey, chl-a = green).'
+ylab2<-"Chlorophyll-a [μg/L]"
+panel<-"b"
+btxt<-list(title, capt, ylab, ylab2, panel)
+names(btxt)<-c("title", "capt", "ylab", "ylab2", "panel")
 
 
-# scaling prees
+title<-paste0("Station ", "3.5", ": ", "Average Export Flux and SST - ", window_area, " km^2 area")
+capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). MODIS derived SST in red. Input of VGPM NPP model. \nDashed lines are 1 SD (σ) above/below mean for time series (EF = grey, SST =red).'
+ylab2<-"SST (°C)"
+panel<-"c"
+ctxt<-list(title, capt, ylab, ylab2, panel)
+names(ctxt)<-c("title", "capt", "ylab", "ylab2", "panel")
 
+title<-paste0("Station ", "3.5", ": ", "Chlorophyll-a and SST - ", window_area, " km^2 area")
+capt<-'MODIS derived Chl-a in green, and SST in red. Inputs of VGPM NPP model. \nDashed lines are 1 SD (σ) above/below mean for time series (chl-a = green, SST =red).'
+ylab<-"Chlorophyll-a [μg/L]"
+ylab2<-"SST (°C)"
+panel<-"d"
+dtxt<-list(title, capt, ylab, ylab2, panel)
+names(dtxt)<-c("title", "capt", "ylab", "ylab2", "panel")
+
+title<-paste0("Station ", "3.5", ": ", "Chlorophyll-a and storms within 400km^2 box - ", window_area, " km^2 area")
+capt<-'MODIS derived Chl-a in green. Input of VGPM NPP model. Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " ". \nStorms outside flux box but wihin 400km^2 in grey. Green dashed line is 1 SD (σ) above mean Chl-a for time series. \n1013.25 mb is standard atmospheric pressue at sea level for reference.'
+ylab<-"Chlorophyll-a [μg/L]"
+ylab2<-"Cyclone eye pressure - millibars (mb)"
+panel<-"e"
+etxt<-list(title, capt, ylab, ylab2, panel)
+names(etxt)<-c("title", "capt", "ylab", "ylab2", "panel")
+
+title<-paste0("Station ", "3.5", ": ", "SST and storms within 400km^2 box - ", window_area, " km^2 area")
+capt<-'MODIS derived SST in red. Input of VGPM NPP model. Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " ". \nStorms outside flux box but wihin 400km^2 in grey. Red dashed line is 1 SD (σ) above mean SST for time series. \n1013.25 mb is standard atmospheric pressue at sea level for reference.'
+ylab<-"SST (°C)"
+panel<-"f"
+ftxt<-list(title, capt, ylab, ylab2, panel)
+names(ftxt)<-c("title", "capt", "ylab", "ylab2", "panel")
+
+
+title<-paste0("Station ", "3.5", ": ", "Average Export Flux and storms within 400km^2 box - ", window_area, " km^2 area")
+capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " ". \nStorms outside flux box but wihin 400km^2 in grey. Grey dashed line is 1 SD (σ) above mean export flux for time series. \n1013.25 mb is standard atmospheric pressue at sea level for reference.'
+ylab<-"Mean export flux (mgC/m^2/day)"
+panel<-"g"
+gtxt<-list(title, capt, ylab, ylab2, panel)
+names(gtxt)<-c("title", "capt", "ylab", "ylab2", "panel")
+
+plot_list<-vector(mode="list")
+
+```
+
+
+
+
+## plot a
+-Above aver poc and 200km TS
+```{r}
+
+w<-inner_join(x,y, by='date') %>% inner_join(., z,  by='date' ) %>% select(., - ef)
+h_rect<-rects$h
+t_rect<-rects$t
+
+txt<-atxt
 stdp<-1013.25
 adj<-stdp+3.45*(stdp-min(h_rect$y2))
 
 h_rect$y2<-abs(h_rect$y2-adj)
 t_rect$y2<-abs(t_rect$y2-adj)
+
+# ` hurrican categories
 
 #1 > 980
 #2 965 to 979
@@ -566,166 +722,308 @@ t_rect$y2<-abs(t_rect$y2-adj)
 #4 920 to 944
 #5  < 920 
 
-p.breaks<-c( 872, 900, 920, plyr::round_any((944+920)/2, 5, f=floor), plyr::round_any((964+945)/2, 5, f=ceiling), plyr::round_any((979+965)/2,5, f=floor), 980, 1000) %>% round(., 0) %>% append(., c(round(stdp,2),  round(adj,2)))
-# p.breaks<-c(872, 900, 920, 940, 960, 980, 1000, stdp, adj)
+a.breaks<-c( 872, 900, 920, plyr::round_any((944+920)/2, 5, f=floor), plyr::round_any((964+945)/2, 5, f=ceiling), plyr::round_any((979+965)/2,5, f=floor), 980, 1000) %>% round(., 0) %>% append(., c(round(stdp,2),  round(adj,2)))
 
-# labs<-p.breaks
+a.labs<-(a.breaks)
+a.breaks<-abs(a.breaks-adj)
 
-labs<-(p.breaks)
-p.breaks<-abs(p.breaks-adj)
-
-
-scale.pres<-(max(x$avg)/max(c(t_rect$y2, h_rect$y2)))
-# poc_lim<-mean(x$avg)-sd(x$avg)
-poc_lim<-mean(x$avg)
-
-# scale.pres<-(max(x$avg)-min(x$avg))/max(c(t_rect$y2, h_rect$y2)) # puts bars in midlle of graph
-# poc_lim<-NA
-
-
-capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " " '
-
-
-# ggplot2::theme_update(plot.tag = element_text(face = "bold"))
+scale.a<-(max(w$avg)/max(c(t_rect$y2, h_rect$y2)))
+poc_lim<-mean(w$avg)
 
 
 plot_a<- ggplot()+ theme_bw()+
-geom_hline(yintercept=(mean(x$avg)+sd(x$avg)), data=x, linetype="dashed", color ="grey")+
-geom_rect(data=t_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.pres), color=rect_fill_non, fill=rect_fill_non, alpha=0.5)+
-geom_rect(data=h_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.pres), color=rect_fill, fill=rect_fill, alpha=0.5)+
-# geom_line(data=x, aes(date, avg), color=line_col, lwd=1)+
-geom_point(data=x, aes(date, avg), color=line_col, lwd=1)+
+geom_hline(yintercept=(mean(w$avg)+sd(w$avg)), data=w, linetype="dashed", color ="grey")+
+geom_rect(data=t_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.a), color=rect_fill_non, fill=rect_fill_non, alpha=0.5)+
+geom_rect(data=h_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.a), color=rect_fill, fill=rect_fill, alpha=0.5)+
+geom_point(data=w, aes(date, avg), color=line_col, lwd=1)+
   
-# scale_y_continuous(name ="Mean export flux (mgC/m^2/day)", labels = function(x) format(x, scientific = TRUE),
-scale_y_continuous(name ="Mean export flux (mgC/m^2/day)", sec.axis = sec_axis(~./scale.pres,name="Cyclone eye pressure - millibars (mb)",  breaks = p.breaks , labels=labs), limits = c(poc_lim, NA))+
-  
-labs(title=lab_avg, caption = capt)+
+scale_y_continuous(name =txt$ylab, sec.axis = sec_axis(~./scale.a, name=txt$ylab2,  breaks = a.breaks , labels= a.labs), limits = c(poc_lim, NA))+
+labs(title=txt$title, caption = txt$capt)+
 theme(plot.title = element_text(hjust = 0.5))+
 theme(plot.caption =element_text(hjust = 0.5))+
 scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months", position = "top")+
 theme(axis.title.x=element_blank(), plot.tag = element_text(face = "bold"))+
-labs(tag = "a")
-  
+labs(tag = txt$panel)
+
+
+plot_list$a<-plot_a
+# rm(scale, poc_lim, a.labs, a.breaks, txt)
+ 
+#old
+
+# geom_line(data=x, aes(date, avg), color=line_col, lwd=1)+
+# scale_y_continuous(name ="Mean export flux (mgC/m^2/day)", labels = function(x) format(x, scientific = TRUE),
+
+
+# a.breaks<-c( 872, 900, 920, plyr::round_any((944+920)/2, 5, f=floor), plyr::round_any((964+945)/2, 5, f=ceiling), plyr::round_any((979+965)/2,5, f=floor), 980, 1000) %>% round(., 0) %>% append(., c(round(stdp,2)))
+# p.breaks<-c(872, 900, 920, 940, 960, 980, 1000, stdp, adj)
+# labs<-p.breaks
+
+
+# poc_lim<-mean(x$avg)-sd(x$avg)
+# scale.pres<-(max(x$avg)-min(x$avg))/max(c(t_rect$y2, h_rect$y2)) # puts bars in midlle of graph
+# poc_lim<-NA
+
+# capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " " '
+# ggplot2::theme_update(plot.tag = element_text(face = "bold"))
+
 
 ```
 
-## Plot B
-
+## Plot b
+- poc and chl
 ```{r}
-
-scale.chl<-max(x$avg)/max(y$chl)
-tcolor<-"red"
-fcolor<-"darkgreen"
-
-
-#chl is in mg / m**3, so to convert o ug *100
-
-1000
-convert to 
-
-
-
-capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). MODIS derived Chl-a in green. Input of VGPM NPP model.'
+txt<-btxt
+w<-inner_join(x,y, by='date') %>% inner_join(., z,  by='date' ) %>% select(., - ef)
+scale.b<-max(w$avg)/max(w$chl)
 
 
 plot_b<- ggplot()+ theme_bw()+
-geom_hline(yintercept=(mean(x$avg)+sd(x$avg)), data=x, linetype="dashed", color ="grey")+
-geom_hline(yintercept=scale.chl*(mean(y$chl)+sd(y$chl)), data=y, linetype="dashed", color =fcolor)+
-geom_line(data=x, aes(date, avg), color=line_col, lwd=.5)+
-geom_line(data=y, aes(date, chl*scale.chl), color=fcolor, lwd=.5)+
-scale_y_continuous(name ="Mean export flux (mgC/m^2/day)", sec.axis = sec_axis(~./scale.chl, name= "Chlorophyll-a [μg/L]"))+
-labs(title=lab_avg, caption = capt)+
+geom_hline(yintercept=(mean(w$avg)+sd(w$avg)), data=w, linetype="dashed", color ="grey")+
+geom_hline(yintercept=scale.b*(mean(w$chl)+sd(w$chl)), data=w, linetype="dashed", color =chcolor)+
+geom_line(data=w, aes(date, avg), color=line_col, lwd=.5)+
+geom_line(data=w, aes(date, chl*scale.b), color=chcolor, lwd=.5)+
+scale_y_continuous(name =txt$ylab, sec.axis = sec_axis(~./scale.b, name=txt$ylab2))+
+
+labs(title=txt$title, caption = txt$capt)+
 theme(plot.title = element_text(hjust = 0.5))+
 theme(plot.caption =element_text(hjust = 0.5))+
 scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months", position = "top")+
 theme(axis.title.x=element_blank(), plot.tag = element_text(face = "bold"))+
-labs(tag = "b")                  
+labs(tag = txt$panel)   
+
+plot_list$b<-plot_b
+# rm(scale, txt)
 
 ```
 
 ## Plot C
 
-
+poc and sst
 ```{r}
-z<-select(sst, date, `SST_mean (area weighted)`)
-names(z)<-c("date", "sst")
-z$date<-ymd(z$date)
+txt<-ctxt
+w<-inner_join(x,y, by='date') %>% inner_join(., z,  by='date' ) %>% select(., - ef)
 
-
-tcolor<-"red"
-fcolor<-"darkgreen"
-
-capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). MODIS derived SST in red. Input of VGPM NPP model.'
 
 # t.breaks<-(summary(z$sst))
 # t.breaks<- as.vector(unname(t.breaks[-3])) # rmoves median
 
-t.breaks<-seq(from=22, to =27, by =1)
-labs<-t.breaks
+c.breaks<-seq(from=22, to =27, by =1)
+labs<-c.breaks
 
-adj<-floor(min(z$sst))
+adj<-floor(min(w$sst))
 # labs<-plyr::round_any(t.breaks, 1, f=round)
 
-t.breaks<-t.breaks-adj
-z$sst<-z$sst-adj
-
-scale.sst<-max(x$avg)/max(z$sst)
-
+c.breaks<-c.breaks-adj
+w$sst<-w$sst-adj
+scale.c<-max(w$avg)/max(w$sst)
 
 
 plot_c<- ggplot()+ theme_bw()+
-geom_hline(yintercept=(mean(x$avg)+sd(x$avg)), data=x, linetype="dashed", color ="grey")+
-geom_hline(yintercept=scale.sst*(mean(z$sst)-sd(z$sst)), data=z, linetype="dashed", color =tcolor)+
-geom_line(data=x, aes(date, avg), color=line_col, lwd=.5)+
-geom_line(data=z, aes(date, sst*scale.sst), color=tcolor, lwd=.5)+
-scale_y_continuous(name ="Mean export flux (mgC/m^2/day)", sec.axis = sec_axis(~./scale.sst, name= "SST (°C)", breaks = t.breaks , labels=labs))+
-labs(title=lab_avg, caption = capt)+
+geom_hline(yintercept=(mean(w$avg)+sd(w$avg)), data=w, linetype="dashed", color ="grey")+
+geom_hline(yintercept=scale.c*(mean(w$sst)-sd(w$sst)), data=z, linetype="dashed", color =tcolor)+
+geom_line(data=w, aes(date, avg), color=line_col, lwd=.5)+
+geom_line(data=w, aes(date, sst*scale.c), color=tcolor, lwd=.5)+
+scale_y_continuous(name =txt$ylab, sec.axis = sec_axis(~./scale.c, name=txt$ylab2, breaks = c.breaks, labels= labs))+
+
+labs(title=txt$title, caption = txt$capt)+
 theme(plot.title = element_text(hjust = 0.5))+
 theme(plot.caption =element_text(hjust = 0.5))+
 scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months", position = "top")+
 theme(axis.title.x=element_blank(), plot.tag = element_text(face = "bold"))+
-labs(tag = "c")
+labs(tag = txt$panel)
 
-
+plot_list$c<-plot_c
+# rm(txt, labs, c.breaks)
 
 
 ```
 
-## Plot D varaition
+## Plot d varaition
+-chl and sst
 ```{r}
+txt<-dtxt
+w<-inner_join(x,y, by='date') %>% inner_join(., z,  by='date' ) %>% select(., - ef)
 
-z<-select(sst, date, `SST_mean (area weighted)`)
-names(z)<-c("date", "sst")
-z$date<-ymd(z$date)
+d.breaks<-seq(from=22, to =27, by =1)
+labs<-d.breaks
 
-
-t.breaks<-seq(from=22, to =27, by =1)
-labs<-t.breaks
-
-adj<-floor(min(z$sst))
+adj<-floor(min(w$sst))
 # labs<-plyr::round_any(t.breaks, 1, f=round)
 
-t.breaks<-t.breaks-adj
-z$sst<-z$sst-adj
+d.breaks<-d.breaks-adj
+w$sst<-w$sst-adj
 
-scale.chl_sst<-max(y$chl)/max(z$sst)
+scale.d<-max(w$chl)/max(w$sst)
 
-capt<-' MODIS derived Chl-a in green, and SST in red. Inputs of VGPM NPP model.'
+
 
 plot_d<- ggplot()+ theme_bw()+
-geom_hline(yintercept=(mean(y$chl)+sd(y$chl)), data=y, linetype="dashed", color =fcolor)+
-geom_hline(yintercept=scale.chl_sst*(mean(z$sst)-sd(z$sst)), data=z, linetype="dashed", color =tcolor)+
-geom_line(data=z, aes(date, sst*scale.chl_sst), color=tcolor, lwd=.5)+
-geom_line(data=y, aes(date, chl), color=fcolor, lwd=.5)+
-scale_y_continuous(name ="Chlorophyll-a [μg/L]", sec.axis = sec_axis(~./scale.chl_sst, name= "SST (°C)", breaks = t.breaks , labels=labs))+
-labs(title=lab_avg, caption = capt)+
+geom_hline(yintercept=(mean(w$chl)+sd(w$chl)), data=w, linetype="dashed", color =chcolor)+
+geom_hline(yintercept=scale.d*(mean(w$sst)-sd(w$sst)), data=w, linetype="dashed", color =tcolor)+
+geom_line(data=w, aes(date, sst*scale.d), color=tcolor, lwd=.5)+
+geom_line(data=w, aes(date, chl), color=chcolor, lwd=.5)+
+
+scale_y_continuous(name =txt$ylab, sec.axis = sec_axis(~./scale.d, name=txt$ylab2, breaks = d.breaks, labels= labs))+
+
+labs(title=txt$title, caption = txt$capt)+
 theme(plot.title = element_text(hjust = 0.5))+
 theme(plot.caption =element_text(hjust = 0.5))+
 scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months", position = "top")+
 theme(axis.title.x=element_blank(), plot.tag = element_text(face = "bold"))+
-labs(tag = "d")
+labs(tag = txt$panel)
+
+plot_list$d<-plot_d
+# rm(labs, adj, w, scale, d.breaks)
 
 ```
+
+
+## plot_e
+
+chl & ts
+
+```{r}
+
+rect_fill_outside<-"grey80"
+rect_fill<-"black"
+rect_fill_non<-"black"
+
+
+
+
+txt<-etxt
+
+w<-inner_join(x,y, by='date') %>% inner_join(., z, by='date' ) %>% select(., - ef)
+h_rect<-rects$h
+t_rect<-rects$t
+t_4_rect<-rects$t_4
+
+stdp<-1013.25
+ff<-2
+adj<-stdp+ff*(stdp-min(h_rect$y2))
+
+h_rect$y2<-abs(h_rect$y2-adj)
+t_rect$y2<-abs(t_rect$y2-adj)
+t_4_rect$y2<-abs(t_4_rect$y2-adj)
+
+# ` hurrican categories
+
+#1 > 980
+#2 965 to 979
+#3 945 to 964
+#4 920 to 944
+#5  < 920 
+
+breaks<-c( 872, 900, 920, plyr::round_any((944+920)/2, 5, f=floor), plyr::round_any((964+945)/2, 5, f=ceiling), plyr::round_any((979+965)/2,5, f=floor), 980, 1000) %>% round(., 0) %>% append(., c(round(stdp,2),  round(adj,2)))
+
+labs<-(breaks)
+breaks<-abs(breaks-adj)
+
+scale.e<-(max(w$chl)/max(c(t_rect$y2, h_rect$y2, t_4_rect$y2)))
+
+
+plot_e<- ggplot()+ theme_bw()+
+# geom_hline(yintercept=(mean(w$chl)+sd(w$chl)), data=w, linetype="dashed", color =chcolor)+
+
+geom_hline(yintercept=(mean(w$chl)), data=w, linetype="dashed", color =chcolor)+
+# geom_rect(data=t_4_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.e), color=rect_fill_outside, fill=rect_fill_outside, alpha=0.5)+
+geom_rect_pattern(data=t_4_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.e), color=rect_fill_outside, fill=rect_fill_outside, pattern = 'crosshatch', pattern_fill= "grey30", alpha=0.5)+
+
+geom_rect(data=t_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.e), color=rect_fill_non, fill=rect_fill_non, alpha=1)+
+geom_rect(data=h_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.e), color=rect_fill, fill=rect_fill, alpha=1)+  
+
+geom_line(data=w, aes(date, chl), color=chcolor, lwd=0.2)+
+
+
+geom_point(data=w, aes(date, chl), color=chcolor, lwd=.75)+ 
+scale_y_continuous(name =txt$ylab, sec.axis = sec_axis(~./scale.e, name=txt$ylab2,  breaks = breaks , labels= labs))+
+  
+  
+labs(title=txt$title, caption = txt$capt)+
+theme(plot.title = element_text(hjust = 0.5))+
+theme(plot.caption =element_text(hjust = 0.5))+
+scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months", position = "top")+
+theme(axis.title.x=element_blank(), plot.tag = element_text(face = "bold"))+
+labs(tag = txt$panel)
+
+
+
+          # Unused ideas...(failures)
+
+# geom_rect_pattern(data=t_4_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.e), color=rect_fill_outside, fill=rect_fill_outside, pattern = 'crosshatch', alpha=0.5)+
+
+
+# geom_line(stat = "summary", fun.y = "mean", colour = "red", data=w, aes(date, chl))+ 
+# geom_line(colour = "green", data=w, aes(date, chl))+
+# geom_smooth(data=w, aes(date, chl), color=chcolor, lwd=.5)+
+# stat_smooth(data=w, aes(date, chl), formula = w$chl ~ s(w$date, k = nrow(w)-1), method = "gam", se = FALSE, color="black")+
+# scale_y_continuous(name =txt$ylab)+
+
+ # aes(pattern = level, pattern_angle = level, pattern_spacing = level), fill  = 'white',
+ #    colour          = 'black', 
+ #    pattern_density = 0.35, 
+ #    pattern_fill    = 'black',
+ #    pattern_colour  = 'black'
+ #  ) +
+
+
+```
+
+
+#plot_f
+
+```{r}
+txt<-ftxt
+
+labs(title=txt$title, caption = txt$capt)+
+theme(plot.title = element_text(hjust = 0.5))+
+theme(plot.caption =element_text(hjust = 0.5))+
+scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months", position = "top")+
+theme(axis.title.x=element_blank(), plot.tag = element_text(face = "bold"))+
+labs(tag = txt$panel)
+```
+
+
+#plot_g
+
+```{r}
+
+
+labs(title=txt$title, caption = txt$capt)+
+theme(plot.title = element_text(hjust = 0.5))+
+theme(plot.caption =element_text(hjust = 0.5))+
+scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months", position = "top")+
+theme(axis.title.x=element_blank(), plot.tag = element_text(face = "bold"))+
+labs(tag = txt$panel)
+```
+
+
+
+
+# single plot
+
+```{r}
+
+# w<-inner_join(x,y, by='date') %>% inner_join(., z,  by='date' ) %>% select(., - ef)
+# below wotrsk but vairble need to be scaled....
+
+# w<-gather(w, key = "variable", value = "value", -date)
+# plot_all<- ggplot(data=w)+ geom_line(aes(x = date, y=value)) +theme_bw()+facet_wrap(~variable , ncol=1)
+
+plot_list<-vector(mode="list", length=7)
+plot_list$a<-plot_a
+plot_list$b<-plot_b
+plot_list$c<-plot_c
+plot_list$d<-plot_d
+plot_list$f<-plot_f
+plot_list$g<-plot_g
+
+
+
+
+```
+
 
 
 
@@ -1014,7 +1312,7 @@ plots_avg[[i]]<- ggplot(x, aes(x=date, y=avg)) +
 rm(x)         
                        
 }
-
+cowplot::plot_grid(plotlist = a1, nrow=3, ncol=1)
 ```
 
 
@@ -1050,7 +1348,7 @@ dev.off()
 
 
 
-
+acet_wrap(~ clarity
 
 
 
