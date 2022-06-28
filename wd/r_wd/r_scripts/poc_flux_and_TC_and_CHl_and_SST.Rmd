@@ -627,7 +627,8 @@ alph<-.25
 rect_fill<-"#fc8d62"
 rect_fill_non<-"#8da0cb"
 # rect_fill_outside<-"#66c2a5"
- rect_fill_outside<-"darkgrey"
+ # rect_fill_outside<-"grey48"
+rect_fill_outside<-"gray38"
 
 
 # line colors
@@ -639,7 +640,7 @@ chcolor<-"darkgreen"
 
 
 title<-paste0("Station ", "3.5", ": ", "Positive Anomaly Average Export Flux - ", window_area, " km^2 area")
-capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). Positve aanomalies only (above or eqaul to mean). Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5 \nOrange = Hurricane strength,  Blue = less than " ". Grey dashed line is 1 SD (σ) above mean export flux for time series. 1013.25 mb is standard atmospheric pressue at sea level for reference.'
+capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). Positve aanomalies only (above or eqaul to mean). Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5 \nOrange = Hurricane strength,  Blue = less than " ". Grey dashed horizontal line is 1 SD (σ) above mean export flux for time series. 1013.25 mb is standard atmospheric pressue at sea level for reference.'
 ylab<-"Mean export flux (mgC/m^2/day)"
 ylab2<-"Cyclone eye pressure - millibars (mb)"
 panel<-"a"
@@ -647,7 +648,7 @@ atxt<-list(title, capt, ylab, ylab2, panel)
 names(atxt)<-c("title", "capt", "ylab", "ylab2", "panel")
 
 title<-paste0("Station ", "3.5", ": ", "Average Export Flux and Chlorophyll-a - ", window_area, " km^2 area")
-capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). MODIS derived Chl-a in green. Input of VGPM NPP model. \nDashed lines are 1 SD (σ) above mean for time series (EF = grey, chl-a = green).'
+capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). MODIS derived Chl-a in green. Input of VGPM NPP model. \nDashed horizontal lines are 1 SD (σ) above mean for time series (EF = grey, chl-a = green).'
 ylab2<-"Chlorophyll-a [μg/L]"
 panel<-"b"
 btxt<-list(title, capt, ylab, ylab2, panel)
@@ -655,7 +656,7 @@ names(btxt)<-c("title", "capt", "ylab", "ylab2", "panel")
 
 
 title<-paste0("Station ", "3.5", ": ", "Average Export Flux and SST - ", window_area, " km^2 area")
-capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). MODIS derived SST in red. Input of VGPM NPP model. \nDashed lines are 1 SD (σ) above/below mean for time series (EF = grey, SST =red).'
+capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). MODIS derived SST in red. Input of VGPM NPP model. \nDashed horizontal lines are 1 SD (σ) above/below mean for time series (EF = grey, SST =red).'
 ylab2<-"SST (°C)"
 panel<-"c"
 ctxt<-list(title, capt, ylab, ylab2, panel)
@@ -670,7 +671,7 @@ dtxt<-list(title, capt, ylab, ylab2, panel)
 names(dtxt)<-c("title", "capt", "ylab", "ylab2", "panel")
 
 title<-paste0("Station ", "3.5", ": ", "Chlorophyll-a and storms within 400km^2 box - ", window_area, " km^2 area")
-capt<-'MODIS derived Chl-a in green. Input of VGPM NPP model. Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " ". \nStorms outside flux box but wihin 400km^2 in grey. Green dashed line is 1 SD (σ) above mean Chl-a for time series. \n1013.25 mb is standard atmospheric pressue at sea level for reference.'
+capt<-'MODIS derived Chl-a in green. Input of VGPM NPP model. Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " ". \nStorms outside flux box but wihin 400km^2 in grey (dashed). Green dashed horizontal line is mean Chl-a for time series. 1013.25 mb is standard atmospheric pressue at sea level for reference.'
 ylab<-"Chlorophyll-a [μg/L]"
 ylab2<-"Cyclone eye pressure - millibars (mb)"
 panel<-"e"
@@ -678,7 +679,7 @@ etxt<-list(title, capt, ylab, ylab2, panel)
 names(etxt)<-c("title", "capt", "ylab", "ylab2", "panel")
 
 title<-paste0("Station ", "3.5", ": ", "SST and storms within 400km^2 box - ", window_area, " km^2 area")
-capt<-'MODIS derived SST in red. Input of VGPM NPP model. Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " ". \nStorms outside flux box but wihin 400km^2 in grey. Red dashed line is 1 SD (σ) above mean SST for time series. \n1013.25 mb is standard atmospheric pressue at sea level for reference.'
+capt<-'MODIS derived SST in red. Input of VGPM NPP model. Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " ". \nStorms outside flux box but wihin 400km^2 in grey (dashed). Red dashed horizontal line is mean SST for time series. 1013.25 mb is standard atmospheric pressue at sea level for reference.'
 ylab<-"SST (°C)"
 panel<-"f"
 ftxt<-list(title, capt, ylab, ylab2, panel)
@@ -686,7 +687,7 @@ names(ftxt)<-c("title", "capt", "ylab", "ylab2", "panel")
 
 
 title<-paste0("Station ", "3.5", ": ", "Average Export Flux and storms within 400km^2 box - ", window_area, " km^2 area")
-capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " ". \nStorms outside flux box but wihin 400km^2 in grey. Grey dashed line is 1 SD (σ) above mean export flux for time series. \n1013.25 mb is standard atmospheric pressue at sea level for reference.'
+capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " ". \nStorms outside flux box but wihin 400km^2 in grey (dashed). Blackdashed horizontal line is mean export flux for time series. 1013.25 mb is standard atmospheric pressue at sea level for reference.'
 ylab<-"Mean export flux (mgC/m^2/day)"
 panel<-"g"
 gtxt<-list(title, capt, ylab, ylab2, panel)
@@ -797,7 +798,7 @@ plot_list$b<-plot_b
 
 ```
 
-## Plot C
+## Plot c
 
 poc and sst
 ```{r}
@@ -839,7 +840,7 @@ plot_list$c<-plot_c
 
 ```
 
-## Plot d varaition
+## Plot d 
 -chl and sst
 ```{r}
 txt<-dtxt
@@ -885,11 +886,9 @@ chl & ts
 
 ```{r}
 
-rect_fill_outside<-"grey80"
-rect_fill<-"black"
-rect_fill_non<-"black"
-
-
+# rect_fill_outside<-"gray38"
+# rect_fill<-"black"
+# rect_fill_non<-"black"
 
 
 txt<-etxt
@@ -915,31 +914,22 @@ t_4_rect$y2<-abs(t_4_rect$y2-adj)
 #4 920 to 944
 #5  < 920 
 
-breaks<-c( 872, 900, 920, plyr::round_any((944+920)/2, 5, f=floor), plyr::round_any((964+945)/2, 5, f=ceiling), plyr::round_any((979+965)/2,5, f=floor), 980, 1000) %>% round(., 0) %>% append(., c(round(stdp,2),  round(adj,2)))
+e.breaks<-c( 872, 900, 920, plyr::round_any((944+920)/2, 5, f=floor), plyr::round_any((964+945)/2, 5, f=ceiling), plyr::round_any((979+965)/2,5, f=floor), 980, 1000) %>% round(., 0) %>% append(., c(round(stdp,2),  round(adj,2)))
 
-labs<-(breaks)
-breaks<-abs(breaks-adj)
+labs<-(e.breaks)
+e.breaks<-abs(e.breaks-adj)
 
 scale.e<-(max(w$chl)/max(c(t_rect$y2, h_rect$y2, t_4_rect$y2)))
 
 
 plot_e<- ggplot()+ theme_bw()+
-# geom_hline(yintercept=(mean(w$chl)+sd(w$chl)), data=w, linetype="dashed", color =chcolor)+
-
+geom_segment(data=t_4_rect, mapping=aes(x=start, xend=end, yend=y2*scale.e, y=-Inf), linetype ="dashed", color=rect_fill_outside, alpha=.5)+  
 geom_hline(yintercept=(mean(w$chl)), data=w, linetype="dashed", color =chcolor)+
-# geom_rect(data=t_4_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.e), color=rect_fill_outside, fill=rect_fill_outside, alpha=0.5)+
-geom_rect_pattern(data=t_4_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.e), color=rect_fill_outside, fill=rect_fill_outside, pattern = 'crosshatch', pattern_fill= "grey30", alpha=0.5)+
-
-geom_rect(data=t_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.e), color=rect_fill_non, fill=rect_fill_non, alpha=1)+
-geom_rect(data=h_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.e), color=rect_fill, fill=rect_fill, alpha=1)+  
-
-geom_line(data=w, aes(date, chl), color=chcolor, lwd=0.2)+
-
-
-geom_point(data=w, aes(date, chl), color=chcolor, lwd=.75)+ 
-scale_y_continuous(name =txt$ylab, sec.axis = sec_axis(~./scale.e, name=txt$ylab2,  breaks = breaks , labels= labs))+
-  
-  
+geom_rect(data=t_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.e), color=rect_fill_non, fill=rect_fill_non, alpha=.5)+
+geom_rect(data=h_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.e), color=rect_fill, fill=rect_fill, alpha=.5)+  
+geom_point(data=w, aes(date, chl), color=chcolor, lwd=.6)+ 
+geom_line(data=w, aes(date, chl), color=chcolor, lwd=0.4)+
+scale_y_continuous(name =txt$ylab, sec.axis = sec_axis(~./scale.e, name=txt$ylab2,  breaks = e.breaks , labels= labs))+
 labs(title=txt$title, caption = txt$capt)+
 theme(plot.title = element_text(hjust = 0.5))+
 theme(plot.caption =element_text(hjust = 0.5))+
@@ -952,6 +942,16 @@ labs(tag = txt$panel)
           # Unused ideas...(failures)
 
 # geom_rect_pattern(data=t_4_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.e), color=rect_fill_outside, fill=rect_fill_outside, pattern = 'crosshatch', alpha=0.5)+
+
+
+# geom_rect(data=t_4_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.e), color=rect_fill_outside, fill=rect_fill_outside, alpha=0.5)+
+# geom_rect_pattern(data=t_4_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.e), color=rect_fill_outside, fill=rect_fill_outside,  aes(pattern = 'magick', pattern_fill= 'grey30', pattern_type="horizontal3", width =1, height=1), alpha=0.5)+
+
+# geom_rect_pattern(data=t_4_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.e), color=rect_fill_outside, fill=rect_fill_outside, pattern = 'magick', type ='horizontal3',pattern_fill= "grey30", alpha=0.5, width=1, height=1)+  
+  
+# geom_rect_pattern(data=t_4_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.e), pattern ='magick',  pattern_type='horizontal3',  pattern_angle=0, pattern_alpha=0.5, height=t_4_rect$y2*scale.e)+    
+  
+# geom_vline(data=t_4_rect, mapping=aes(xintercept=start, yintercept=y2*scale.e), linetype ="dotted", color=rect_fill_outside)+  
 
 
 # geom_line(stat = "summary", fun.y = "mean", colour = "red", data=w, aes(date, chl))+ 
@@ -967,37 +967,107 @@ labs(tag = txt$panel)
  #    pattern_colour  = 'black'
  #  ) +
 
-
+plot_list$e<-plot_e
 ```
 
 
 #plot_f
 
 ```{r}
+gc()
 txt<-ftxt
 
+w<-inner_join(x,y, by='date') %>% inner_join(., z, by='date' ) %>% select(., - ef)
+h_rect<-rects$h
+t_rect<-rects$t
+t_4_rect<-rects$t_4
+
+stdp<-1013.25
+ff<-10
+adj<-stdp+ff*(stdp-min(h_rect$y2))
+
+h_rect$y2<-abs(h_rect$y2-adj)
+t_rect$y2<-abs(t_rect$y2-adj)
+t_4_rect$y2<-abs(t_4_rect$y2-adj)
+
+f.breaks<-c( 872, 900, 920, plyr::round_any((944+920)/2, 5, f=floor), plyr::round_any((964+945)/2, 5, f=ceiling), plyr::round_any((979+965)/2,5, f=floor), 980, 1000) %>% round(., 0) %>% append(., c(round(stdp,2),  round(adj,2)))
+
+labs<-(f.breaks)
+f.breaks<-abs(f.breaks-adj)
+
+scale.f<-(max(w$sst)/max(c(t_rect$y2, h_rect$y2, t_4_rect$y2)))
+
+plot_f<- ggplot()+ theme_bw()+
+geom_segment(data=t_4_rect, mapping=aes(x=start, xend=end, yend=y2*scale.f, y=-Inf), linetype ="dashed", color=rect_fill_outside, alpha=.5)+  
+geom_hline(yintercept=(mean(w$sst)), data=w, linetype="dashed", color =tcolor)+
+geom_rect(data=t_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.f), color=rect_fill_non, fill=rect_fill_non, alpha=.5)+
+geom_rect(data=h_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.f), color=rect_fill, fill=rect_fill, alpha=.5)+  
+geom_point(data=w, aes(date, sst), color=tcolor, lwd=.6)+ 
+geom_line(data=w, aes(date, sst), color=tcolor, lwd=0.4)+
+scale_y_continuous(name =txt$ylab, sec.axis = sec_axis(~./scale.f, name=txt$ylab2,  breaks = f.breaks , labels= labs))+
 labs(title=txt$title, caption = txt$capt)+
 theme(plot.title = element_text(hjust = 0.5))+
 theme(plot.caption =element_text(hjust = 0.5))+
 scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months", position = "top")+
 theme(axis.title.x=element_blank(), plot.tag = element_text(face = "bold"))+
 labs(tag = txt$panel)
+
+plot_list$f<-plot_f
 ```
 
 
 #plot_g
 
 ```{r}
+txt<-gtxt
 
+w<-inner_join(x,y, by='date') %>% inner_join(., z, by='date' ) %>% select(., - ef)
+h_rect<-rects$h
+t_rect<-rects$t
+t_4_rect<-rects$t_4
 
+stdp<-1013.25
+ff<-2
+adj<-stdp+ff*(stdp-min(h_rect$y2))
+
+h_rect$y2<-abs(h_rect$y2-adj)
+t_rect$y2<-abs(t_rect$y2-adj)
+t_4_rect$y2<-abs(t_4_rect$y2-adj)
+
+g.breaks<-c( 872, 900, 920, plyr::round_any((944+920)/2, 5, f=floor), plyr::round_any((964+945)/2, 5, f=ceiling), plyr::round_any((979+965)/2,5, f=floor), 980, 1000) %>% round(., 0) %>% append(., c(round(stdp,2),  round(adj,2)))
+
+labs<-(g.breaks)
+g.breaks<-abs(g.breaks-adj)
+
+scale.g<-(max(w$avg)/max(c(t_rect$y2, h_rect$y2, t_4_rect$y2)))
+
+plot_g<- ggplot()+ theme_bw()+
+geom_segment(data=t_4_rect, mapping=aes(x=start, xend=end, yend=y2*scale.g, y=-Inf), linetype ="dashed", color=rect_fill_outside, alpha=.5)+  
+geom_hline(yintercept=(mean(w$avg)), data=w, linetype="dashed", color ="black")+
+geom_rect(data=t_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.g), color=rect_fill_non, fill=rect_fill_non, alpha=.5)+
+geom_rect(data=h_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.g), color=rect_fill, fill=rect_fill, alpha=.5)+  
+geom_point(data=w, aes(date, avg), color="black", lwd=.6)+ 
+geom_line(data=w, aes(date, avg), color="black", lwd=0.4)+
+scale_y_continuous(name =txt$ylab, sec.axis = sec_axis(~./scale.g, name=txt$ylab2,  breaks = g.breaks , labels= labs))+
 labs(title=txt$title, caption = txt$capt)+
 theme(plot.title = element_text(hjust = 0.5))+
 theme(plot.caption =element_text(hjust = 0.5))+
 scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months", position = "top")+
 theme(axis.title.x=element_blank(), plot.tag = element_text(face = "bold"))+
 labs(tag = txt$panel)
+
+plot_list$g<-plot_g
+
 ```
 
+```{r}
+
+setwd(wd)
+setwd(fig)
+pdf("export_flux_figure.pdf", height=33 , width =14)
+cowplot::plot_grid(plotlist = plot_list, nrow=7, ncol=1)
+dev.off()
+```
 
 
 
