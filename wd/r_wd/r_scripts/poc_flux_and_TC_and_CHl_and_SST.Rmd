@@ -222,8 +222,8 @@ rm(m.coast, database)
 ```{r}
 setwd(wd)
 setwd(robj)
- # h<-get_hurdat(basin="EP")
-# saveRDS(h, "r_objects/hurdat.R")
+# h<-get_hurdat(basin="EP")
+# saveRDS(h, "hurdat.R")
 
 h<-readRDS("hurdat.R")
 h$DateTime<-with_tz(h$DateTime, tz="UTC")
@@ -599,9 +599,22 @@ rm(remove_200)
 
 ```
 
+## saving hurricane objects for plotting. temp _action
+```{r}
+
+storms_around_st3.5<-vectot(mode="list")
+storms_around_st3.5$t<-t
+storms_around_st3.5$t<-t
+
+
+```
 
 
 # plotting with tcs @ st3.5
+```{r}
+
+
+```
 
 
 
@@ -617,6 +630,14 @@ rects<-vector(mode="list")
 rects$t<-t_rect
 rects$h<-h_rect
 rects$t_4<-t_4_rect
+
+
+#   Saving hurricane objects for plotting. temp _action
+# setwd(wd)
+# setwd(robj)
+# saveRDS( rects, "storms_around_st3_5_20220705.R")
+
+
 
 
  # rectangel parameters:

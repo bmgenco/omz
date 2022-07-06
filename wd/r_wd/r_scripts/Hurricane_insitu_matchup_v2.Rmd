@@ -58,10 +58,13 @@ f.ipak(packages)
 # lapply(packages, require, character.only = TRUE)
 # rm(f.ipak, packages)
 print(paste0("Current Working Directory is ", getwd()))
+
+wd<-getwd()
 ```
 ## Load submodule for bio-argo floats
 
 ```{r argo submodule}
+setwd(wd)
 path_code = "r_scripts/submodules/BGC-ARGO_R_WORKSHOP/"
 
 source(paste0(path_code, "initialize_argo.R"))
