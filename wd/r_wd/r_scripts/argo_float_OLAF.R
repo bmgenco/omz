@@ -1,6 +1,10 @@
 rm(list=ls())
 
-wd<-"/home/brandon/vestawd/omz/wd/r_wd/r_scripts"
+# wd<-"/home/brandon/vestawd/omz/wd/r_wd/r_scripts"
+wd<-"/home/brandon/europawd/omz/wd/r_wd/"
+robj<-"r_objects"
+
+
 setwd(wd)
 
 
@@ -22,7 +26,7 @@ f.ipak(packages)
 
 
 setwd(wd)
-path_code = "submodules/BGC-ARGO_R_WORKSHOP/"
+path_code = "r_scripts/submodules/BGC-ARGO_R_WORKSHOP/"
 
 source(paste0(path_code, "initialize_argo.R"))
 source(paste0(path_code, "try_download.R"))
@@ -50,7 +54,12 @@ rm(f.ipak, packages, path_code)
 
 # here
 
-initialize_argo()
+# run code in arfo float OLAF..
+
+
+setwd(robj)
+load("init_argo.RData")
+# initialize_argo()
 float<-"6903093"
  
 
@@ -59,6 +68,15 @@ prof_ids = c(Float$prof_idx1[float_idx]:Float$prof_idx2[float_idx])
 
 dates = Sprof$date[prof_ids] 
 # edit here for dates I want, then slect profiles for plottinf functions and laoding nc data
+
+h.pts$DateTime
+
+st_date<-min(h.pts$DateTime)
+ed_date<-max(h.pts$DateTime)
+
+window<-dates[dates <= ed_date] %>% .[dates >= st_date]
+which(dates = st_date)
+
 
 sensors = unique(Sprof$sens[prof_ids])
 load_float_data <-(float_ids=float)
