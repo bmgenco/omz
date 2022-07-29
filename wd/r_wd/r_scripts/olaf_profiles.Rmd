@@ -166,7 +166,7 @@ x<-h.pts
 
   y<-st_difference(z, cl.buf)
 
-rm(x,z,cl.buf)
+rm(x,z,cl.buf)  
 
   
   return(y)
@@ -388,8 +388,6 @@ stations<-stations_positions_list$ctd_centroids
 stations_mapped<-readRDS("OC1806A_mapped_ctd_stations.R")
 rm(stations_positions_list)
 
-
-
 setwd(wd)
 setwd(gis_data)
 coastline<-st_read("./ne_50m_land/ne_50m_land.shp")
@@ -433,7 +431,7 @@ h$DateTime<-with_tz(h$DateTime, tz="UTC")
 ```{r}
 storm_name<-"OLAF"
 # print(filter(h, Name == storm_name) %>% select(., Key) %>% unique(.))
-temp<-filter(h, Name == storm_name & year(DateTime) >= 2021) # Kne year form Mike's email
+temp<-filter(h, Name == storm_name & year(DateTime) >= 2021) # Knew year from Mike's email
 temp<-filter(h, Key == "EP152021" & year(DateTime) >= 2021)
 
 h.pts<- sf::st_as_sf(temp, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
@@ -459,14 +457,12 @@ woa<-read_tsv("isosurface_data.txt", skip=1) %>% select(., 'Depth [m]  at  Oxyge
 
 # first step map
 - add dates
+
+
+###  woa
+
 -crop extent remove WOA
-
 ```{r}
-
-setwd(wd)
-setwd(gis_data)
-coastline<-st_read("./ne_50m_land/ne_50m_land.shp") 
-cl<-st_crop(coastline, xmin=-170, ymin=-20, xmax=-80, ymax=40)
 names(woa)<-c("depth", "lon", "lat")
 woa$lon<-(360-woa$lon)*-1
 rm(coastline)
@@ -502,6 +498,16 @@ woa<-raster::resample(woa_r, r, method="bilinear")
 # for geom_contours
 woa.fortify<-as.bathy(woa)%>%fortify(.)
 rm(r)
+
+```
+
+
+```{r}
+
+setwd(wd)
+setwd(gis_data)
+coastline<-st_read("./ne_50m_land/ne_50m_land.shp") 
+cl<-st_crop(coastline, xmin=-170, ymin=-20, xmax=-80, ymax=40)
 
 
 
@@ -555,6 +561,11 @@ s8<-geom_sf_text(aes(label = station), hjust=2.25, data= sitesd, size = site_siz
 s9<-geom_sf(data =sitese, shape =shape_s, size =symbol_size)
 s10<-geom_sf_text(aes(label = station), hjust=2.25, data= sitese,size = site_size, fontface = "bold")
 
+# added 2022-07-27 simplifies stations
+
+
+shape_s<-1
+
 th1<-theme(text=element_text(family="Helvetica"))+ theme(legend.position=lp, plot.background = element_blank(),panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x=element_blank(), axis.title.y=element_blank(), plot.title = element_text(hjust = 0.5), plot.margin = unit(c(t, r, b, l), "cm"), legend.box.margin=margin(-15,-10,-10,-10))
 
 # legend.box.margin=margin(-10,-10,-10,-10))
@@ -572,7 +583,7 @@ left<-extent(woa)[1]
 right<-extent(woa)[2]
 y1<-ylim(bottom, top)
 c3<-coord_sf(xlim = c(left,right), ylim = c(11.55, 32.45))
-
+rm(woa, woa_r)
 
 
 n<-30 #color complexity
@@ -726,6 +737,19 @@ t2<-geom_sf(data=track2, color=f2_color, linetype= "solid")
 m.map2<-ggplot()+c1+c2+t1+t2+p2a+p1b+ggtitle("Hurricane Olaf and Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+l1+l2+th1+a1+y1
 m.map3<-ggplot()+c1+c2+t1+t2+p2a+p1b+ggtitle("Hurricane Olaf and Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+a1+y1+th2+guides(fill="none")
 
+# here: (draw line an make points)
+#https://thegraphcourses.org/topic/working-with-coordinates-labels-segments-and-points-under-development/
+
+
+# name <- "Bud"
+# lon  <- 11.49633 #coordinates source: openstreetmap.org
+# latitude_school  <- 3.89247
+# 
+# school <- data.frame(name, longitude_school, latitude_school)
+# 
+# bud.text<-geom_sf_text(data="Bud",  )
+
+
 argo_legend<-get_legend(m.map1)
 olaf_legend<-get_legend(m.map2)
 
@@ -737,8 +761,36 @@ p<-plot_grid(m.map3, NULL,  legends, ncol=3, rel_widths = c(1,-.6,1), align = "v
 
 m.map4<-ggplot()+c1+c2+t1+t2+p1a+p2a+p1b+ggtitle("Hurricanes Olaf & Bud with Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+l1+l2+th1+a1+y1
 
-p2<-m.map4+annotation_custom(grob = argo_legend, xmin = -Inf,  ymin = -Inf, ymax=15, xmax = -115)
 
+site_size=3
+symbol_size=6.5
+shape_s<-21
+all_stations<-geom_sf(data=stations_mapped, shape=shape_s, size=symbol_size, fill="white")
+all_stations_labled<-geom_sf_text(aes(label = station),data= stations_mapped,size = site_size, fontface = "bold")
+m.coast+all_stations
+
+
+# c3<-coord_sf(xlim = c(-119.5, -100.5), ylim = c(11.55, 32.45))
+# c4<-coord_sf(xlim = c(-110,-106), ylim =c(19.5, 22))
+c3a<-coord_sf(xlim = c(-116, -100), ylim = c(14, 26))
+
+# bud point
+
+bl<-bud_fig1[bud_fig1$print_date == 10,] %>% na.omit()
+bl$label<-"Hurricane Bud"
+site_size=4
+bud_label<-geom_sf_text(aes(label = label),data=bl,size = site_size, hjust =1.2)
+
+ol<-h.pts[5,] 
+ol$label<-"Hurricane Olaf"
+site_size=4
+olaf_label<-geom_sf_text(aes(label = label),data=ol,size = site_size, hjust= -.25)
+
+m.map4_ws<-ggplot()+c1+c2+t1+t2+p1a+p2a+p1b+ggtitle("Hurricanes Olaf & Bud with Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+all_stations+all_stations_labled+c3a+l1+l2+th1+a1 + bud_label +olaf_label
+
+
+# p2<-m.map4_ws+annotation_custom(grob = argo_legend, xmin = -Inf,  ymin = -Inf, ymax=15, xmax = -115)
+p2<-m.map4_ws+annotation_custom(grob = argo_legend, xmin = -Inf,  ymin = -Inf, ymax=16, xmax = -113)
 
 
 dev.off()
@@ -748,6 +800,8 @@ dev.off()
   
 # save plots 1
 ```{r}
+
+# might need to change this
 setwd(wd)
 setwd(fig)
 pdf("Olaf_Bud_and_argo_floats.pdf", height=8.5 , width =7.5)
@@ -787,19 +841,23 @@ cols.tracks = c("6903093" = f1_color, "6903094" = f2_color)
 
 x<-olaf_profiles$window.sp
 
-z<-x$`6903093` %>% filter(., CYCLE_NUMBER %in% c(48, 49, 50, 51, 52))
+# z<-x$`6903093` %>% filter(., CYCLE_NUMBER %in% c(48, 49, 50, 51, 52))
+z<-x$`6903093` %>% filter(., CYCLE_NUMBER %in% c(46, 47, 48, 49, 50, 51, 52, 53))
+
 z$TIME<-z$TIME %>% date(.) %>% ymd(.) %>% as.character() %>% substring(., 6)
 
-date_labels<-geom_sf_text(aes(label = TIME), data=z, size =2.6, hjust=1.1,  color =select_color)
+# date_labels<-geom_sf_text(aes(label = TIME), data=z, size =2.6, hjust=1.1,  color =select_color)
+date_labels<-geom_sf_text(aes(label = TIME), data=z, size =2.8, hjust=1.2, angle =25,  color =select_color)
 
+test<-format(as.Date(h.pts$DateTime), "%m-%d")
+bah<-as.character(hour(h.pts$DateTime))
+h.pts$time_abrv<-paste0(test, "-", bah, ":00")
+rm(test, bah)
 
+olaf_labels<-geom_sf_text(aes(label = time_abrv), data=h.pts, size =2.8, hjust=-.6, angle=-10, color ="black")
 
 buffer<-olaf_profiles$window$`6903094`$bufer_number
 buffer_subtitle<-paste0("tracks are ", buffer, " profiles before and after date of Olaf overpass window")
-
-
-
-
 
 float1<-names(x)[1]
 float2<-names(x)[2]
@@ -823,11 +881,18 @@ p3<-m.map5+annotation_custom(grob = argo_legend, xmin = -Inf,  ymin = -Inf, ymax
 
 # c4<-coord_sf(xlim = c(-115,-105), ylim =c(15, 25))
 
-c4<-coord_sf(xlim = c(-114,-104), ylim =c(15.5, 24.5))
-buffer_subtitle<-paste0("Profiles corresponding to Cycles 48-52 in green")
+# c4<-coord_sf(xlim = c(-114,-104), ylim =c(15.5, 24.5))
+c4<-coord_sf(xlim = c(-110,-106), ylim =c(19.5, 22))
 
-m.map6<-ggplot()+c1+c2+f1+f2+t1+t2+p2a+p1b+ggtitle("Hurricanes Olaf and corresponding Argo Float Tracks", subtitle = buffer_subtitle )+theme(plot.title = element_text(size = title.size))+f1b+s1+s3+s5+s7+s9+c4+l1+l2+th1+a1+y1+theme(plot.subtitle=element_text(hjust=0.5))+date_labels
 
+# buffer_subtitle<-paste0("Profiles corresponding to Cycles 48-52 in green")
+buffer_subtitle<-paste0("Profiles corresponding to Cycles 46-53 in green")
+
+m.map6<-ggplot()+c1+c2+f1+f2+t1+t2+p2a+p1b+ggtitle("Hurricanes Olaf and corresponding Argo Float Tracks", subtitle = buffer_subtitle )+theme(plot.title = element_text(size = title.size))+f1b+s1+s2+s3+s5+s7+s8+s9+c4+l1+l2+th1+a1+y1+theme(plot.subtitle=element_text(hjust=0.5))+date_labels+olaf_labels
+
+m.map6<-ggplot()+c1+c2+f1+f2+t1+t2+p2a+p1b+ggtitle("Hurricanes Olaf and corresponding Argo Float Tracks", subtitle = buffer_subtitle )
+
++theme(plot.title = element_text(size = title.size))+f1b+s1+s2+s3+s5+s7+s8+s9+c4+l1+l2+a1+th2+theme(plot.subtitle=element_text(hjust=0.5))+date_labels+olaf_labels
 
 
 p4<-m.map6 +annotation_custom(grob = argo_legend, xmin = -Inf,  ymin = -Inf, ymax=19, xmax = -110)
@@ -853,17 +918,37 @@ dev.off()
 
 
 # select profiles:
+
+### newset
+
+```{r}
+
+```
+
+
+```{r}
+rgocor<-"../../data/argo/coriolis_dac"
+setwd(wd)
+setwd(rgocor)
+files<-list.files()
+
+
+
+```
+
+
 ## newer
 
 
 ```{r}
 setwd(wd)
+
+x<-olaf_profiles$window.sp
 z<-x$`6903093` %>% filter(., CYCLE_NUMBER %in% c(48, 49, 50, 51, 52))
 e<-extent(z)
 
 q<-select_profiles(lon_lim=c(e[1],e[2]), lat_lim=c(e[3], e[4]), start_date=(z$TIME[1]-1), end_date=(z$TIME[length(z$TIME)]+1), outside="none", sensor=NULL)
 
-x<-load_float_data(float_ids=q$floats, float_profs=q$profiles)
 
 # d<-(storm_profiles$floats[i])
 # plot_profiles()
@@ -871,6 +956,30 @@ x<-load_float_data(float_ids=q$floats, float_profs=q$profiles)
 # select_profiles <- function(lon_lim=c(-180,180), lat_lim=c(-90, 90), 
 #                             start_date="1995-01-01", end_date="2038-01-19",
 #                             outside="none", sensor=NULL) {
+```
+
+
+```{r}
+setwd(wd)
+setwd(robj)
+# show_profiles(profile_ids = q$floats[1], variables = 'TEMP')
+setwd("Profiles")
+
+files<-list.files()
+
+x<-files[charmatch(q$floats, files)]
+t<-tidync(x)
+# t<-tidync(x) %>%activate("D0, ")
+# t<-t %>% hyper_filter(DATE_TIME = z$TIME )%>% hyper_tibble()
+# x<-tidync(x)%>% hyper_tibble()
+
+
+# hyper_filter(lat = lat >= min(z$lat) & lat <= max(z$lat), lon = lon>= min(z$lon)
+
+# for(i in 1:length(files)){
+#     file<-files[i]
+#     t<-tidync(file)%>% hyper_filter(lat = lat >= min(z$lat) & lat <= max(z$lat), lon = lon>= min(z$lon) & lon<= max(z$lon)) %>% hyper_tibble()
+
 ```
 
 # combined plot
