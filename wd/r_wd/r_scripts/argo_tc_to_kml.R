@@ -38,6 +38,13 @@ setwd(robj)
 
 olaf_profiles<-readRDS("olaf_profiles_list.R")
 
+
+x<-olaf_profiles$floats.sp$`6903093` %>% select(., CYCLE_NUMBER, TIME, geometry)
+y<-olaf_profiles$window.sp$`6903093` %>% select(., CYCLE_NUMBER, TIME, geometry)
+z<-x %>% filter(., CYCLE_NUMBER %in% c(46, 47, 48, 49, 50, 51, 52,53))
+
+
+
 h<-readRDS("hurdat.R")
 h$DateTime<-with_tz(h$DateTime, tz="UTC")
 storm_name<-"OLAF"
@@ -52,3 +59,27 @@ rm(temp, h.pts)
 
 stations_mapped<-readRDS("OC1806A_mapped_ctd_stations.R")
 bud_fig1<-readRDS("bud_fig1.R")
+
+q<-st_coordinates(z)
+
+q<-SpatialPoints(coords=cbind(q[,1], q[,2]), proj4string = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
+q<-gCentroid(q) %>% st_as_sf(.)
+
+
+setwd(wd)
+setwd(gis_data)
+# names(stations_mapped)<-c("Name", "Description", "geometry")
+st_write(stations_mapped, "OC1806A_stations.kml", driver="kml")
+
+st_write(x, "argo_float_6903093.kml", driver="kml")
+st_write(y, "argo_float_6903093_window.kml", driver="kml")
+st_write(z, "argo_float_6903093_select_profiles.kml", driver="kml")
+st_write(q, "argo_float_6903093_select_profile_centroid.kml", driver="kml")
+# making buffers
+# slecting limted cyles
+
+
+
+
+x<-cbind(x@coords[1], x@coords[2])
+

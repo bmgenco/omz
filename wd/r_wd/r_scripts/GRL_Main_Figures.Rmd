@@ -29,15 +29,33 @@ https://stackoverflow.com/questions/51885427/font-family-wont-change-in-ggplot/5
 https://stackoverflow.com/questions/34522732/changing-fonts-in-ggplot2
 
 
-# Setup
-```{r, include=FALSE, warning=FALSE}
-rm(list=ls())
-#knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(echo = FALSE)
+# Packages, Directories
 
+# dynamic
+
+```{r setup}
+rm(list=ls())
+# relative directories
+robj<-"r_objects"
+fig<-"../../figures"
+gis_data<-"../../data/gis_data"
+data_d<-"../../data/2018_data"
+# data_d<-"../../data"
+ocean_color<-"../../data/ocean_color_bud"
+bathy_d<-"../../data/bathy" # edit this
+
+aqua_directory<-"../../data/ocean_color_bud/aqua"
+terra_directory<-"../../data/ocean_color_bud/terra"
+viirs_directory<-"../../data/ocean_color_bud/terra"
+
+#absolute directory
+drop_img<-"/home/brandon/Dropbox/MERCED/dissertation/presentations/images"
+
+knitr::opts_chunk$set(echo =FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
-# Packages, Directories
+
 ## Load Packages
 * Change 'packages' vector accordingly
 * change font type
@@ -58,10 +76,15 @@ f.ipak <- function(pkg){
 packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "patchwork", "RColorBrewer", "marmap", "extrafont", "oce", "ncdf4", "raster", "RStoolbox", "cmocean", "metR")  # set packages here
 f.ipak(packages)
 
+print(paste0("Current Working Directory is ", getwd()))
+
+wd<-getwd()
+
 ```
 
 ## Set Directories
 * Currently machine "?"
+
 
 ### Vesta
 ```{r setup}
@@ -168,7 +191,7 @@ stations_mapped<-readRDS("OC1806A_mapped_ctd_stations.R") # centroid of ctd cast
 
 ## Load Data 2 - Bathy/Coastline/ Hurricane Bud Track
 ```{r}
-# global 5m resolution land polygon: 
+# global 5m resolution land polygon:  
 setwd(gis_data)
 coastline<-st_read("./ne_50m_land/ne_50m_land.shp") 
 
@@ -1190,11 +1213,15 @@ rm(a,t,v, i)
 ```
 #### geotiif objects 
  load list
-  commnetd out - make ggplot objects
+commnetd out - make ggplot objects
+
+* redo for new figures:
+* even versu odd, can I slecte by date?
+* IMPORTANT raster stack is a local directory pointer object 
 ```{r}
 
 # directory<-paste(ocean_color, "/true_color/viirs", sep ="") #change to modis if nessecary 
-
+setwd(wd)
 setwd(ocean_color)
 setwd("./true_color/viirs")
 files<-list.files()
@@ -1206,6 +1233,7 @@ rm(files)
 
 #### save fig 2 r objects
 gdal errors with v_rgb seem to be corrected by not load older robjects of v_rgb.
+ 
  
 ```{r}
 setwd(robj)
@@ -1229,632 +1257,7 @@ rm(stations_positions_list)
 
 ```
 ### ploting 
-#### old and commented out 
-##### plotting 1
 
-```{r}
-# #setwd(robj)
-# plot<-9
-# test<-combined[[plot]]
-# date<-paste0("June", " ", names(combined)[plot])
-# 
-# col<- colorRampPalette(c(
-#   "#DBF7D8", "#B6DDAE", "#8FC788", "#64B365", "#21A049", "#078749", "#186D43", "#1E5338", "#1D3B29", "#152317"))
-# 
-# col<-colorRampPalette(c("#ffffff", "#DBF7D8", "#C9EAC3" ,"#B8DFB0" ,"#A6D49E", "#93CA8C" ,"#80BF7A", "#6BB66A" ,"#54AD5A", "#35A44C", "#0B9A49", 
-#                         "#038D49", "#0B8148", "#147445","#196841", "#1C5D3D", "#1E5037", "#1E4530", "#1C3928", "#1A2E20", "#152317",
-#                         "#423E85","#443882","#46327E", "#472C7A", "#482576","#481E6F", "#481769", "#471063", "#46085C","#440154"))   
-# 
-# lon<-as.numeric(rownames(test))
-# lat<-as.numeric(colnames(test))
-#   
-# #cl<-st_crop(cl, xmin=min(lon), ymin=min(lat), xmax=max(lon), ymax=max(lat))
-# #imagep(lon, lat, log10(test))
-# #imagep(lon, lat, log10(test), col=col, zlim=log10(c(0.01, 20)), missingColor=1, zlab='log10(Chl)')
-# 
-# 
-# #t1<-round(max(na.omit(as.vector(test))),1)
-# 
-# 
-# # png(paste0(date, ".png"))
-# 
-# 
-# imagep(lon, lat, (test), col=col, zlim=(c(0.01, 5)), missingColor=NULL, zlab='Chl (mg/m^3)')
-# 
-# 
-# 
-# 
-# 
-# # 
-# # setwd(fig)
-# # png(paste0(date, ".png"))
-# # imagep(lon, lat, (test), col=col, zlim=(c(0.01, 5)), missingColor=1, zlab='Chl (mg/m^3)')
-# # plot(cl,  col='gray', add=T)
-# # title(main=date)
-# # dev.off()
-# 
-# 
-# ### ggplot version
-
-
-
-```
-##### ploting attemp 2
-
-```{r}
-# # six is the best
-# 
-# #cuts<-c(0.01, 0.04, 0.06, 0.08,  0.1, 0.15, 0.2, 0.5, 0.8, 0.9, 1, 2, 4, 6)# fig_2
-# #cuts<-c(0.01, 0.04, 0.06, 0.08, 0.09, 0.1, 0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2, 4, 6)# fig_2_v1
-# #cuts<-c(0.01, 0.04, 0.06, 0.08, 0.09, 0.1, 0.125, 0.15, 0.175, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2, 4, 6)# fig_2_v2
-# #cuts<-c(0.01, 0.04, 0.06, 0.08, 0.09, 0.1,  0.15, 0.175, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2, 4, 6)# fig_2_v3
-# #cuts<-c(0, 0.01, 0.04, 0.06, 0.08, 0.09, 0.1,  0.15, 0.175, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2, 4, 6)# fig_2_v4
-# 
-# #cuts<-c(0, 0.01, 0.04, 0.06, 0.08,  0.1,  0.15, 0.175, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2, 4, 6)# fig_2_v5
-# cuts<-c(0, 0.01, 0.04,  0.08,  0.1,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2, 4, 6)# fig_2_v6
-# #cuts<-c(0, 0.01, 0.04,  0.08, 0.09, 0.1,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2, 4, 6)# fig_2_v7
-# #cuts<-c(0, 0.01, 0.05,  0.08, 0.09, 0.1, .11, .12,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2, 4, 6)# fig_2_v8
-# #cuts<-c(0, 0.01, 0.05,  0.08, 0.09, 0.1, .125,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2, 4, 6)# fig_2_v9
-# 
-# 
-# setwd(fig)
-# pdf("figure_2_v6_small.pdf", height=2.85 , width =2)
-# par(mfrow=c(4,3))
-# 
-# for(i in 1:length(combined)){
-# i<-5
-# plot<-i
-# t1<-combined[[plot]]
-# t2<-v_rgb[[plot]]
-# 
-# date<-paste0("June", " ", names(combined)[plot])
-# 
-# lat<-as.numeric(row.names(t(t1)))
-# lon<-as.numeric(colnames(t(t1)))
-# 
-# 
-# t1<-raster(t(t1))
-# extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
-# 
-# # croping
-# 
-# t1_ex<-extent(t1)
-# t2_ex<-extent(t2)
-# 
-# extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
-# extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
-# 
-# rm(t1_ex, t2_ex)
-# 
-# 
-# t3<-resample(t1, t2)
-# #rm(t1)
-# #t4<-stack(t2,t3)
-# 
-# 
-# plotRGB(t2)
-# plot(t3, col = rev(rainbow((length(cuts)+1))),  breaks=cuts, add=T, margin=F)
-# 
-# 
-# 
-# 
-# #plot(t1, col = rev(rainbow((length(cuts)+1)),  zlim=(c(0.01, 5)), zlab='Chl (mg/m^3)'), breaks=cuts, add=T)
-# }
-# dev.off()
-```
-
-##### plotting attemp 3 nature geosciene ####
-* legends per plot
-```{r}
-# options(warn=-1)
-# 
-# # cuts<-c(0, 0.01, 0.04,  0.08,  0.1,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2, 4, 6)
-# # cuts<-c(0, 0.01, 0.04,  0.08,  0.1,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2, 4, 6)# fig_2_v6
-# #cuts<-c(0, 0.01, 0.04,  0.08, 0.09, 0.1,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2, 4, 6)# fig_2_v7
-# #cuts<-c(0, 0.01, 0.05,  0.08, 0.09, 0.1, .11, .12,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2, 4, 6)# fig_2_v8
-# #cuts<-c(0, 0.01, 0.05,  0.08, 0.09, 0.1, .125,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2, 4, 6)# fig_2_v9
-# 
-# 
-# plots<-vector(mode='list', length = length(combined))
-# 
-# t<-0
-# for(i in 1:3){
-# t1<-combined[[i]]
-# t2<-v_rgb[[i]]
-# date<-paste0("June", " ", names(combined)[i])
-# 
-# lat<-as.numeric(row.names(t(t1)))
-# lon<-as.numeric(colnames(t(t1)))
-# 
-# t1<-raster(t(t1))
-# extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
-# t1_ex<-extent(t1)
-# t2_ex<-extent(t2)
-# extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
-# extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
-# rm(t1_ex, t2_ex)
-# 
-# 
-# t3<-resample(t1, t2)
-# t3<-na.omit(t3)
-# rm(t1)
-# 
-# f1<- ggRGB(t2, r=1, g=2, b=3, ggObj = T) + ggtitle(date)+theme_bw() +
-#   theme(plot.title = element_text(hjust = 0.5))+
-#   theme(axis.line = element_line(colour = "black"),
-#         plot.margin = unit(c(t, 0, 0, 0.25), "cm"),
-#         panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         #panel.border = element_blank(),
-#         panel.background = element_rect(colour = "black", fill=NA, size=5),
-#         axis.title.x=element_blank(),
-#         axis.title.y=element_blank()) +
-#   scale_y_continuous(expand = c(0, 0)) +
-#   scale_x_continuous(expand = c(0, 0))
-# 
-# cuts<-c(0, 0.01, 0.02, 0.04,  0.08,  0.1,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2,3,4, 5)
-# 
-# n<-length(cuts)+1
-# custom_color<-rev(rainbow(n))
-# cuts<-rescale(cuts)
-# title_two<-"Chlor-a\nmg/m^3"
-# labs<-c(0, .5, 1, 2 , 2.5, 5)
-# 
-# f3<-f1+ggR(t3, geom_raster = TRUE, ggLayer=T) +
-#   theme(axis.line = element_line(colour = "black"),
-#         plot.margin = unit(c(t, 0, 0, 0.25), "cm"),
-#         panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         panel.background = element_rect(colour = "black", fill=NA, size=5),
-#         axis.title.x=element_blank(),
-#         axis.title.y=element_blank()) +
-#   scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
-#                        name=waiver(),breaks=labs)+
-#   guides(fill=guide_colourbar(title=title_two, barheight = 8)) +
-#   theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
-#   theme(text=element_text(family="Helvetica"))
-#         
-# plots[[i]]<-f3
-# rm(t2,t3, f1, f3)
-# 
-# }
-# t<--3
-# for(i in 4:6){
-# t1<-combined[[i]]
-# t2<-v_rgb[[i]]
-# date<-paste0("June", " ", names(combined)[i])
-# 
-# lat<-as.numeric(row.names(t(t1)))
-# lon<-as.numeric(colnames(t(t1)))
-# 
-# t1<-raster(t(t1))
-# extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
-# t1_ex<-extent(t1)
-# t2_ex<-extent(t2)
-# extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
-# extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
-# rm(t1_ex, t2_ex)
-# 
-# 
-# t3<-resample(t1, t2)
-# t3<-na.omit(t3)
-# rm(t1)
-# 
-# f1<- ggRGB(t2, r=1, g=2, b=3, ggObj = T) + ggtitle(date)+theme_bw() +
-#   theme(plot.title = element_text(hjust = 0.5))+
-#   theme(axis.line = element_line(colour = "black"),
-#         plot.margin = unit(c(t, 0, 0, 0.25), "cm"),
-#         panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         #panel.border = element_blank(),
-#         panel.background = element_rect(colour = "black", fill=NA, size=5),
-#         axis.title.x=element_blank(),
-#         axis.title.y=element_blank()) +
-#   scale_y_continuous(expand = c(0, 0)) +
-#   scale_x_continuous(expand = c(0, 0))
-# 
-# cuts<-c(0, 0.01, 0.02, 0.04,  0.08,  0.1,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2,3,4, 5)
-# 
-# n<-length(cuts)+1
-# custom_color<-rev(rainbow(n))
-# cuts<-rescale(cuts)
-# title_two<-"Chlor-a\nmg/m^3"
-# labs<-c(0, .5, 1, 2 , 2.5, 5)
-# 
-# f3<-f1+ggR(t3, geom_raster = TRUE, ggLayer=T) +
-#   theme(axis.line = element_line(colour = "black"),
-#         plot.margin = unit(c(t, 0, 0, 0.25), "cm"),
-#         panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         panel.background = element_rect(colour = "black", fill=NA, size=5),
-#         axis.title.x=element_blank(),
-#         axis.title.y=element_blank()) +
-#   scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
-#                        name=waiver(),breaks=labs)+
-#   guides(fill=guide_colourbar(title=title_two, barheight = 8)) +
-#   theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
-#   theme(text=element_text(family="Helvetica"))
-#         
-# plots[[i]]<-f3
-# rm(t2,t3, f1, f3)
-# 
-# }
-# t<--6
-# for(i in 7:9){
-# t1<-combined[[i]]
-# t2<-v_rgb[[i]]
-# date<-paste0("June", " ", names(combined)[i])
-# 
-# lat<-as.numeric(row.names(t(t1)))
-# lon<-as.numeric(colnames(t(t1)))
-# 
-# t1<-raster(t(t1))
-# extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
-# t1_ex<-extent(t1)
-# t2_ex<-extent(t2)
-# extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
-# extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
-# rm(t1_ex, t2_ex)
-# 
-# 
-# t3<-resample(t1, t2)
-# t3<-na.omit(t3)
-# rm(t1)
-# 
-# f1<- ggRGB(t2, r=1, g=2, b=3, ggObj = T) + ggtitle(date)+theme_bw() +
-#   theme(plot.title = element_text(hjust = 0.5))+
-#   theme(axis.line = element_line(colour = "black"),
-#         plot.margin = unit(c(t, 0, 0, 0.25), "cm"),
-#         panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         #panel.border = element_blank(),
-#         panel.background = element_rect(colour = "black", fill=NA, size=5),
-#         axis.title.x=element_blank(),
-#         axis.title.y=element_blank()) +
-#   scale_y_continuous(expand = c(0, 0)) +
-#   scale_x_continuous(expand = c(0, 0))
-# 
-# cuts<-c(0, 0.01, 0.02, 0.04,  0.08,  0.1,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2,3,4, 5)
-# 
-# n<-length(cuts)+1
-# custom_color<-rev(rainbow(n))
-# cuts<-rescale(cuts)
-# title_two<-"Chlor-a\nmg/m^3"
-# labs<-c(0, .5, 1, 2 , 2.5, 5)
-# 
-# f3<-f1+ggR(t3, geom_raster = TRUE, ggLayer=T) +
-#   theme(axis.line = element_line(colour = "black"),
-#         plot.margin = unit(c(t, 0, 0, 0.25), "cm"),
-#         panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         panel.background = element_rect(colour = "black", fill=NA, size=5),
-#         axis.title.x=element_blank(),
-#         axis.title.y=element_blank()) +
-#   scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
-#                        name=waiver(),breaks=labs)+
-#   guides(fill=guide_colourbar(title=title_two, barheight = 8)) +
-#   theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
-#   theme(text=element_text(family="Helvetica"))
-#         
-# plots[[i]]<-f3
-# rm(t2,t3, f1, f3)
-# 
-# }
-# t<--9
-# for(i in 10:12){
-# t1<-combined[[i]]
-# t2<-v_rgb[[i]]
-# date<-paste0("June", " ", names(combined)[i])
-# 
-# lat<-as.numeric(row.names(t(t1)))
-# lon<-as.numeric(colnames(t(t1)))
-# 
-# t1<-raster(t(t1))
-# extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
-# t1_ex<-extent(t1)
-# t2_ex<-extent(t2)
-# extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
-# extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
-# rm(t1_ex, t2_ex)
-# 
-# 
-# t3<-resample(t1, t2)
-# t3<-na.omit(t3)
-# rm(t1)
-# 
-# f1<- ggRGB(t2, r=1, g=2, b=3, ggObj = T) + ggtitle(date)+theme_bw() +
-#   theme(plot.title = element_text(hjust = 0.5))+
-#   theme(axis.line = element_line(colour = "black"),
-#         plot.margin = unit(c(t, 0, 0, 0.25), "cm"),
-#         panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         #panel.border = element_blank(),
-#         panel.background = element_rect(colour = "black", fill=NA, size=5),
-#         axis.title.x=element_blank(),
-#         axis.title.y=element_blank()) +
-#   scale_y_continuous(expand = c(0, 0)) +
-#   scale_x_continuous(expand = c(0, 0))
-# 
-# cuts<-c(0, 0.01, 0.02, 0.04,  0.08,  0.1,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2,3,4, 5)
-# 
-# n<-length(cuts)+1
-# custom_color<-rev(rainbow(n))
-# cuts<-rescale(cuts)
-# title_two<-"Chlor-a\nmg/m^3"
-# labs<-c(0, .5, 1, 2 , 2.5, 5)
-# 
-# f3<-f1+ggR(t3, geom_raster = TRUE, ggLayer=T) +
-#   theme(axis.line = element_line(colour = "black"),
-#         plot.margin = unit(c(t, 0, 0, 0.25), "cm"),
-#         panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         panel.background = element_rect(colour = "black", fill=NA, size=5),
-#         axis.title.x=element_blank(),
-#         axis.title.y=element_blank()) +
-#   scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
-#                        name=waiver(),breaks=labs)+
-#   guides(fill=guide_colourbar(title=title_two, barheight = 8)) +
-#   theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
-#   theme(text=element_text(family="Helvetica"))
-#         
-# plots[[i]]<-f3
-# rm(t2,t3, f1, f3)
-# 
-# }
-# 
-# setwd(fig)
-# pdf("figure_2.pdf", height=11.5 , width =8)
-# plot_grid(plotlist=plots, ncol=3, nrow=4)
-# dev.off()
-# 
-# ```
-# 
-# 
-# #### plotting attempt 4 nature geosciene ###
-# * see https://stackoverflow.com/questions/53918557/fix-legend-title-when-using-superscript-in-more-than-two-lines-r-ggplot2
-# ** lines function might print better
-# 
-# ```{r}
-# options(warn=-1)
-# 
-# cuts<-c(0, 0.01, 0.02, 0.04,  0.08,  0.1,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2,3,4, 5)
-# n<-length(cuts)+1
-# custom_color<-rev(rainbow(n))
-# cuts<-rescale(cuts)
-# # title_two<-"Chl a\nmg/m^3"
-# title_two<-expression(atop(textstyle(" Chl a "), textstyle(" mg⋅M"^-1*"")))
-# #title_two<-list("Chl a", expression("mg⋅M"^-1*""))
-# 
-# labs<-c(0, .5, 1, 2 , 2.5, 5)
-# 
-# f.fig2<-function(combined, v_rgb, i, t, l){
-#   t1<-combined[[i]]
-#   t2<-v_rgb[[i]]
-#   date<-paste0("June", " ", names(combined)[i])
-#   
-#   lat<-as.numeric(row.names(t(t1)))
-#   lon<-as.numeric(colnames(t(t1)))
-#   
-#   t1<-raster(t(t1))
-#   extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
-#   t1_ex<-extent(t1)
-#   t2_ex<-extent(t2)
-#   extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
-#   extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
-#   rm(t1_ex, t2_ex)
-#   
-#   
-#   t3<-resample(t1, t2)
-#   t3<-na.omit(t3)
-#   rm(t1)
-#   
-#   f1<- ggRGB(t2, r=1, g=2, b=3, ggObj = T) + ggtitle(date)+theme_bw() +
-#     theme(plot.title = element_text(hjust = 0.5))+
-#     theme(axis.line = element_line(colour = "black"),
-#           plot.margin = unit(c(t, 0, 0, 0.25), "cm"),
-#           panel.grid.major = element_blank(),
-#           panel.grid.minor = element_blank(),
-#           #panel.border = element_blank(),
-#           panel.background = element_rect(colour = "black", fill=NA, size=5),
-#           axis.title.x=element_blank(),
-#           axis.title.y=element_blank()) +
-#     scale_y_continuous(expand = c(0, 0)) +
-#     scale_x_continuous(expand = c(0, 0))
-#   
-#   f3<-f1+ggR(t3, geom_raster = TRUE, ggLayer=T) +
-#     theme(axis.line = element_line(colour = "black"),
-#           plot.margin = unit(c(t, 0, 0, 0.25), "cm"),
-#           panel.grid.major = element_blank(),
-#           panel.grid.minor = element_blank(),
-#           panel.background = element_rect(colour = "black", fill=NA, size=5),
-#           axis.title.x=element_blank(),
-#           axis.title.y=element_blank()) +
-#     scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
-#                          name=waiver(),breaks=labs)+
-#     guides(fill=guide_colourbar(title=bquote(title_two), barheight = 8)) +
-#     theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
-#     theme(text=element_text(family="Helvetica")) + theme(legend.position = "none")
-#   
-#   
-#   
-#   return(f3)
-# }
-# f.fig2_legend<-function(combined, v_rgb, l, b, r){
-#   t1<-combined[[1]]
-#   t2<-v_rgb[[1]]
-#   
-#   lat<-as.numeric(row.names(t(t1)))
-#   lon<-as.numeric(colnames(t(t1)))
-#   
-#   t1<-raster(t(t1))
-#   extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
-#   t1_ex<-extent(t1)
-#   t2_ex<-extent(t2)
-#   extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
-#   extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
-#   rm(t1_ex, t2_ex)
-#   
-#   
-#   t3<-resample(t1, t2)
-#   t3<-na.omit(t3)
-#   rm(t1)
-# 
-#   
-#   p<-ggplot()+ggR(t3, geom_raster = TRUE, ggLayer=T) +
-#     theme(axis.line = element_line(colour = "black"),
-#           plot.margin = unit(c(0, 0, 0, 0, 0), "cm"),
-#           panel.grid.major = element_blank(),
-#           panel.grid.minor = element_blank(),
-#           panel.background = element_rect(colour = "black", fill=NA, size=5),
-#           axis.title.x=element_blank(),
-#           axis.title.y=element_blank()) +
-#     scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
-#                          name=waiver(),breaks=labs)+
-#     guides(fill=guide_colourbar(title=title_two, barheight = b)) +
-#     theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
-#     theme(text=element_text(family="Helvetica"))
-#   
-#   legend <- get_legend(p + theme(legend.box.margin = margin(0, 0, 0, l)))
-#   rm(p, t3, t2) 
-#   return(legend)
-# } # l = legend margin left, b=barhieght (in cm ) of legend
-
-#plots<-vector(mode='list', length = length(combined))
-#plots<-vector(mode='list', length = 3)
-
-# legend<-f.fig2_legend(combined, v_rgb, l=1, b=150)
-# 
-# i<-1
-# plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
-# i<-2
-# plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=-2)
-# i<-3
-# plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=-4)
-# 
-# 
-# 
-# 
-# setwd(fig)
-# pdf("testing3.pdf", height=11.5 , width =8)
-# plot_grid(plotlist=plots, ncol=3, nrow=4)
-# dev.off()
-# 
-# 
-# # setwd(fig)
-# # pdf("figure_2.pdf", height=11.5 , width =8)
-# # plot_grid(plotlist=plots, ncol=3, nrow=4)
-# # dev.off()
-
-```
-##### plotting attempt 5.A - function attempt
-```{r}
-# #plots<-vector(mode='list', length = length(combined))
-# 
-# t<-c(0,0,0,-3,-3,-3,-6,-6,-6, -9,-9,-9)
-# t<-as.list(t)
-# l<-c(0, -2.5, -5, 0, -2.5, -5, 0, -2.5,-5, 0, -2.5, -5)
-# l<-as.list(l)
-# 
-# date<-paste0("June", " ", names(combined))
-# 
-# f.fig2<-function(x, y, z, w, date){
-#   t1<-x
-#   t2<-y
-#   
-#   
-#   lat<-as.numeric(row.names(t(t1)))
-#   lon<-as.numeric(colnames(t(t1)))
-#   
-#   t1<-raster(t(t1))
-#   extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
-#   t1_ex<-extent(t1)
-#   t2_ex<-extent(t2)
-#   extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
-#   extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
-#   rm(t1_ex, t2_ex)
-#   
-#   t3<-resample(t1, t2)
-#   t3<-na.omit(t3)
-#   rm(t1)
-#   
-#   f1<- ggRGB(t2, r=1, g=2, b=3, ggObj = T) + ggtitle(date)+theme_bw() +
-#     theme(plot.title = element_text(hjust = 0.5))+
-#     theme(axis.line = element_line(colour = "black"),
-#           plot.margin = unit(c(0, 0, 0, 0), "cm"),
-#           panel.grid.major = element_blank(),
-#           panel.grid.minor = element_blank(),
-#           #panel.border = element_blank(),
-#           panel.background = element_rect(colour = "black", fill=NA, size=5),
-#           axis.title.x=element_blank(),
-#           axis.title.y=element_blank()) +
-#     scale_y_continuous(expand = c(0, 0)) +
-#     scale_x_continuous(expand = c(0, 0))
-#   
-#   f3<-f1+ggR(t3, geom_raster = TRUE, ggLayer=T) +
-#     theme(axis.line = element_line(colour = "black"),
-#           plot.margin = unit(c(z, 0, 0, w), "cm"),
-#           panel.grid.major = element_blank(),
-#           panel.grid.minor = element_blank(),
-#           panel.background = element_rect(colour = "black", fill=NA, size=5),
-#           axis.title.x=element_blank(),
-#           axis.title.y=element_blank()) +
-#     scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
-#                          name=waiver(),breaks=labs)+
-#     guides(fill=guide_colourbar(title=bquote(title_two), barheight = 8)) +
-#     theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
-#     theme(text=element_text(family="Helvetica")) + theme(legend.position = "none")
-#   
-#   
-# return(f3)
-# #rm(t2,t3, f1, f3)
-# }
-# 
-# 
-# f.fig2_legend<-function(combined, v_rgb, l, b, r){
-#   t1<-combined[[1]]
-#   t2<-v_rgb[[1]]
-#   
-#   lat<-as.numeric(row.names(t(t1)))
-#   lon<-as.numeric(colnames(t(t1)))
-#   
-#   t1<-raster(t(t1))
-#   extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
-#   t1_ex<-extent(t1)
-#   t2_ex<-extent(t2)
-#   extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
-#   extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
-#   rm(t1_ex, t2_ex)
-#   
-#   
-#   t3<-resample(t1, t2)
-#   t3<-na.omit(t3)
-#   rm(t1)
-# 
-#   
-#   p<-ggplot()+ggR(t3, geom_raster = TRUE, ggLayer=T) +
-#     theme(axis.line = element_line(colour = "black"),
-#           plot.margin = unit(c(0, 0, 0, 0, 0), "cm"),
-#           panel.grid.major = element_blank(),
-#           panel.grid.minor = element_blank(),
-#           panel.background = element_rect(colour = "black", fill=NA, size=5),
-#           axis.title.x=element_blank(),
-#           axis.title.y=element_blank()) +
-#     scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
-#                          name=waiver(),breaks=labs)+
-#     guides(fill=guide_colourbar(title=title_two, barheight = b)) +
-#     theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
-#     theme(text=element_text(family="Helvetica"))
-#   
-#   legend <- get_legend(p + theme(legend.box.margin = margin(0, 0, 0, l)))
-#   rm(p, t3, t2) 
-#   return(legend)
-# } # l = legend margin left, b=barhieght (in cm ) of legend
-# legend<-f.fig2_legend(combined, v_rgb, l=1, b=45, width)
-# 
-# plots<-mapply(f.fig2, x=combined, y=v_rgb, z=t, w=l, date=date, SIMPLIFY = F)
-# 
-
-```
 #### Final Attempt (5.b) - individual plots 
 * add 200 km circle- 100km radi
 https://stackoverflow.com/questions/34183049/plot-circle-with-a-certain-radius-around-point-on-a-map-in-ggplot2
@@ -1900,6 +1303,7 @@ f.fig2<-function(combined, v_rgb, i, t, l){
   lon<-as.numeric(colnames(t(t1)))
   
   t1<-raster(t(t1))
+
   extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
   t1_ex<-extent(t1)
   t2_ex<-extent(t2)
@@ -2163,6 +1567,236 @@ print(elapsed)
 # plot_grid(p, legend.bb, nrow=2, rel_heights =c(20,1))
 # dev.off()
 ```
+
+
+
+#### resubmission - individual plots 
+* even dates -> main figure
+* odd
+
+```{r}
+setwd(robj)
+
+stations_positions_list<-readRDS("OC1806A_stations_positions_list.R")
+st3.5<-stations_positions_list[[3]][4,cbind(2,3)]
+rm(stations_positions_list)
+
+st3.5<-sf::st_as_sf(st3.5, coords =c("longitude", "latitude"),  crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+flat<-sf::st_transform(st3.5, "+proj=aeqd +lat_0=18.5005 +lon_0=-108.502" )
+circle<-sf::st_buffer(flat, dist=100000)%>%sf::st_transform(., "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") 
+rm(flat, st3.5)
+
+
+```
+ main figure
+```{r}
+start<-Sys.time()
+
+options(warn=-1)
+plots<-vector(mode='list', length = length(combined))
+
+cuts<-c(0, 0.01, 0.02, 0.04,  0.08,  0.1,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2,3,4, 5)
+n<-length(cuts)+1
+custom_color<-rev(rainbow(n))
+cuts<-rescale(cuts)
+title_two<-expression(atop(textstyle("Chl a"), textstyle("mg m"^-3*"")))
+labs<-c(0.1, .5, 1, 2 , 2.5, 5)
+
+# bar_height<-25
+
+bar_height<-22.70
+
+f.fig2<-function(combined, v_rgb, i, t, l){
+  t1<-combined[[i]]
+  t2<-v_rgb[[i]]
+  date<-paste0("June", " ", names(combined)[i])
+  
+  lat<-as.numeric(row.names(t(t1)))
+  lon<-as.numeric(colnames(t(t1)))
+  
+  t1<-raster(t(t1))
+
+  extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
+  t1_ex<-extent(t1)
+  t2_ex<-extent(t2)
+  extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  rm(t1_ex, t2_ex)
+  
+  
+  t3<-resample(t1, t2)
+  t3<-na.omit(t3)
+  rm(t1)
+  
+  f1<- ggRGB(t2, r=1, g=2, b=3, ggObj = T) + ggtitle(date)+theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))+
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          #panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+    scale_y_continuous(expand = c(0, 0))+
+    scale_x_continuous(expand = c(0, 0), breaks=seq(-120, -100, b=10))
+    
+  
+  f3<-f1+ggR(t3, geom_raster = TRUE, ggLayer=T) +
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+    scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
+                         name=waiver(),breaks=labs)+
+    guides(fill=guide_colourbar(title=bquote(title_two), barheight = 8)) +
+    theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
+    theme(text=element_text(family="Helvetica")) + theme(legend.position = "none") +
+    geom_sf(data = circle, color = "red", alpha = 0, inherit.aes = FALSE) 
+  
+  return(f3)
+}
+f.fig2_no_y<-function(combined, v_rgb, i, t, l){
+  t1<-combined[[i]]
+  t2<-v_rgb[[i]]
+  date<-paste0("June", " ", names(combined)[i])
+  
+  lat<-as.numeric(row.names(t(t1)))
+  lon<-as.numeric(colnames(t(t1)))
+  
+  t1<-raster(t(t1))
+  extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
+  t1_ex<-extent(t1)
+  t2_ex<-extent(t2)
+  extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  rm(t1_ex, t2_ex)
+  
+  
+  t3<-resample(t1, t2)
+  t3<-na.omit(t3)
+  rm(t1)
+  
+  f1<- ggRGB(t2, r=1, g=2, b=3, ggObj = T) + ggtitle(date)+theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))+
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          #panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+    scale_y_continuous(expand = c(0, 0)) +
+    scale_x_continuous(expand = c(0, 0), breaks=seq(-120, -100, b=10))
+  
+  f3<-f1+ggR(t3, geom_raster = TRUE, ggLayer=T) +
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+    scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
+                         name=waiver(),breaks=labs)+
+    guides(fill=guide_colourbar(title=bquote(title_two), barheight = 8)) +
+    theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
+    theme(text=element_text(family="Helvetica")) + theme(legend.position = "none") +
+    theme(axis.text.y=element_blank(), axis.ticks.y=element_blank()) +
+    geom_sf(data = circle, color = "red", alpha = 0, inherit.aes = FALSE) 
+   
+        
+  
+  
+  return(f3)
+}
+f.fig2_legend<-function(combined, v_rgb, height, width, t,b,r,l, title.textsize, marks.textsize){
+  t1<-combined[[1]]
+  t2<-v_rgb[[1]]
+  
+  lat<-as.numeric(row.names(t(t1)))
+  lon<-as.numeric(colnames(t(t1)))
+  
+  t1<-raster(t(t1))
+  extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
+  t1_ex<-extent(t1)
+  t2_ex<-extent(t2)
+  extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  rm(t1_ex, t2_ex)
+  
+  
+  t3<-resample(t1, t2)
+  t3<-na.omit(t3)
+  rm(t1)
+
+  
+  p<-ggplot()+ggR(t3, geom_raster = TRUE, ggLayer=T) +
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(0, 0, 0, 0, 0), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+    scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
+                         name=waiver(),breaks=labs)+
+    guides(fill=guide_colourbar(title=title_two, barheight = height, barwidth = width)) +
+    theme(legend.title =element_text(size=title.textsize), legend.text=element_text(size=marks.textsize)) + 
+    theme(text=element_text(family="Helvetica"))
+  
+  legend <- get_legend(p + theme(legend.box.margin = margin(t, r, b, l)))
+  rm(p, t3, t2) 
+  return(legend)
+} # l = legend margin left, b=barhieght (in cm ) of legend
+
+#indovidually assin plots
+
+i<-1
+plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+i<-4
+plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+i<-7
+plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+i<-10
+plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+i<-2
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-3
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-5
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-6
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-8
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-9
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-11
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-12
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+
+
+p<-(plots[[1]]+ plots[[2]]+plots[[3]]+plots[[4]]+plots[[5]]+ plots[[6]]+ plots[[7]]+ plots[[8]]+plots[[9]]+plots[[10]]+ plots[[11]]+plots[[12]]+plot_layout(ncol=3))
+
+legend<-f.fig2_legend(combined, v_rgb, height=bar_height, width=1, t=-390, b=0, r=0, l=-115,  title.textsize=10, marks.textsize=8)
+
+
+### finsiheed ####
+rm(combined, v_rgb)
+
+end<-Sys.time()
+elapsed<-end-start
+print(elapsed)
+
+```
+
+
 
 
 #### - saving figure 2 and tertiary margins

@@ -613,8 +613,8 @@ rm(temp)
 #create raster from buffers
 # function_variables$land_buffer<-100000
 
-y<-f.cl_buffer(function_variables, cl) %>% st_as_sf(.) %>%
-fasterize(., numobs_raster.odz, field=y$field, fun="sum")
+y<-f.cl_buffer(function_variables, cl) %>% st_as_sf(.)
+y<-fasterize(y, numobs_raster.odz, field=y$field, fun="sum")
 
 filtered_numobs_raster.odz<-mask(numobs_raster.odz,y, inverse=T)
 rm(y)

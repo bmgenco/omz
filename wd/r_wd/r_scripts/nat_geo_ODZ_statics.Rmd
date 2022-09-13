@@ -4,8 +4,9 @@ author: "Brandon M. Genco"
 date: "5/16/2022"
 output: html_document
 ---
-"modifed from huricane in situ matchup 2" 
-
+"modified from huricane in situ matchup 2" 
+- edit to add argo float spatial point
+- add centroid from kml script
 # Setup
 ## Directories and defaults
 Use r proj file for relative directories

@@ -1,0 +1,299 @@
+---
+title: "additonal_anlaysis_bud_resubmit"
+output: html_document
+date: '2022-08-16'
+---
+
+misc script fro small anlysis
+
+# setup
+
+## Directories and defaults
+```{r setup}
+rm(list=ls())
+# relative directories
+robj<-"r_objects"
+fig<-"../../figures"
+gis_data<-"../../data/gis_data"
+output<-"../../output"
+
+sst_data<-"../../data/POC_Flux_data_sets/annual_vgpm_modis_sst_netcdf"
+chl_data<-"../../data/POC_Flux_data_sets/annual_vgpm_modis_chl_netcdf"
+ 
+#absolute directory
+# drop_img<-"/home/brandon/Dropbox/MERCED/dissertation/presentations/images"
+
+knitr::opts_chunk$set(echo =FALSE, warning = FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+
+```
+
+
+## packages and working directory
+```{r}
+wd<-getwd()
+
+f.ipak <- function(pkg){
+  # loads packages, quietly, given by a vector of package names e.g., pkg<-c("ggplot", "tidyverse")
+  # will install  packages listed , and their dependencies, if needed.
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg))
+    install.packages(new.pkg, dependencies = TRUE, quiet=T, verbose = F)
+  sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
+}
+
+# packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "RColorBrewer", "marmap", "extrafont", "oce", "MODIS", "measurements")  # set packages here
+# tidyverse: is all of the following packages: ggplot2, dplyr, tidyr, readr, purr, tibble, sringr, & forcats.
+
+packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT", "ggpattern")
+
+# "HURDAT",
+
+f.ipak(packages)
+# lapply(packages, require, character.only = TRUE)
+# rm(f.ipak, packages)
+print(paste0("Current Working Directory is ", getwd()))
+
+```
+
+
+# common load items:
+
+-gis
+-stations
+
+```{r}
+# coastline
+setwd(wd)
+setwd(gis_data)
+coastline<-st_read("./ne_50m_land/ne_50m_land.shp") 
+# ocean<-st_read("./ne_50m_ocean/ne_50m_ocean.shp") 
+cl<-st_crop(coastline, xmin=-170, ymin=-20, xmax=-80, ymax=40)
+rm(coastline)
+ m.coast <- ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+
+  theme_bw()+ theme(text = element_text(size =12)) 
+
+ # stations
+setwd(wd)
+setwd(robj)
+stations_positions_list<-readRDS("OC1806A_stations_positions_list.R")
+
+stations<-stations_positions_list$ctd_centroids
+rm(stations_positions_list)
+
+```
+
+
+# Aletta
+
+## load  hurdat
+- select  Bud and Aletta
+
+```{r}
+setwd(wd)
+setwd(robj)
+# h<-get_hurdat(basin="EP")
+# saveRDS(h, "hurdat.R")
+
+h<-readRDS("hurdat.R")
+h$DateTime<-with_tz(h$DateTime, tz="UTC")
+conv<-1.94384 # convert to m/s
+
+storm_name<-"ALETTA"
+a<-filter(h, Name == storm_name& year(DateTime) == 2018)
+a$max_sustained_wind_m_s<-a$Wind/conv
+h.pts<- sf::st_as_sf(a, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+a.pts<-h.pts
+
+storm_name<-"BUD"
+b<-filter(h, Name == storm_name & year(DateTime) == 2018)
+b$max_sustained_wind_m_s<-b$Wind/conv
+h.pts<- sf::st_as_sf(b, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+b.pts<-h.pts
+
+rm(h.pts)
+
+
+```
+
+
+
+## TS and wind speeds
+- taken from "GRL_Data_Input_and_Analysis.Rmd"
+--## hurricane metrics
+-- covnert to MDT after calculations, might explain errors in original bud calulation
+** need to compare this
+
+
+```{r}
+
+a.sp<-SpatialPointsDataFrame(coords = cbind(a$Lat, a$Lon), proj4string =CRS("+proj=longlat") , data = a)
+y <- sp::spDists(a.sp, longlat=T, segments=T)
+a$distance<-c(0,y)
+y<-subset(a, select=c(DateTime, max_sustained_wind_m_s, distance, Lat, Lon))
+y$delta= NA
+for(i in seq(1, nrow(y), by=2 )){
+  y[i,"delta"] = y[i+1,"delta"] = y[i+1,"DateTime"] - y[i,"DateTime"]
+}
+
+y$delta<-shift(y$delta, n=1, fill="NA", type="lag")
+y$speed<-(y$distance*1000)/(as.numeric(y$delta)*3600)
+y<-y[-1,]
+y<-na.omit(y)
+a.ts<-y
+
+rm(y)
+
+b.sp<-SpatialPointsDataFrame(coords = cbind(b$Lat, b$Lon), proj4string =CRS("+proj=longlat") , data = b)
+y <- sp::spDists(b.sp, longlat=T, segments=T)
+b$distance<-c(0,y)
+y<-subset(b, select=c(DateTime, max_sustained_wind_m_s, distance, Lat, Lon))
+y$delta= NA
+for(i in seq(1, nrow(y), by=2 )){
+  y[i,"delta"] = y[i+1,"delta"] = y[i+1,"DateTime"] - y[i,"DateTime"]
+}
+
+y$delta<-shift(y$delta, n=1, fill="NA", type="lag")
+y$speed<-(y$distance*1000)/(as.numeric(y$delta)*3600)
+y<-y[-1,]
+y<-na.omit(y)
+
+b.ts<-y
+
+rm(y)
+
+round(median(a.ts$speed), 2)
+round(median(b.ts$speed), 2)
+
+round(median(a.ts$max_sustained_wind_m_s), 1)
+round(median(b.ts$max_sustained_wind_m_s), 1)
+
+
+
+
+```
+
+
+distance and time match up
+```{r}
+
+y<-a.ts
+#hardcoding
+names(y)[1]<-"time_utc" 
+y$time_mdt<-with_tz(y$time_utc, tz="US/Mountain")
+row.names(y)<-1:dim(y)[1]
+op<-st_as_sf(y, coords = c("Lon", "Lat"),crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+
+st<-stations
+names(st)[4]<-"time_mdt"
+st$time_utc<-with_tz(st$time_mdt, tz="UTC")
+
+st<-st_as_sf(st, coords = c("longitude", "latitude"),crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") 
+
+
+#matching above
+
+op.f<-filter(op, time_mdt<=st$time_mdt[1])
+st.f<-st[1,]
+match1<-cbind(op[st_nearest_feature(st.f, op.f),], st.f) 
+match1$distance_km<-round(as.integer(st_distance(match1$geometry, match1$geometry.1)/1000), 0)
+match1<-match1 %>% st_drop_geometry(.) 
+
+op.f<-filter(op, time_mdt<=st$time_mdt[2])
+st.f<-st[2,]
+match2<-cbind(op[st_nearest_feature(st.f, op.f),], st.f) 
+match2$distance_km<-round(as.integer(st_distance(match2$geometry, match2$geometry.1)/1000), 0)
+match2<-match2 %>% st_drop_geometry(.) 
+
+
+op.f<-filter(op, time_mdt<=st$time_mdt[3])
+st.f<-st[3,]
+match3<-cbind(op[st_nearest_feature(st.f, op.f),], st.f)
+match3$distance_km<-round(as.integer(st_distance(match3$geometry, match3$geometry.1)/1000), 0)
+match3<-match3 %>% st_drop_geometry(.) 
+
+op.f<-filter(op, time_mdt<=st$time_mdt[4])
+st.f<-st[4,]
+match3.5<-cbind(op[st_nearest_feature(st.f, op.f),], st.f) 
+match3.5$distance_km<-round(as.integer(st_distance(match3.5$geometry, match3.5$geometry.1)/1000), 0)
+match3.5<-match3.5 %>% st_drop_geometry(.) 
+
+op.f<-filter(op, time_mdt<=st$time_mdt[5])
+st.f<-st[5,]
+match4<-cbind(op[st_nearest_feature(st.f, op.f),], st.f)
+match4$distance_km<-round(as.integer(st_distance(match4$geometry, match4$geometry.1)/1000), 0)
+match4<-match4 %>% st_drop_geometry(.)  
+
+op.f<-filter(op, time_mdt<=st$time_mdt[6])
+st.f<-st[6,]
+match5<-cbind(op[st_nearest_feature(st.f, op.f),], st.f)
+match5$distance_km<-round(as.integer(st_distance(match5$geometry, match5$geometry.1)/1000), 0)
+match5<-match5 %>% st_drop_geometry(.) 
+
+matched<-rbind(match1, match2, match3, match3.5, match4, match5)
+
+
+
+matched$hours_after<-as.integer(round((matched$time_mdt.1-matched$time_mdt), 1))
+
+matched<-(select(matched, -geometry.1, -time_mdt.1, -time_utc.1))
+
+print(matched)
+
+
+```
+
+
+Means of track psoitions near staion 3 Alette
+
+```{r}
+a.ts[3:12,] # theser are relevant points
+
+```
+
+
+calutea wind diameter area:
+- make a function
+- mean diamter for eash wind speed buffer.
+- caluate areas
+- stadarized for area/ tracks etc
+
+-jus F it and \-proabb;ly just us apply function
+
+```{r}
+# names(a)
+
+
+x<-a
+print((mean(na.omit(x$NE34))+ mean(na.omit(x$SE34)) +mean(na.omit(x$SW34))+mean(na.omit(a$NW34)))/4)
+print((mean(na.omit(x$NE50))+ mean(na.omit(x$SE50)) +mean(na.omit(x$SW50))+mean(na.omit(a$NW50)))/4)
+print((mean(na.omit(x$NE64))+ mean(na.omit(x$SE64)) +mean(na.omit(x$SW64))+mean(na.omit(a$NW64)))/4)
+x<-b
+print((mean(na.omit(x$NE34))+ mean(na.omit(x$SE34)) +mean(na.omit(x$SW34))+mean(na.omit(a$NW34)))/4)
+print((mean(na.omit(x$NE50))+ mean(na.omit(x$SE50)) +mean(na.omit(x$SW50))+mean(na.omit(a$NW50)))/4)
+print((mean(na.omit(x$NE64))+ mean(na.omit(x$SE64)) +mean(na.omit(x$SW64))+mean(na.omit(a$NW64)))/4)
+
+```
+
+
+
+# CTDs and profiles
+2017 & 2018
+
+From drive:
+
+"2017 Cast Info
+Casts 1-11 are station 7
+Casts 12-22 are station 6
+Casts 23-33 are station 5
+Casts 34-46 are station 4
+Casts 47-56 are station 3
+Casts 57-69 are station 2
+Casts 70-80 are station 1"
+
+
+
+```{r}
+
+```
+

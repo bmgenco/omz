@@ -31,7 +31,7 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 
 ```
 
-## packages and work direcorty
+## packages and working directory
 
 Installed custom hurdat package using r markdown menu
 * download  tar from archive as no longer maintained on cran repository
@@ -344,6 +344,7 @@ rm(data, sst, chl)
 # computing sst
 
 ## stations
+-all stations not needed
 
 ```{r}
 
@@ -443,6 +444,7 @@ system("poweroff")
 
 # selecting TCs by space and time
 -requires POC for time window
+_
 ```{r}
 
 bbox<-st_bbox(circle_3.5)
@@ -547,7 +549,7 @@ h$DateTime<-with_tz(h$DateTime, tz="UTC")
 
 radii<-100000 ## radius in km for POC select
 
-radii<-2*radii ## for selecting TC that intesect
+radii<-2*radii ## for selecting TC that intersect
 
 stations_positions_list<-readRDS("OC1806A_stations_positions_list.R")
 
@@ -560,6 +562,8 @@ bbox<-st_bbox(circle_3.5_400km)
 
 # x<-filter(h, Status == "HU") %>% filter(., DateTime >=date(min(poc$date))-60) # save 'h' in order to adjust function variables if needed.
 g<-filter(h, DateTime >=date(min(poc$date))-60) # save 'h' in order to adjust function variables if needed.
+g<-h
+
 h.pts<- sf::st_as_sf(g, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>% 
 sf::st_crop(., c(xmin=bbox$xmin[[1]], ymin=bbox$ymin[[1]], xmax=bbox$xmax[[1]], ymax=bbox$ymax[[1]])) #subset by user defined 
 
@@ -572,6 +576,11 @@ t_4$ymin<--Inf
 t_4$ymax<-Inf
 # t$DateTime<-as.Date(t$DateTime)
 t_4$DateTime<-as_datetime(t_4$DateTime)
+
+
+#commneted out below. for paper statistics only
+h_4<-t_4 %>% subset(., !(Key %in% remove_200))
+h_4_all<-t_4
 
 t_4<-t_4 %>% subset(., !(Key %in% remove_200))%>% group_by(Key)
 
@@ -594,10 +603,51 @@ for(i in 1:length(t_4)){
 
 t_4_rect<-data.frame(start=date(start), end=date(end), y1=-Inf, y2=pres)
 
-rm(remove_200)
+# uncomment for streamlining
+# rm(remove_200)
 
 
 ```
+
+##### count ing hurricanes
+-just for inserting statitics into paper
+```{r}
+
+# temp<-filter(h_4, Status =="HU")
+# length(unique(temp$Key))
+
+# add year
+
+q<-h_4_all
+q$year<-year(q$DateTime)
+
+q2<-q %>%group_by(year) %>% arrange(DateTime) %>% mutate(days_interval = difftime(DateTime, lag(DateTime), unit="days"))
+# q2<-na.omit(q2)
+
+
+q2$days_interval=as.numeric(q2$days_interval)
+ q2<-filter(q2, days_interval != 0.25000000)
+ q2<-filter(q2, days_interval >=1)
+ 
+ 
+ q2<-select(q2, Key, Name, DateTime, days_interval, Status, year)
+
+
+which(q2$days_interval ==0.04166667)
+# q$md<-format(as.Date(q$DateTime), "%m-%d")
+q1<-q %>%group_by(year) %>% summarise(., m=mean(DateTime), f=min(DateTime), l=max(DateTime), md=mean(md), 
+middle=median(DateTime)) 
+q1$fyd<-yday(q1$f)
+q1$lyd<-yday(q1$l)
+q1$window<-q1$lyd-q1$fyd
+mean(yday(q1$middle))
+mean(q1$fyd)
+
+
+
+q2<-q %>%group_by(year) %>% summarise(count=n_distinct(Key))
+```
+
 
 ## saving hurricane objects for plotting. temp _action
 ```{r}
@@ -1280,7 +1330,10 @@ dev.off()
 
 ```
 
+# plotting ctd object
+```{r}
 
+```
 
 
 # plotting v2 fx here f needed
