@@ -1,3 +1,4 @@
+*.RData filter=lfs diff=lfs merge=lfs -text
 *.pdf filter=lfs diff=lfs merge=lfs -text
 *.nc filter=lfs diff=lfs merge=lfs -text
 *.Raw filter=lfs diff=lfs merge=lfs -text
@@ -10,6 +11,8 @@
 *.png filter=lfs diff=lfs merge=lfs -text
 *.eps filter=lfs diff=lfs merge=lfs -text
 *.jpg filter=lfs diff=lfs merge=lfs -text
+*.tiff filter=lfs diff=lfs merge=lfs -text
+*.kmz filter=lfs diff=lfs merge=lfs -text
 *.bmp filter=lfs diff=lfs merge=lfs -text
 *.xcf filter=lfs diff=lfs merge=lfs -text
 *.shp filter=lfs diff=lfs merge=lfs -text
@@ -18,4 +21,5 @@
 *.shx filter=lfs diff=lfs merge=lfs -text
 *.cbg filter=lfs diff=lfs merge=lfs -text
 *.kmz filter=lfs diff=lfs merge=lfs -text
+*.kml filter=lfs diff=lfs merge=lfs -text
 *.odt filter=lfs diff=lfs merge=lfs -text

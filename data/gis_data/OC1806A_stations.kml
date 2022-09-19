@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document id="root_doc">
+<Schema name="OC1806A_stations" id="OC1806A_stations">
+	<SimpleField name="station" type="string"></SimpleField>
+	<SimpleField name="time" type="string"></SimpleField>
+</Schema>
+<Folder><name>OC1806A_stations</name>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#OC1806A_stations">
+		<SimpleData name="station">1</SimpleData>
+		<SimpleData name="time">2018/06/10 20:17:26.167+00</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-106.50064583,20.5000625</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#OC1806A_stations">
+		<SimpleData name="station">2</SimpleData>
+		<SimpleData name="time">2018/06/15 02:23:25.898+00</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-107.20072222,16.4985</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#OC1806A_stations">
+		<SimpleData name="station">3</SimpleData>
+		<SimpleData name="time">2018/06/18 00:51:41.121+00</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-110.0005,15.99901389</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#OC1806A_stations">
+		<SimpleData name="station">3.5</SimpleData>
+		<SimpleData name="time">2018/06/20 01:37:17.557+00</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-108.502,18.50053333</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#OC1806A_stations">
+		<SimpleData name="station">4</SimpleData>
+		<SimpleData name="time">2018/06/21 19:46:15.503+00</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-109.49991667,21.50061111</coordinates></Point>
+  </Placemark>
+  <Placemark>
+	<ExtendedData><SchemaData schemaUrl="#OC1806A_stations">
+		<SimpleData name="station">5</SimpleData>
+		<SimpleData name="time">2018/06/23 20:37:33.457+00</SimpleData>
+	</SchemaData></ExtendedData>
+      <Point><coordinates>-113.3002,24.69886667</coordinates></Point>
+  </Placemark>
+</Folder>
+</Document></kml>
