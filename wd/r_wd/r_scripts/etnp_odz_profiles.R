@@ -1,5 +1,9 @@
 #  crusie profiles from entmp_od
 
+# to do:
+# ADD SKQ2016 to the Station 3.5 plot, 
+# remove SKQ2016 and TT66 from the Station 4 plot.   
+
 rm(list=ls())
 
 #### directories ####
@@ -26,10 +30,14 @@ f.ipak <- function(pkg){
 
 packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  
             "ggthemes",  "sf", "cmocean",   "plot3D", "tidync", "devtools", 
-            "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "nngeo", "readxl")
+            "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "nngeo", "readxl", "stringr")
 
+# install.packages("remotes")
+# remotes::install_github("decisionpatterns/stringr.tools")
 
 f.ipak(packages)
+library("stringr.tools")
+
 ### load staions centorids:
 setwd(wd)
 setwd(robj)
@@ -50,6 +58,17 @@ setwd(other_crusies)
 
 data<-read_delim("All 8 Cruises_adjusted including KM1919 .csv", skip=3, col_names = T, delim =",")
 data<-Filter(function(x)!all(is.na(x)), data) # reove emopt data columns
+metadata<-read_xlsx("ETNP ODZ file metadata.xlsx") %>% select(., Year, 'Start month', Shorthand)
+
+# hack
+metadata$month<-c("02","01","12","03","11","12","03","09")
+metadata$Year<-as.character(metadata$Year)
+metadata$month<-str_prefix(metadata$month, "-")
+metadata$date<-str_postfix(metadata$Year, metadata$month )
+metadata<-select(metadata, date, Shorthand)
+names(metadata)<-c("date", "cruise")
+
+
 
 ## for use in remote working stations:
 setwd(wd)
@@ -63,6 +82,14 @@ data<-readRDS("etnp_odz_vertical_profiles.R")
 
 cid<-unique(data$Cruise)
 cid<-as.vector(na.omit(cid))
+
+#fix discrepanices  between metadatshorthand and cid
+metadata[which(metadata$cruise =="P_18"),2]<-"P-18"
+metadata[which(metadata$cruise =="RR1804"),2]<-"RR_1804"
+metadata[which(metadata$cruise =="Clivar"),2]<-"CLIVAR"
+
+metadata$date<-str_prefix(metadata$date, " ")
+
 
 cruises<-vector(mode="list", length = length(cid))
 names(cruises)<-cid
@@ -88,6 +115,16 @@ f.closest<-function(x,y){
   q<-unique(z$Station)
   x<-filter(x, Station==q)
 }
+
+# add dates to name, a bit of a hack..
+for(i in 1:length(cruises)){
+  x<-names(cruises)[i]
+  y<-which(metadata$cruise==x)
+  z<-str_prefix(metadata$date[y], metadata$cruise[y])
+  names(cruises)[i]<-z}
+
+names(cruises)[which(names(cruises)=="RR_1804 2018-03")]<-"RR1804 2018-03"
+names(cruises)[which(names(cruises)=="P-18 2016-11")]<-"P1816 2016-11"
 
 
 y<-stations[5,]$geometry
@@ -126,29 +163,72 @@ names(x)<-tolower(names(x))
 x<-as.oce(x) %>% as.ctd(.,)}
 
 y<-lapply(odz_st4, f.ctd)
-ramp<-c("#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33", "#a65628", "#f781bf", "#999999")
+
+names(y)
+
+y<-within(y, rm('TT66 1972-02', 'SKQ2016 2016-12'))
+
+
+
+ramp<-c("#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffcc33", "#a65628", "#f781bf", "#575757")
+ramp<-ramp[-7]
+ramp<-ramp[-7]
+dm<-400
+# removing objects from list
+
 
 setwd(wd)
 setwd(fig)
 pdf("Station_4.pdf", height = 10, width = 7)
 
-plotProfile(y$TT66, xtype = "oxygen", ytype="depth", col=ramp[1], ylim=c(500,0),xlim=c(5,260))
-plotProfile(y$WOCE, xtype = "oxygen", ytype="depth", col=ramp[2],ylim=c(500,0), add=T)
-plotProfile(y$CLIVAR, xtype = "oxygen", ytype="depth", col=ramp[3], ylim=c(500,0),add=T)
-plotProfile(y$TN278, xtype = "oxygen", ytype="depth", col=ramp[4], ylim=c(500,0), add=T)
-plotProfile(y$SKQ2016, xtype = "oxygen", ytype="depth", col=ramp[5], ylim=c(500,0), add=T)
-plotProfile(y$`P-18`, xtype = "oxygen", ytype="depth", col=ramp[6], ylim=c(500,0), add=T)
-plotProfile(y$RR_1804, xtype = "oxygen", ytype="depth", col=ramp[7], ylim=c(500,0), add=T)
-plotProfile(y$KM1919, xtype = "oxygen", ytype="depth", col=ramp[8], ylim=c(500,0), add=T)
-plotProfile(t1, xtype = "oxygen2", ytype="depth", col=ramp[9], ylim=c(500,0), add=T)
-plotProfile(t2, xtype = "oxygen2", ytype="depth", col=ramp[9], ylim=c(500,0), add=T)
-plotProfile(t3, xtype = "oxygen2", ytype="depth", col=ramp[9], ylim=c(500,0), add=T)
-plotProfile(t4, xtype = "oxygen2", ytype="depth", col=ramp[9], ylim=c(500,0), add=T)
-plotProfile(t5, xtype = "oxygen2", ytype="depth", col=ramp[9], ylim=c(500,0), add=T)
-plotProfile(t6, xtype = "oxygen2", ytype="depth", col=ramp[9], ylim=c(500,0), add=T)
+# plotProfile(y$TT66, xtype = "oxygen", ytype="depth", col=ramp[1], ylim=c(500,0),xlim=c(5,260))
+plotProfile(y$'WOCE 1994-01', xtype = "oxygen", ytype="depth", col=ramp[1],ylim=c(dm,0), xlim=c(5,260))
+plotProfile(y$'CLIVAR 2007-12', xtype = "oxygen", ytype="depth", col=ramp[2], ylim=c(dm,0),add=T)
+plotProfile(y$'TN278 2012-03', xtype = "oxygen", ytype="depth", col=ramp[3], ylim=c(dm,0), add=T)
+# plotProfile(y$SKQ2016, xtype = "oxygen", ytype="depth", col=ramp[5], ylim=c(500,0), add=T)
+plotProfile(y$`P1816 2016-11`, xtype = "oxygen", ytype="depth", col=ramp[4], ylim=c(dm,0), add=T)
+plotProfile(y$'RR1804 2018-03', xtype = "oxygen", ytype="depth", col=ramp[5], ylim=c(dm,0), add=T)
+plotProfile(y$'KM1919 2019-09', xtype = "oxygen", ytype="depth", col=ramp[6], ylim=c(dm,0), add=T)
+plotProfile(t1, xtype = "oxygen2", ytype="depth", col=ramp[7], ylim=c(dm,0), add=T)
+plotProfile(t2, xtype = "oxygen2", ytype="depth", col=ramp[7], ylim=c(dm,0), add=T)
+plotProfile(t3, xtype = "oxygen2", ytype="depth", col=ramp[7], ylim=c(dm,0), add=T)
+plotProfile(t4, xtype = "oxygen2", ytype="depth", col=ramp[7], ylim=c(dm,0), add=T)
+plotProfile(t5, xtype = "oxygen2", ytype="depth", col=ramp[7], ylim=c(dm,0), add=T)
+plotProfile(t6, xtype = "oxygen2", ytype="depth", col=ramp[7], ylim=c(dm,0), add=T)
 legend(175, 300, legend=c(names(y), "Station 4"),col=ramp, lty=1, cex=0.95)
 dev.off()
 
+# station 3.5
+
+y<-lapply(odz_st3.5, f.ctd)
+ramp<-c("#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33", "#a65628", "#f781bf", "#575757")
+
+# resorted names and color patterm
+
+t<-names(y)
+n<-c(t[2], t[3], t[4], t[6], t[7], t[8], t[5], t[1])
+
+plotProfile(y$'WOCE 1994-01', xtype = "oxygen", ytype="depth", col=ramp[1],ylim=c(dm,0), xlim=c(5,260))
+plotProfile(y$'CLIVAR 2007-12', xtype = "oxygen", ytype="depth", col=ramp[2], ylim=c(dm,0),add=T)
+plotProfile(y$'TN278 2012-03', xtype = "oxygen", ytype="depth", col=ramp[3], ylim=c(dm,0), add=T)
+# plotProfile(y$SKQ2016, xtype = "oxygen", ytype="depth", col=ramp[5], ylim=c(500,0), add=T)
+plotProfile(y$`P1816 2016-11`, xtype = "oxygen", ytype="depth", col=ramp[4], ylim=c(dm,0), add=T)
+plotProfile(y$'RR1804 2018-03', xtype = "oxygen", ytype="depth", col=ramp[5], ylim=c(dm,0), add=T)
+plotProfile(y$'KM1919 2019-09', xtype = "oxygen", ytype="depth", col=ramp[7], ylim=c(dm,0), add=T)
+
+plotProfile(y$'SKQ2016 2016-12', xtype = "oxygen", ytype="depth", col=ramp[8], ylim=c(dm,0),add=T)
+plotProfile(y$'TT66 1972-02', xtype = "oxygen", ytype="depth", col=ramp[6], ylim=c(dm,0),add=T)
+
+plotProfile(t1, xtype = "oxygen2", ytype="depth", col=ramp[9], ylim=c(dm,0), add=T)
+plotProfile(t2, xtype = "oxygen2", ytype="depth", col=ramp[9], ylim=c(dm,0), add=T)
+plotProfile(t3, xtype = "oxygen2", ytype="depth", col=ramp[9], ylim=c(dm,0), add=T)
+plotProfile(t4, xtype = "oxygen2", ytype="depth", col=ramp[9], ylim=c(dm,0), add=T)
+plotProfile(t5, xtype = "oxygen2", ytype="depth", col=ramp[9], ylim=c(dm,0), add=T)
+plotProfile(t6, xtype = "oxygen2", ytype="depth", col=ramp[9], ylim=c(dm,0), add=T)
+legend(175, 300, legend=c(n, "Station 3.5"),col=ramp, lty=1, cex=0.95)
+
+
+## other stufff... ( not sure)
 
 lat<-lapply(y, function(x){x<-unlist(unique(x@data$latitude)[[1]])})
 lon<-lapply(y, function(x){x<-unlist(unique(x@data$longitude)[[1]])})
@@ -156,7 +236,7 @@ st<-lapply(y, function(x){x<-unlist(unique(x@data$station))})
 
 text("Station 4")
 
-plotProfile(d4, xtype = "oxygen2", ytype="depth", col=ramp[9], add=T)
+plotProfile(d4, xtype = "oxygen2", ytype="depth", col=ramp[7], add=T)
 
 plotProfile(d4, xtype = "oxygen", ytype="depth", col=ramp[9])
 plot(d4, which="oxygen2", ztype="image", xtype="time")
@@ -196,5 +276,5 @@ rm(l6,a6)
 
 p<-apply(cbind(t1@data$pressure, p2, p3, p4, p5, p6), MARGIN=1, FUN=median, na.rm = FALSE)
 
-plotProfile(d4, xtype = "oxygen", ytype="depth", col=ramp[9], ylim=c(200,0))
+plotProfile(d4, xtype = "oxygen", ytype="depth", col=ramp[7], ylim=c(200,0))
 
