@@ -30,13 +30,20 @@ f.ipak <- function(pkg){
 
 packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  
             "ggthemes",  "sf", "cmocean",   "plot3D", "tidync", "devtools", 
-            "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "nngeo", "readxl", "stringr")
+            "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "nngeo", "readxl", "stringr", "stringr.tools")
 
 # install.packages("remotes")
 # remotes::install_github("decisionpatterns/stringr.tools")
 
+# below is how to calcuale averages
+# remotes::install_github("clayton33/csasMarPhys")
+# library("csasAtlPhys")
+a<-averageCtds(y)
+
+# library("stringr.tools")
+
 f.ipak(packages)
-library("stringr.tools")
+
 
 ### load staions centorids:
 setwd(wd)
@@ -126,10 +133,8 @@ for(i in 1:length(cruises)){
 names(cruises)[which(names(cruises)=="RR_1804 2018-03")]<-"RR1804 2018-03"
 names(cruises)[which(names(cruises)=="P-18 2016-11")]<-"P1816 2016-11"
 
-
 y<-stations[5,]$geometry
 odz_st4<-lapply(cruises, f.closest, y=y)
-
 
 y<-stations[4,]$geometry
 odz_st3.5<-lapply(cruises, f.closest, y=y)
@@ -149,37 +154,153 @@ setwd(wd)
 setwd(robj)
 d.sec<-readRDS("OC1806A_ctd_sections.R")
 d4<-d.sec$st4
+d3.5<-d.sec$st3.5
 
 
-t1<-d4@data$station[1][[1]]
-t2<-d4@data$station[2][[1]]
-t3<-d4@data$station[3][[1]]
-t4<-d4@data$station[4][[1]]
-t5<-d4@data$station[5][[1]]
-t6<-d4@data$station[6][[1]]
+y1<-d4@data$station[1][[1]]
+y2<-d4@data$station[2][[1]]
+y3<-d4@data$station[3][[1]]
+y4<-d4@data$station[4][[1]]
+y5<-d4@data$station[5][[1]]
+y6<-d4@data$station[6][[1]]
+
+z1<-d3.5@data$station[1][[1]]
+z2<-d3.5@data$station[2][[1]]
+z3<-d3.5@data$station[3][[1]]
+z4<-d3.5@data$station[4][[1]]
+z5<-d3.5@data$station[5][[1]]
+
 
 f.ctd<-function(x){
 names(x)<-tolower(names(x))
 x<-as.oce(x) %>% as.ctd(.,)}
 
+# ploting objects per staion
+
 y<-lapply(odz_st4, f.ctd)
-
-names(y)
-
 y<-within(y, rm('TT66 1972-02', 'SKQ2016 2016-12'))
 
+#sort depth so ctd object plots correctly
+odz_st3.5$`TN278 2012-03`<-odz_st3.5$`TN278 2012-03`[order(odz_st3.5$`TN278 2012-03`$Depth),]
 
+z<-lapply(odz_st3.5, f.ctd)
+t<-names(z)
+n<-c(t[2], t[3], t[4], t[6], t[7], t[8], t[5], t[1])
 
-ramp<-c("#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffcc33", "#a65628", "#f781bf", "#575757")
+ramp<-c("#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33", "#a65628", "#f781bf", "#575757")
+ramp2<-ramp
 ramp<-ramp[-7]
 ramp<-ramp[-7]
-dm<-400
-# removing objects from list
 
+# plotting defaults:
 
+# dm<-400
+# dm<-1600
+dm<-350
+# for 10 by 7 pdf
+leg.x<-(175 * (3/7)) +20
+leg.y<-(300 * (4.5/10))+100
+# DO<-expression(Dissolved ~ oxygen ~ (μmol ~kg^-1 ))
+  # removing objects from list
+DO<-expression(paste('Dissolved oxygen', " (",mu,"mol kg"^-1,")"))
+
+# Exporting
+dev.off()
 setwd(wd)
 setwd(fig)
-pdf("Station_4.pdf", height = 10, width = 7)
+pdf("sup_fig_4.pdf", height = 4.5, width = 6)
+
+par(mfrow=c(1,2))
+
+plotProfile(z$'WOCE 1994-01', xtype = "oxygen", ytype="depth", col=ramp2[1],ylim=c(dm,0), xlim=c(5,260), xlab= DO, cex.lab=0.75, cex.axis=.75)
+mtext(expression(bold(a)), side=3, line=2, at=-60)
+
+# plotProfile(z$'WOCE 1994-01', xtype = "oxygen", ytype="depth", col=ramp2[1],ylim=c(dm,0), xlim=c(5,260), xlab=DO, cex.lab=0.75, cex.axis=.75)
+plotProfile(z$'CLIVAR 2007-12', xtype = "oxygen", ytype="depth", col=ramp2[2], ylim=c(dm,0),add=T)
+plotProfile(z$'TN278 2012-03', xtype = "oxygen", ytype="depth", col=ramp2[3], ylim=c(dm,0), add=T)
+# plotProfile(fix, xtype = "oxygen", ytype="depth", col=ramp2[3], ylim=c(dm,0), add=T)
+# plotProfile(y$SKQ2016, xtype = "oxygen", ytype="depth", col=ramp[5], ylim=c(500,0), add=T)
+plotProfile(z$`P1816 2016-11`, xtype = "oxygen", ytype="depth", col=ramp2[4], ylim=c(dm,0), add=T)
+plotProfile(z$'RR1804 2018-03', xtype = "oxygen", ytype="depth", col=ramp2[5], ylim=c(dm,0), add=T)
+plotProfile(z$'KM1919 2019-09', xtype = "oxygen", ytype="depth", col=ramp2[7], ylim=c(dm,0), add=T)
+plotProfile(z$'SKQ2016 2016-12', xtype = "oxygen", ytype="depth", col=ramp2[8], ylim=c(dm,0),add=T)
+plotProfile(z$'TT66 1972-02', xtype = "oxygen", ytype="depth", col=ramp2[6], ylim=c(dm,0),add=T)
+plotProfile(z1, xtype = "oxygen2", ytype="depth", col=ramp2[9], ylim=c(dm,0), add=T)
+plotProfile(z2, xtype = "oxygen2", ytype="depth", col=ramp2[9], ylim=c(dm,0), add=T)
+plotProfile(z3, xtype = "oxygen2", ytype="depth", col=ramp2[9], ylim=c(dm,0), add=T)
+plotProfile(z4, xtype = "oxygen2", ytype="depth", col=ramp2[9], ylim=c(dm,0), add=T)
+plotProfile(z5, xtype = "oxygen2", ytype="depth", col=ramp2[9], ylim=c(dm,0), add=T)
+legend(leg.x-20, leg.y, legend=c(n, "Station 3.5 2018-06"),col=ramp2, lty=1, cex=0.6, box.col = "white" ,bg="white")
+
+plotProfile(y$'WOCE 1994-01', xtype = "oxygen", ytype="depth", col=ramp2[1],ylim=c(dm,0), xlim=c(5,260), xlab= DO,cex.lab=0.75, cex.axis=.75 )
+mtext(expression(bold(b)), side=3, line=2, at=-60)
+
+# plotProfile(y$'WOCE 1994-01', xtype = "oxygen", ytype="depth", col=ramp[1],ylim=c(dm,0), xlim=c(5,260), xlab=DO, cex.lab=0.75, cex.axis=.75)
+plotProfile(y$'CLIVAR 2007-12', xtype = "oxygen", ytype="depth", col=ramp[2], ylim=c(dm,0),add=T)
+plotProfile(y$'TN278 2012-03', xtype = "oxygen", ytype="depth", col=ramp[3], ylim=c(dm,0), add=T)
+# plotProfile(y$SKQ2016, xtype = "oxygen", ytype="depth", col=ramp[5], ylim=c(500,0), add=T)
+plotProfile(y$`P1816 2016-11`, xtype = "oxygen", ytype="depth", col=ramp[4], ylim=c(dm,0), add=T)
+plotProfile(y$'RR1804 2018-03', xtype = "oxygen", ytype="depth", col=ramp[5], ylim=c(dm,0), add=T)
+plotProfile(y$'KM1919 2019-09', xtype = "oxygen", ytype="depth", col=ramp[6], ylim=c(dm,0), add=T)
+plotProfile(y1, xtype = "oxygen2", ytype="depth", col=ramp[7], ylim=c(dm,0), add=T)
+plotProfile(y2, xtype = "oxygen2", ytype="depth", col=ramp[7], ylim=c(dm,0), add=T)
+plotProfile(y3, xtype = "oxygen2", ytype="depth", col=ramp[7], ylim=c(dm,0), add=T)
+plotProfile(y4, xtype = "oxygen2", ytype="depth", col=ramp[7], ylim=c(dm,0), add=T)
+plotProfile(y5, xtype = "oxygen2", ytype="depth", col=ramp[7], ylim=c(dm,0), add=T)
+plotProfile(y6, xtype = "oxygen2", ytype="depth", col=ramp[7], ylim=c(dm,0), add=T)
+# legend(leg.x, leg.y, legend=c(names(y), "Station 4"),col=ramp, lty=1, cex=0.95)
+legend(leg.x, leg.y, legend=c(names(y), "Station 4 2018-06"),col=ramp, lty=1, cex=0.6, box.col = "white" ,bg="white")
+
+
+
+dev.off()
+
+### ploting bottom of core
+
+dm<-1800
+t=600
+
+dev.off()
+par(mfrow=c(1,2))
+plotProfile(z2, xtype = "oxygen2", ytype="depth", col=ramp2[9], ylim=c(dm,t))
+plotProfile(z5, xtype = "oxygen2", ytype="depth", col=ramp2[9], ylim=c(dm,t), add=T)
+
+plotProfile(z$'CLIVAR 2007-12', xtype = "oxygen", ytype="depth", col=ramp2[2], ylim=c(dm,t),add=T)
+plotProfile(z$'TN278 2012-03', xtype = "oxygen", ytype="depth", col=ramp2[3], ylim=c(dm,t), add=T)
+# plotProfile(fix, xtype = "oxygen", ytype="depth", col=ramp2[3], ylim=c(dm,0), add=T)
+# plotProfile(y$SKQ2016, xtype = "oxygen", ytype="depth", col=ramp[5], ylim=c(500,0), add=T)
+plotProfile(z$`P1816 2016-11`, xtype = "oxygen", ytype="depth", col=ramp2[4], ylim=c(dm,t), add=T)
+plotProfile(z$'RR1804 2018-03', xtype = "oxygen", ytype="depth", col=ramp2[5], ylim=c(dm,t), add=T)
+plotProfile(z$'KM1919 2019-09', xtype = "oxygen", ytype="depth", col=ramp2[7], ylim=c(dm,t), add=T)
+plotProfile(z$'SKQ2016 2016-12', xtype = "oxygen", ytype="depth", col=ramp2[8], ylim=c(dm,t),add=T)
+legend(leg.x, leg.y, legend=c(names(y), "Station 4 2018-06"),col=ramp, lty=1, cex=0.6, box.col = "white" ,bg="white")
+
+plotProfile(y$'WOCE 1994-01', xtype = "oxygen", ytype="depth", col=ramp2[1],ylim=c(dm,t), xlab= DO,cex.lab=0.75, cex.axis=.75 )
+mtext(expression(bold(b)), side=3, line=2, at=-60)
+
+# plotProfile(y$'WOCE 1994-01', xtype = "oxygen", ytype="depth", col=ramp[1],ylim=c(dm,0), xlim=c(5,260), xlab=DO, cex.lab=0.75, cex.axis=.75)
+plotProfile(y$'CLIVAR 2007-12', xtype = "oxygen", ytype="depth", col=ramp[2], ylim=c(dm,t),add=T)
+plotProfile(y$'TN278 2012-03', xtype = "oxygen", ytype="depth", col=ramp[3], ylim=c(dm,t), add=T)
+# plotProfile(y$SKQ2016, xtype = "oxygen", ytype="depth", col=ramp[5], ylim=c(500,0), add=T)
+plotProfile(y$`P1816 2016-11`, xtype = "oxygen", ytype="depth", col=ramp[4], ylim=c(dm,t), add=T)
+plotProfile(y$'RR1804 2018-03', xtype = "oxygen", ytype="depth", col=ramp[5], ylim=c(dm,t), add=T)
+plotProfile(y$'KM1919 2019-09', xtype = "oxygen", ytype="depth", col=ramp[6], ylim=c(dm,t), add=T)
+plotProfile(y1, xtype = "oxygen2", ytype="depth", col=ramp[7], ylim=c(dm,t), add=T)
+
+
+### 2017 ctd data ####
+
+ctdata<-"/home/brandon/vestawd/omz/data/2018_data/ctd/data"
+
+
+
+
+
+
+
+
+# older:
+
 
 # plotProfile(y$TT66, xtype = "oxygen", ytype="depth", col=ramp[1], ylim=c(500,0),xlim=c(5,260))
 plotProfile(y$'WOCE 1994-01', xtype = "oxygen", ytype="depth", col=ramp[1],ylim=c(dm,0), xlim=c(5,260))
@@ -195,29 +316,27 @@ plotProfile(t3, xtype = "oxygen2", ytype="depth", col=ramp[7], ylim=c(dm,0), add
 plotProfile(t4, xtype = "oxygen2", ytype="depth", col=ramp[7], ylim=c(dm,0), add=T)
 plotProfile(t5, xtype = "oxygen2", ytype="depth", col=ramp[7], ylim=c(dm,0), add=T)
 plotProfile(t6, xtype = "oxygen2", ytype="depth", col=ramp[7], ylim=c(dm,0), add=T)
-legend(175, 300, legend=c(names(y), "Station 4"),col=ramp, lty=1, cex=0.95)
+# legend(leg.x, leg.y, legend=c(names(y), "Station 4"),col=ramp, lty=1, cex=0.95)
+legend(leg.x, leg.y, legend=c(names(y), "Station 4"),col=ramp, lty=1, cex=0.6, box.col = "white" ,bg="white")
 dev.off()
 
 # station 3.5
 
-y<-lapply(odz_st3.5, f.ctd)
+
 ramp<-c("#e41a1c", "#377eb8", "#4daf4a", "#984ea3", "#ff7f00", "#ffff33", "#a65628", "#f781bf", "#575757")
 
-# resorted names and color patterm
 
-t<-names(y)
-n<-c(t[2], t[3], t[4], t[6], t[7], t[8], t[5], t[1])
 
-plotProfile(y$'WOCE 1994-01', xtype = "oxygen", ytype="depth", col=ramp[1],ylim=c(dm,0), xlim=c(5,260))
-plotProfile(y$'CLIVAR 2007-12', xtype = "oxygen", ytype="depth", col=ramp[2], ylim=c(dm,0),add=T)
-plotProfile(y$'TN278 2012-03', xtype = "oxygen", ytype="depth", col=ramp[3], ylim=c(dm,0), add=T)
+plotProfile(z$'WOCE 1994-01', xtype = "oxygen", ytype="depth", col=ramp[1],ylim=c(dm,0), xlim=c(5,260))
+plotProfile(z$'CLIVAR 2007-12', xtype = "oxygen", ytype="depth", col=ramp[2], ylim=c(dm,0),add=T)
+plotProfile(z$'TN278 2012-03', xtype = "oxygen", ytype="depth", col=ramp[3], ylim=c(dm,0), add=T)
 # plotProfile(y$SKQ2016, xtype = "oxygen", ytype="depth", col=ramp[5], ylim=c(500,0), add=T)
-plotProfile(y$`P1816 2016-11`, xtype = "oxygen", ytype="depth", col=ramp[4], ylim=c(dm,0), add=T)
-plotProfile(y$'RR1804 2018-03', xtype = "oxygen", ytype="depth", col=ramp[5], ylim=c(dm,0), add=T)
-plotProfile(y$'KM1919 2019-09', xtype = "oxygen", ytype="depth", col=ramp[7], ylim=c(dm,0), add=T)
+plotProfile(z$`P1816 2016-11`, xtype = "oxygen", ytype="depth", col=ramp[4], ylim=c(dm,0), add=T)
+plotProfile(z$'RR1804 2018-03', xtype = "oxygen", ytype="depth", col=ramp[5], ylim=c(dm,0), add=T)
+plotProfile(z$'KM1919 2019-09', xtype = "oxygen", ytype="depth", col=ramp[7], ylim=c(dm,0), add=T)
 
-plotProfile(y$'SKQ2016 2016-12', xtype = "oxygen", ytype="depth", col=ramp[8], ylim=c(dm,0),add=T)
-plotProfile(y$'TT66 1972-02', xtype = "oxygen", ytype="depth", col=ramp[6], ylim=c(dm,0),add=T)
+plotProfile(z$'SKQ2016 2016-12', xtype = "oxygen", ytype="depth", col=ramp[8], ylim=c(dm,0),add=T)
+plotProfile(z$'TT66 1972-02', xtype = "oxygen", ytype="depth", col=ramp[6], ylim=c(dm,0),add=T)
 
 plotProfile(t1, xtype = "oxygen2", ytype="depth", col=ramp[9], ylim=c(dm,0), add=T)
 plotProfile(t2, xtype = "oxygen2", ytype="depth", col=ramp[9], ylim=c(dm,0), add=T)
@@ -242,7 +361,36 @@ plotProfile(d4, xtype = "oxygen", ytype="depth", col=ramp[9])
 plot(d4, which="oxygen2", ztype="image", xtype="time")
 
 
-# Making average
+### depth range stuff: ####
+z2@data$depth[which(z2@data$oxygen2==15.020)]
+z2@data$depth[which(z2@data$oxygen2==27.761)]
+z3@data$depth[which(z3@data$oxygen2==29.304)]
+z3@data$depth[which(z3@data$oxygen2==15.915)]
+z4@data$depth[which(z4@data$oxygen2==13.839)]
+50.688
+z4@data$depth[which(z4@data$oxygen2==47.218)]
+
+z4@data$oxygen2
+
+y6@data$oxygen2
+21.193
+y1@data$depth[which(y1@data$oxygen2==21.193)]
+70.37
+
+y2@data$depth[which(y2@data$oxygen2==21.530)]
+73.522
+y3@data$depth[which(y3@data$oxygen2==22.147)]
+78.389
+y4@data$depth[which(y4@data$oxygen2==20.870)]
+84.428
+y5@data$depth[which(y5@data$oxygen2==23.935)]
+66.54
+y6@data$depth[which(y6@data$oxygen2==22.667)]
+
+
+
+
+### Making average ####
 
 
 ml<-length(t1@data$pressure)

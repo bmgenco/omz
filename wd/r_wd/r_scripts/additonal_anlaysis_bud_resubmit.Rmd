@@ -1,4 +1,4 @@
----
+ ---
 title: "additonal_anlaysis_bud_resubmit"
 output: html_document
 date: '2022-08-16'
@@ -116,6 +116,19 @@ rm(h.pts)
 
 ```
 
+
+temp saving list object for plotting
+```{r}
+setwd(wd)
+setwd(robj)
+
+tracks_ab<-vector(mode="list", length=2)
+tracks_ab[[1]]<-a.pts
+tracks_ab[[2]]<-b.pts
+names(tracks_ab)<-c("aletta", "bud")
+saveRDS(tracks_ab, "tracks_ab.R")
+
+```
 
 
 ## TS and wind speeds
@@ -260,6 +273,10 @@ calutea wind diameter area:
 
 -jus F it and \-proabb;ly just us apply function
 
+here: https://www.datasciencemadesimple.com/row-wise-median-row-median-in-r-dataframe/
+
+
+
 ```{r}
 # names(a)
 
@@ -272,6 +289,11 @@ x<-b
 print((mean(na.omit(x$NE34))+ mean(na.omit(x$SE34)) +mean(na.omit(x$SW34))+mean(na.omit(a$NW34)))/4)
 print((mean(na.omit(x$NE50))+ mean(na.omit(x$SE50)) +mean(na.omit(x$SW50))+mean(na.omit(a$NW50)))/4)
 print((mean(na.omit(x$NE64))+ mean(na.omit(x$SE64)) +mean(na.omit(x$SW64))+mean(na.omit(a$NW64)))/4)
+
+## attmept 2:b.ppts
+test<-select(x, Key, Name, DateTime, Lat, Lon, max_sustained_wind_m_s, NE64, SE64, SW64, NW64 )
+test<-select(x, DateTime, NE64, SE64, SW64, NW64 )
+test$row_median = apply(test[,-1], 1, median)
 
 ```
 

@@ -44,6 +44,8 @@ data_d<-"../../data/2018_data"
 ocean_color<-"../../data/ocean_color_bud"
 bathy_d<-"../../data/bathy" # edit this
 
+
+# old NC files
 aqua_directory<-"../../data/ocean_color_bud/aqua"
 terra_directory<-"../../data/ocean_color_bud/terra"
 viirs_directory<-"../../data/ocean_color_bud/terra"
@@ -62,7 +64,7 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 * to do trim uneeded package
 
 ```{r}
-
+wd<-getwd()
 f.ipak <- function(pkg){
   
   # loads packages, quietly, given by a vector of package names e.g., pkg<-c("ggplot", "tidyverse")
@@ -73,12 +75,13 @@ f.ipak <- function(pkg){
     install.packages(new.pkg, dependencies = TRUE, quiet=T, verbose = F)
   sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
 }
-packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "patchwork", "RColorBrewer", "marmap", "extrafont", "oce", "ncdf4", "raster", "RStoolbox", "cmocean", "metR")  # set packages here
+packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "patchwork", "RColorBrewer", "marmap", "extrafont", "oce", "ncdf4", "raster", "RStoolbox", "cmocean", "metR",  "grImport2", "scales")  # set packages here
+
+# "ggimage",
+
 f.ipak(packages)
 
 print(paste0("Current Working Directory is ", getwd()))
-
-wd<-getwd()
 
 ```
 
@@ -192,6 +195,7 @@ stations_mapped<-readRDS("OC1806A_mapped_ctd_stations.R") # centroid of ctd cast
 ## Load Data 2 - Bathy/Coastline/ Hurricane Bud Track
 ```{r}
 # global 5m resolution land polygon:  
+setwd(wd)
 setwd(gis_data)
 coastline<-st_read("./ne_50m_land/ne_50m_land.shp") 
 
@@ -1056,6 +1060,7 @@ old:
 #### aqau, terra, viirs combined
 * produces combination of aqau and terra chla
 * change directory by computer, improve here
+
 ```{r}
 
 #### combining aqau terra, and viirs ####
@@ -1249,7 +1254,7 @@ saveRDS(v_rgb,"viirs_rgb.R")
 setwd(robj)
 combined<-readRDS("combined_chl_fig2.R")
 #v_rgb<-readRDS("plots_rgb_fig2.R")
-v_rgb<-readRDS("viirs_rgb.R")
+# v_rgb<-readRDS("viirs_rgb.R")
 stations_positions_list<-readRDS("OC1806A_stations_positions_list.R")
 st3.5<-stations_positions_list[[3]][4,cbind(2,3)]
 rm(stations_positions_list)
@@ -1263,7 +1268,9 @@ rm(stations_positions_list)
 https://stackoverflow.com/questions/34183049/plot-circle-with-a-certain-radius-around-point-on-a-map-in-ggplot2
 
 ```{r}
+setwd(wd)
 setwd(robj)
+
 
 stations_positions_list<-readRDS("OC1806A_stations_positions_list.R")
 st3.5<-stations_positions_list[[3]][4,cbind(2,3)]
