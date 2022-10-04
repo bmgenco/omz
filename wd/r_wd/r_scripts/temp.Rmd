@@ -5,6 +5,120 @@ date: "9/26/2022"
 output: html_document
 ---
 
+
+# new legned 2
+ custom legends
+ https://stackoverflow.com/questions/53273286/customize-legend-in-ggplot2-with-sf-objects
+ ggimage legends
+ https://stackoverflow.com/questions/61327081/how-to-use-an-image-as-a-legend-key-glyph
+ 
+```{r}
+
+day<-10
+
+g = ggplot() +
+  geom_sf(data = buf.a, color = NA, aes(fill = 'GROUP A'), show.legend = "point") +
+  geom_sf(data = buf.b, color = NA, aes(fill = 'GROUP B'), show.legend = "point") +
+  geom_sf(data = a,     shape = 20, size = 3, aes(color = 'GROUP A'), show.legend = "point") + 
+  geom_sf(data = b,     shape = 20, size = 3, aes(color = 'GROUP B'), show.legend = "point") +
+  scale_color_manual(name = "points", values = cols.sol,
+                     guide = guide_legend(override.aes = list(shape = c(20, 20)))) +
+  scale_fill_manual(name = "circles", values = cols.fill,
+                    guide = guide_legend(override.aes = list(shape = c(20, 20), color = cols.fill, size = 8)))
+g
+
+f.fig2_legend_eyes<-function(combined, day,  v_rgb, height, width, t,b,r,l, title.textsize, marks.textsize){
+  
+  i<-which(names(combined)==day)
+  
+  t1<-combined[[i]]
+  t2<-v_rgb[[i]]
+  
+  eye.a<-filter(a, day==as.numeric(names(combined[i]))) %>% select(., geometry)
+  eye.b<-filter(b, day==as.numeric(names(combined[i]))) 
+  eye.b<-data.frame(lon=st_geometry(eye.b)[[1]][[1]], lat=st_geometry(eye.b)[[1]][[2]], image=eye.b$image) 
+  
+  lat<-as.numeric(row.names(t(t1)))
+  lon<-as.numeric(colnames(t(t1)))
+  
+  t1<-raster(t(t1))
+  extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
+
+  t1_ex<-extent(t1)
+  t2_ex<-extent(t2)
+  extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  rm(t1_ex, t2_ex, t2)
+  
+  e<-extent(t1)
+  h<-abs(e[4]-e[3])
+  w<-abs(e[1]-e[2])
+
+  left<-right -(w*zoom)
+  top<-(h*zoom)+bottom
+  rm(t1) 
+
+   test<-ggplot()+geom_sf(data = circle, color = circle_color, alpha = 0)+
+          geom_sf(data=eye.a, shape =aletta_symbol, col=aletta_color,  fill=aletta_color, size=aletta_size)+
+          geom_image(aes(x=lon, y=lat, image=image), data=eye.b )+
+          scale_size_identity()+
+          coord_sf(xlim = c(left,right), ylim = c(bottom, top))
+  
+   
+   
+   test<-ggplot()+geom_sf(data = circle, color = circle_color, alpha = 0)+
+          geom_sf(data=eye.a, shape =aletta_symbol, col=aletta_color,  fill=aletta_color, size=aletta_size)+
+          geom_image(aes(x=lon, y=lat, image=image), data=eye.b )+
+          scale_size_identity()+
+          coord_sf(xlim = c(left,right), ylim = c(bottom, top))+
+          
+          scale_color_manual(name = "points", values = cols.sol, guide = guide_legend(override.aes = list(shape = c(20, 20)))) +
+          scale_fill_manual(name = "circles", values = cols.fill, guide = guide_legend(override.aes = list(shape = c(20, 20), color =cols.fill, size = 8)))     
+     
+     
+     
+          theme(legend.key = element_rect(fill = "white")
+        
+   
+   
+   
+  
+    # xlim(left, right) +ylim(bottom,top)
+  
+  legend <- get_legend(p + theme(legend.box.margin = margin(t, r, b, l)))
+  
+  return(legend)
+}
+```
+
+
+```{r}
+
+# t<--390
+
+t=5
+legend<-f.fig2_legend(combined, v_rgb, height=bar_height, width=1, t=t, b=0, r=0, l=-115,  title.textsize=10, marks.textsize=8)
+t=-1.5
+legend_n<-f.fig2_legend(combined, v_rgb, height=bar_height, width=1, t=t, b=0, r=0, l=-115,  title.textsize=10, marks.textsize=8)
+```
+
+
+```{r}
+setwd(wd)
+setwd(fig)
+
+legends<-plot_grid(legend, legend_n, ncol=1)
+
+pdf("figure_two_legend_test_5_andneg1point5.pdf", height=11 , width =8.5)
+plot_grid(p, legends, ncol=2, rel_widths=c(14,1), align="h")
+dev.off()
+
+gc()
+print("done")
+```
+
+
+
 # testing
 
 
@@ -116,13 +230,34 @@ b$day<-substr(b$Name, nchar(b$Name) - 3+ 1, nchar(b$Name)) %>%as.numeric(.)
 ### csv
 
 ```{r}
+
 setwd(wd)
 setwd(gis_data)
+directory<-getwd()
+
 eyes<-read_csv("aletta_bud_eye_position_visual.csv")
-a<-filter(eyes, storm=="Aletta") %>% st_as_sf(., coords=c("lon", "lat"))
-b<-filter(eyes, storm=="Bud") %>% st_as_sf(., coords=c("lon", "lat"))
+
+# adding hurrican icon
+# icon<-rsvg("hurricane.svg")
+#icon<-image_read2("hurricane.png")
+# icon<-file<-<-list.files(system.file("hurricane", package="ggimage"),
+#                   pattern="png", full.names=TRUE)
+
+# eyes<-data.frame(eyes$lat, eyes$lon, image=icon)
+
+
+a<-filter(eyes, storm=="Aletta")  %>% st_as_sf(., coords=c("lon", "lat"))
 st_crs(a)<-"+proj=longlat +datum=WGS84 +no_defs"
+
+b<-filter(eyes, storm=="Bud")
+
+b<-data.frame(day=b$day, lon=b$lon, lat=b$lat, image=paste0(directory, "/hurricane.png"))
+b<-b%>% st_as_sf(., coords=c("lon", "lat"))
+
 st_crs(b)<-"+proj=longlat +datum=WGS84 +no_defs"
+
+# tesing image
+
 
 # a$day =a$day+1
 # b$day =b$day+1
@@ -388,7 +523,7 @@ f.fig2_legend<-function(combined, v_rgb, height, width, t,b,r,l, title.textsize,
 
 ```
 
-#### hurricaen icon:
+#### hurricane icon adjusted finctions:
 
 https://stackoverflow.com/questions/61387217/use-svg-images-as-symbols-in-gglot2
 
@@ -397,13 +532,782 @@ https://mran.microsoft.com/snapshot/2018-05-23/web/packages/ggimage/vignettes/gg
 https://stackoverflow.com/questions/34847598/using-custom-images-instead-of-standard-shapes-for-r-line-chart-markers
 
 ```{r}
+f.fig2<-function(combined, v_rgb, i, t, l){
+  t1<-combined[[i]]
+  t2<-v_rgb[[i]]
+  date<-paste0("June", " ", names(combined)[i])
 
+  eye.a<-filter(a, day==as.numeric(names(combined[i])))%>% select(., geometry)
+  # eye.b<-filter(a, day==as.numeric(names(combined[i]))) %>% select(., geometry)
+  eye.b<-filter(b, day==as.numeric(names(combined[i]))) 
+
+  lat<-as.numeric(row.names(t(t1)))
+  lon<-as.numeric(colnames(t(t1)))
+  
+  t1<-raster(t(t1))
+
+  extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
+  # extent(t1)<-extent(-120, -100, 10, 33.5)
+  
+  
+  t1_ex<-extent(t1)
+  t2_ex<-extent(t2)
+  extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  rm(t1_ex, t2_ex)
+  
+  
+  t3<-resample(t1, t2)
+  t3<-na.omit(t3)
+  
+  
+  # new extent
+  e<-extent(t1)
+  h<-abs(e[4]-e[3])
+  w<-abs(e[1]-e[2])
+
+  left<-right -(w*zoom)
+  top<-(h*zoom)+bottom
+  new<-as(extent(left, right, bottom, top), 'SpatialPolygons') 
+  crs(new)<-"+proj=longlat +datum=WGS84 +no_defs"
+  
+  t2<-crop(t2, new)
+  t3<-crop(t3, new)
+  
+  st_crs(eye.b)<-st_crs(t3)
+  eye.b<-data.frame(lon=st_geometry(eye.b)[[1]][[1]], lat=st_geometry(eye.b)[[1]][[2]], image=eye.b$image)
+  
+  
+  rm(t1)
+  
+  f1<- ggRGB(t2, r=1, g=2, b=3, ggObj = T) + ggtitle(date)+theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))+
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          #panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+          scale_y_continuous(expand = c(0, 0), breaks=lat_ticks)+
+          scale_x_continuous(expand = c(0, 0), breaks=lon_ticks)
+    # scale_y_continuous(expand = c(0, 0))+
+    # scale_x_continuous(expand = c(0, 0), breaks=c(-115, -110, -105))
+    # scale_x_continuous(expand = c(0, 0))
+    # scale_x_continuous(expand = c(0, 0), breaks=seq(-120, -100, b=10))
+    
+  
+  f3<-f1+ggR(t3, geom_raster = TRUE, ggLayer=T) +
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+    scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
+                         name=waiver(),breaks=labs)+
+    guides(fill=guide_colourbar(title=bquote(title_two), barheight = 8)) +
+    theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
+    theme(text=element_text(family="Helvetica")) + theme(legend.position = "none") +
+    geom_sf(data = circle, color = circle_color, alpha = 0, inherit.aes = FALSE)+
+    geom_sf(data=eye.a, inherit.aes = FALSE, shape =aletta_symbol, color=aletta_color)+
+    geom_image(aes(x=lon, y=lat, image=image), data=eye.b, inherit.aes = TRUE)+
+    # geom_sf(data=eye.b, inherit.aes = FALSE, shape =bud_symbol, color=bud_color)+
+    scale_size_identity()+
+    coord_sf(xlim = c(left,right), ylim = c(bottom, top))
+
+  
+  return(f3)
+}
+f.fig2_no_y<-function(combined, v_rgb, i, t, l){
+  t1<-combined[[i]]
+  t2<-v_rgb[[i]]
+  date<-paste0("June", " ", names(combined)[i])
+  
+  eye.a<-filter(a, day==as.numeric(names(combined[i]))) %>% select(., geometry)
+  # eye.b<-filter(a, day==as.numeric(names(combined[i]))) %>% select(., geometry)
+  eye.b<-filter(b, day==as.numeric(names(combined[i]))) 
+
+  
+  lat<-as.numeric(row.names(t(t1)))
+  lon<-as.numeric(colnames(t(t1)))
+  
+  t1<-raster(t(t1))
+  extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
+  # extent(t1)<-extent(-120, -100, 10, 33.5)
+  
+  t1_ex<-extent(t1)
+  t2_ex<-extent(t2)
+  extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  rm(t1_ex, t2_ex)
+  
+  
+  t3<-resample(t1, t2)
+  t3<-na.omit(t3)
+ 
+  # new extent
+  e<-extent(t1)
+  h<-abs(e[4]-e[3])
+  w<-abs(e[1]-e[2])
+
+  left<-right -(w*zoom)
+  top<-(h*zoom)+bottom
+  new<-as(extent(left, right, bottom, top), 'SpatialPolygons') 
+  crs(new)<-"+proj=longlat +datum=WGS84 +no_defs"
+  
+  t2<-crop(t2, new)
+  t3<-crop(t3, new)
+  
+  st_crs(eye.b)<-st_crs(t3)
+  eye.b<-data.frame(lon=st_geometry(eye.b)[[1]][[1]], lat=st_geometry(eye.b)[[1]][[2]], image=eye.b$image)
+  
+  rm(t1)
+  
+  f1<- ggRGB(t2, r=1, g=2, b=3, ggObj = T) + ggtitle(date)+theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))+
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          #panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+          scale_y_continuous(expand = c(0, 0), breaks=lat_ticks)+
+          scale_x_continuous(expand = c(0, 0), breaks=lon_ticks)
+    # scale_y_continuous(expand = c(0, 0)) +
+    # scale_x_continuous(expand = c(0, 0), breaks=c(-115, -110, -105))
+    # scale_x_continuous(expand = c(0, 0), breaks=seq(-110, -100, b=5))
+    # scale_x_continuous(expand = c(0, 0))
+    # scale_x_continuous(expand = c(0, 0), breaks=seq(-120, -100, b=10))
+  
+  f3<-f1+ggR(t3, geom_raster = TRUE, ggLayer=T) +
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),---
+
+            
+            
+            
+---
+
+  
+  
+
+
+
+```
+
+```{r}
+setwd(wd)
+setwd(viirs_directory)
+files<-list.files()
+library("tidync")
+t<-tidync(files[[1]])
+
+```
+
+```{r}
+tprint.tidync(t)
+```
+
+
+
+# new fig 2
+## eye postion
+
+### use hurdat for eye position... its off by an hour
+```{r}
+setwd(wd)
+setwd(robj)
+tracks<-readRDS("tracks_ab.R")
+a<-tracks$aletta
+b<-tracks$bud
+
+a$hour<-hour(a$DateTime)
+a$day<-day(a$DateTime)
+a<-filter(a, hour==1)
+
+b$hour<-hour(b$DateTime)
+b$day<-day(b$DateTime)
+b<-filter(b, hour==1)
+
+# select
+
+# eye.a<-filter(a, day==as.numeric(names(combined[i]))) %>% sf::st_as_sf(.) %>% select(., geometry)
+# eye.b<-filter(b, day==as.numeric(names(combined[i]))) %>% sf::st_as_sf(.) %>% select(., geometry)
+# geom_sf(data = circle, color = "red", alpha = 0, inherit.aes = FALSE) +
+# geom_point(data=eye.a)
+
+#  t=st_sfc(st_point(c(-108.2, 14.4)))
+# st_crs(t)<-st_crs(a)
+# a$geometry[1][[1]]<-t
+
+
+
+a.h<-a
+b.h<-b
+
+```
+
+### kml loads
+```{r}
 setwd(wd)
 setwd(gis_data)
 list.files()
-image<-system.file("hurricane.svg", package="grImport2")
-icon<-readPicture(image)
+a<-st_read("ep022018_best_track.kmz") %>% select(., Name, geometry)
+# b<-st_read("ep152021_best_track.kmz")  %>% select(., Name, geometry)
+b<-st_read("EP032018_Bud.kmz")  %>% select(., Name, geometry)
+# 
+a$hour<-substr(a$Name, 1, 4)
+a<-a%>% filter(., hour=="0000")
+a$day<-substr(a$Name, nchar(a$Name) - 3+ 1, nchar(a$Name)) %>%as.numeric(.)
 
+b$hour<-substr(b$Name, 1, 4)
+b<-b%>% filter(., hour=="0000")
+b$day<-substr(b$Name, nchar(b$Name) - 3+ 1, nchar(b$Name)) %>%as.numeric(.)
+
+
+```
+
+
+### csv
+
+```{r}
+setwd(wd)
+setwd(gis_data)
+directory<-getwd()
+
+eyes<-read_csv("aletta_bud_eye_position_visual.csv")
+
+# adding hurrican icon
+# icon<-rsvg("hurricane.svg")
+#icon<-image_read2("hurricane.png")
+# icon<-file<-<-list.files(system.file("hurricane", package="ggimage"),
+#                   pattern="png", full.names=TRUE)
+
+# eyes<-data.frame(eyes$lat, eyes$lon, image=icon)
+
+
+a<-filter(eyes, storm=="Aletta")  %>% st_as_sf(., coords=c("lon", "lat"))
+st_crs(a)<-"+proj=longlat +datum=WGS84 +no_defs"
+
+b<-filter(eyes, storm=="Bud")
+
+b<-data.frame(day=b$day, lon=b$lon, lat=b$lat, image=paste0(directory, "/hurricane.png"))
+b<-b%>% st_as_sf(., coords=c("lon", "lat"))
+
+st_crs(b)<-"+proj=longlat +datum=WGS84 +no_defs"
+
+# tesing image
+
+
+# a$day =a$day+1
+# b$day =b$day+1
+
+```
+
+
+## plotting icons wide or zoomed
+coment out extent in functions
+
+### testing
+```{r}
+# 
+# right<--100
+# bottom<-11.55
+# zoom<-.75
+# 
+# e<-extent(t2)
+# h<-abs(e[4]-e[3])
+# w<-abs(e[1]-e[2])
+# 
+# left<-right -(w*zoom)
+# top<-(h*zoom)+bottom
+# 
+# 
+# e <- as(extent(-16, -7.25, 4, 12.75), 'SpatialPolygons')
+# crs(e) <- "+proj=longlat +datum=WGS84 +no_defs"
+# r <- crop(worldpopcount, e)
+# 
+# c<--108.502
+# shift<-abs(left-right)/2
+# c+shift
+
+```
+### main
+#### functions
+
+```{r}
+
+f.fig2<-function(combined, v_rgb, i, t, l){
+  t1<-combined[[i]]
+  t2<-v_rgb[[i]]
+  date<-paste0("June", " ", names(combined)[i])
+  
+  eye.a<-filter(a, day==as.numeric(names(combined[i]))) %>% select(., geometry)
+  eye.b<-filter(b, day==as.numeric(names(combined[i]))) %>% select(., geometry)
+
+  
+  lat<-as.numeric(row.names(t(t1)))
+  lon<-as.numeric(colnames(t(t1)))
+  
+  t1<-raster(t(t1))
+
+  extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
+  # extent(t1)<-extent(-120, -100, 10, 33.5)
+  
+  
+  t1_ex<-extent(t1)
+  t2_ex<-extent(t2)
+  extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  rm(t1_ex, t2_ex)
+  
+  
+  t3<-resample(t1, t2)
+  t3<-na.omit(t3)
+  
+  
+  # new extent
+  e<-extent(t1)
+  h<-abs(e[4]-e[3])
+  w<-abs(e[1]-e[2])
+
+  left<-right -(w*zoom)
+  top<-(h*zoom)+bottom
+  new<-as(extent(left, right, bottom, top), 'SpatialPolygons') 
+  crs(new)<-"+proj=longlat +datum=WGS84 +no_defs"
+  
+  t2<-crop(t2, new)
+  t3<-crop(t3, new)
+  
+  rm(t1)
+  
+  f1<- ggRGB(t2, r=1, g=2, b=3, ggObj = T) + ggtitle(date)+theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))+
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          #panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+          scale_y_continuous(expand = c(0, 0), breaks=lat_ticks)+
+          scale_x_continuous(expand = c(0, 0), breaks=lon_ticks)
+    # scale_y_continuous(expand = c(0, 0))+
+    # scale_x_continuous(expand = c(0, 0), breaks=c(-115, -110, -105))
+    # scale_x_continuous(expand = c(0, 0))
+    # scale_x_continuous(expand = c(0, 0), breaks=seq(-120, -100, b=10))
+    
+  
+  f3<-f1+ggR(t3, geom_raster = TRUE, ggLayer=T) +
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+    scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
+                         name=waiver(),breaks=labs)+
+    guides(fill=guide_colourbar(title=bquote(title_two), barheight = 8)) +
+    theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
+    theme(text=element_text(family="Helvetica")) + theme(legend.position = "none") +
+    geom_sf(data = circle, color = circle_color, alpha = 0, inherit.aes = FALSE)+
+    geom_sf(data=eye.a, inherit.aes = FALSE, shape =aletta_symbol, color=aletta_color)+
+    geom_sf(data=eye.b, inherit.aes = FALSE, shape =bud_symbol, color=bud_color)+
+    coord_sf(xlim = c(left,right), ylim = c(bottom, top))
+
+  
+  return(f3)
+}
+f.fig2_no_y<-function(combined, v_rgb, i, t, l){
+  t1<-combined[[i]]
+  t2<-v_rgb[[i]]
+  date<-paste0("June", " ", names(combined)[i])
+  
+  eye.a<-filter(a, day==as.numeric(names(combined[i]))) %>% select(., geometry)
+  eye.b<-filter(b, day==as.numeric(names(combined[i]))) %>% select(., geometry)
+
+  
+  lat<-as.numeric(row.names(t(t1)))
+  lon<-as.numeric(colnames(t(t1)))
+  
+  t1<-raster(t(t1))
+  extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
+  # extent(t1)<-extent(-120, -100, 10, 33.5)
+  
+  t1_ex<-extent(t1)
+  t2_ex<-extent(t2)
+  extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  rm(t1_ex, t2_ex)
+  
+  
+  t3<-resample(t1, t2)
+  t3<-na.omit(t3)
+ 
+  # new extent
+  e<-extent(t1)
+  h<-abs(e[4]-e[3])
+  w<-abs(e[1]-e[2])
+
+  left<-right -(w*zoom)
+  top<-(h*zoom)+bottom
+  new<-as(extent(left, right, bottom, top), 'SpatialPolygons') 
+  crs(new)<-"+proj=longlat +datum=WGS84 +no_defs"
+  
+  t2<-crop(t2, new)
+  t3<-crop(t3, new)
+  
+  rm(t1)
+  
+  f1<- ggRGB(t2, r=1, g=2, b=3, ggObj = T) + ggtitle(date)+theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))+
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          #panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+          scale_y_continuous(expand = c(0, 0), breaks=lat_ticks)+
+          scale_x_continuous(expand = c(0, 0), breaks=lon_ticks)
+    # scale_y_continuous(expand = c(0, 0)) +
+    # scale_x_continuous(expand = c(0, 0), breaks=c(-115, -110, -105))
+    # scale_x_continuous(expand = c(0, 0), breaks=seq(-110, -100, b=5))
+    # scale_x_continuous(expand = c(0, 0))
+    # scale_x_continuous(expand = c(0, 0), breaks=seq(-120, -100, b=10))
+  
+  f3<-f1+ggR(t3, geom_raster = TRUE, ggLayer=T) +
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+    scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
+                         name=waiver(),breaks=labs)+
+    guides(fill=guide_colourbar(title=bquote(title_two), barheight = 8)) +
+    theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
+    theme(text=element_text(family="Helvetica")) + theme(legend.position = "none") +
+    theme(axis.text.y=element_blank(), axis.ticks.y=element_blank()) +
+    geom_sf(data = circle, color = circle_color, alpha = 0, inherit.aes = FALSE) +
+    geom_sf(data=eye.a, inherit.aes = FALSE, shape =aletta_symbol, color=aletta_color)+
+    geom_sf(data=eye.b, inherit.aes = FALSE, shape =bud_symbol, color=bud_color)+
+    coord_sf(xlim = c(left,right), ylim = c(bottom, top))
+
+        
+  
+  
+  return(f3)
+}
+f.fig2_legend<-function(combined, v_rgb, height, width, t,b,r,l, title.textsize, marks.textsize){
+  t1<-combined[[1]]
+  t2<-v_rgb[[1]]
+  
+  lat<-as.numeric(row.names(t(t1)))
+  lon<-as.numeric(colnames(t(t1)))
+  
+  t1<-raster(t(t1))
+  extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
+  # extent(t1)<-extent(-120, -100, 10, 33.5)
+  
+  t1_ex<-extent(t1)
+  t2_ex<-extent(t2)
+  extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  rm(t1_ex, t2_ex)
+  
+  
+  t3<-resample(t1, t2)
+  t3<-na.omit(t3)
+  
+  # new extent
+  e<-extent(t1)
+  h<-abs(e[4]-e[3])
+  w<-abs(e[1]-e[2])
+
+  left<-right -(w*zoom)
+  top<-(h*zoom)+bottom
+  
+  new<-as(extent(left, right, bottom, top), 'SpatialPolygons') 
+  crs(new)<-"+proj=longlat +datum=WGS84 +no_defs"
+  
+  t3<-crop(t3, new)
+  
+  rm(t1)
+
+  
+  p<-ggplot()+ggR(t3, geom_raster = TRUE, ggLayer=T) +
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(0, 0, 0, 0, 0), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+    scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
+                         name=waiver(),breaks=labs)+
+    guides(fill=guide_colourbar(title=title_two, barheight = height, barwidth = width)) +
+    theme(legend.title =element_text(size=title.textsize), legend.text=element_text(size=marks.textsize)) + 
+    theme(text=element_text(family="Helvetica"))
+    # xlim(left, right) +ylim(bottom,top)
+  
+  legend <- get_legend(p + theme(legend.box.margin = margin(t, r, b, l)))
+  rm(p, t3, t2) 
+  return(legend)
+} # l = legend margin left, b=barhieght (in cm ) of legend
+
+
+```
+
+#### hurricaen icon functions:
+
+https://stackoverflow.com/questions/61387217/use-svg-images-as-symbols-in-gglot2
+
+https://mran.microsoft.com/snapshot/2018-05-23/web/packages/ggimage/vignettes/ggimage.html
+
+https://stackoverflow.com/questions/34847598/using-custom-images-instead-of-standard-shapes-for-r-line-chart-markers
+
+```{r}
+f.fig2<-function(combined, v_rgb, i, t, l){
+  t1<-combined[[i]]
+  t2<-v_rgb[[i]]
+  date<-paste0("June", " ", names(combined)[i])
+
+  eye.a<-filter(a, day==as.numeric(names(combined[i])))%>% select(., geometry)
+  # eye.b<-filter(a, day==as.numeric(names(combined[i]))) %>% select(., geometry)
+  eye.b<-filter(b, day==as.numeric(names(combined[i]))) 
+
+  lat<-as.numeric(row.names(t(t1)))
+  lon<-as.numeric(colnames(t(t1)))
+  
+  t1<-raster(t(t1))
+
+  extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
+  # extent(t1)<-extent(-120, -100, 10, 33.5)
+  
+  
+  t1_ex<-extent(t1)
+  t2_ex<-extent(t2)
+  extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  rm(t1_ex, t2_ex)
+  
+  
+  t3<-resample(t1, t2)
+  t3<-na.omit(t3)
+  
+  
+  # new extent
+  e<-extent(t1)
+  h<-abs(e[4]-e[3])
+  w<-abs(e[1]-e[2])
+
+  left<-right -(w*zoom)
+  top<-(h*zoom)+bottom
+  new<-as(extent(left, right, bottom, top), 'SpatialPolygons') 
+  crs(new)<-"+proj=longlat +datum=WGS84 +no_defs"
+  
+  t2<-crop(t2, new)
+  t3<-crop(t3, new)
+  
+  st_crs(eye.b)<-st_crs(t3)
+  # eye.b<-data.frame(lon=st_geometry(eye.b)[[1]][[1]], lat=st_geometry(eye.b)[[1]][[2]], image=eye.b$image)
+  
+  rm(t1)
+  
+  f1<- ggRGB(t2, r=1, g=2, b=3, ggObj = T) + ggtitle(date)+theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))+
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          #panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+          scale_y_continuous(expand = c(0, 0), breaks=lat_ticks)+
+          scale_x_continuous(expand = c(0, 0), breaks=lon_ticks)
+    # scale_y_continuous(expand = c(0, 0))+
+    # scale_x_continuous(expand = c(0, 0), breaks=c(-115, -110, -105))
+    # scale_x_continuous(expand = c(0, 0))
+    # scale_x_continuous(expand = c(0, 0), breaks=seq(-120, -100, b=10))
+    
+if (length(eye.b$geometry)>0) {
+  
+  eye.b<-data.frame(lon=st_geometry(eye.b)[[1]][[1]], lat=st_geometry(eye.b)[[1]][[2]], image=eye.b$image)
+  
+  f3<-f1+ggR(t3, geom_raster = TRUE, ggLayer=T) +
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+    scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
+                         name=waiver(),breaks=labs)+
+    guides(fill=guide_colourbar(title=bquote(title_two), barheight = 8)) +
+    theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
+    theme(text=element_text(family="Helvetica")) + theme(legend.position = "none") +
+    geom_sf(data = circle, color = circle_color, alpha = 0, inherit.aes = FALSE)+
+    geom_sf(data=eye.a, inherit.aes = FALSE, shape =aletta_symbol, color=aletta_color)+
+    geom_image(aes(x=lon, y=lat, image=image), data=eye.b, inherit.aes = FALSE)+
+    # geom_sf(data=eye.b, inherit.aes = FALSE, shape =bud_symbol, color=bud_color)+
+     scale_size_identity()+
+    coord_sf(xlim = c(left,right), ylim = c(bottom, top))
+  
+} else {
+   f3<-f1+ggR(t3, geom_raster = TRUE, ggLayer=T) +
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+    scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
+                         name=waiver(),breaks=labs)+
+    guides(fill=guide_colourbar(title=bquote(title_two), barheight = 8)) +
+    theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
+    theme(text=element_text(family="Helvetica")) + theme(legend.position = "none") +
+    geom_sf(data = circle, color = circle_color, alpha = 0, inherit.aes = FALSE)+
+    geom_sf(data=eye.a, inherit.aes = FALSE, shape =aletta_symbol, color=aletta_color)+
+    # geom_image(aes(x=lon, y=lat, image=image), data=eye.b, inherit.aes = FALSE)+
+    # geom_sf(data=eye.b, inherit.aes = FALSE, shape =bud_symbol, color=bud_color)+
+    coord_sf(xlim = c(left,right), ylim = c(bottom, top)) 
+  
+  }
+  
+  
+
+  
+  return(f3)
+}
+f.fig2_no_y<-function(combined, v_rgb, i, t, l){
+  t1<-combined[[i]]
+  t2<-v_rgb[[i]]
+  date<-paste0("June", " ", names(combined)[i])
+  
+  eye.a<-filter(a, day==as.numeric(names(combined[i]))) %>% select(., geometry)
+  # eye.b<-filter(a, day==as.numeric(names(combined[i]))) %>% select(., geometry)
+  eye.b<-filter(b, day==as.numeric(names(combined[i]))) 
+
+  
+  lat<-as.numeric(row.names(t(t1)))
+  lon<-as.numeric(colnames(t(t1)))
+  
+  t1<-raster(t(t1))
+  extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
+  # extent(t1)<-extent(-120, -100, 10, 33.5)
+  
+  t1_ex<-extent(t1)
+  t2_ex<-extent(t2)
+  extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  rm(t1_ex, t2_ex)
+  
+  
+  t3<-resample(t1, t2)
+  t3<-na.omit(t3)
+ 
+  # new extent
+  e<-extent(t1)
+  h<-abs(e[4]-e[3])
+  w<-abs(e[1]-e[2])
+
+  left<-right -(w*zoom)
+  top<-(h*zoom)+bottom
+  new<-as(extent(left, right, bottom, top), 'SpatialPolygons') 
+  crs(new)<-"+proj=longlat +datum=WGS84 +no_defs"
+  
+  t2<-crop(t2, new)
+  t3<-crop(t3, new)
+  
+  st_crs(eye.b)<-st_crs(t3)
+  # eye.b<-data.frame(lon=st_geometry(eye.b)[[1]][[1]], lat=st_geometry(eye.b)[[1]][[2]], image=eye.b$image)
+  
+
+  rm(t1)
+  
+  f1<- ggRGB(t2, r=1, g=2, b=3, ggObj = T) + ggtitle(date)+theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))+
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          #panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+          scale_y_continuous(expand = c(0, 0), breaks=lat_ticks)+
+          scale_x_continuous(expand = c(0, 0), breaks=lon_ticks)
+    # scale_y_continuous(expand = c(0, 0)) +
+    # scale_x_continuous(expand = c(0, 0), breaks=c(-115, -110, -105))
+    # scale_x_continuous(expand = c(0, 0), breaks=seq(-110, -100, b=5))
+    # scale_x_continuous(expand = c(0, 0))
+    # scale_x_continuous(expand = c(0, 0), breaks=seq(-120, -100, b=10))
+ if (length(eye.b$geometry)>0) {
+   
+  eye.b<-data.frame(lon=st_geometry(eye.b)[[1]][[1]], lat=st_geometry(eye.b)[[1]][[2]], image=eye.b$image) 
+   
+  f3<-f1+ggR(t3, geom_raster = TRUE, ggLayer=T) +
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+    scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
+                         name=waiver(),breaks=labs)+
+    guides(fill=guide_colourbar(title=bquote(title_two), barheight = 8)) +
+    theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
+    theme(text=element_text(family="Helvetica")) + theme(legend.position = "none") +
+    geom_sf(data = circle, color = circle_color, alpha = 0, inherit.aes = FALSE)+
+    geom_sf(data=eye.a, inherit.aes = FALSE, shape =aletta_symbol, color=aletta_color)+
+    geom_image(aes(x=lon, y=lat, image=image), data=eye.b, inherit.aes = FALSE)+
+    # geom_sf(data=eye.b, inherit.aes = FALSE, shape =bud_symbol, color=bud_color)+
+    scale_size_identity()+
+    coord_sf(xlim = c(left,right), ylim = c(bottom, top))
+  
+} else {
+   f3<-f1+ggR(t3, geom_raster = TRUE, ggLayer=T) +
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+    scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
+                         name=waiver(),breaks=labs)+
+    guides(fill=guide_colourbar(title=bquote(title_two), barheight = 8)) +
+    theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
+    theme(text=element_text(family="Helvetica")) + theme(legend.position = "none") +
+    geom_sf(data = circle, color = circle_color, alpha = 0, inherit.aes = FALSE)+
+    geom_sf(data=eye.a, inherit.aes = FALSE, shape =aletta_symbol, color=aletta_color)+
+    # geom_image(aes(x=lon, y=lat, image=image), data=eye.b, inherit.aes = FALSE)+
+    # geom_sf(data=eye.b, inherit.aes = FALSE, shape =bud_symbol, color=bud_color)+
+    coord_sf(xlim = c(left,right), ylim = c(bottom, top)) 
+  
+  }
+
+        
+  
+  
+  return(f3)
+}
 ```
 
 
@@ -468,9 +1372,678 @@ aletta_color<-"#4daf4a"
 bud_color<-"black"
 aletta_color<-"midnightblue"
 
+# bud_symbol<-13
+# aletta_symbol<-12
+
+bud_symbol<-NULL
+aletta_symbol<-13
+
+
+
+lat_ticks<-seq(15,30, b=5)
+lon_ticks<-c(-115, -110, -105)
+
+ 
+# image extent
+# combinded full:
+# class      : Extent 
+# xmin       : -122.4792 
+# xmax       : -97.02084 
+# ymin       : 5.520833 
+# ymax       : 32.97917 
+
+
+right<--104.7671
+right<--100.8555
+# bottom<-11.55
+bottom<-12.5
+# zoom<-.75
+# right<--97.02084
+# bottom<-5.520833
+
+zoom<-.60
+# zoom<-1
+
+
+
+
+### Main figure select days ####
+
+i<-which(names(combined)==4)
+plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==10)
+plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==14)
+plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==17)
+plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==5)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==9)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==11)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==12)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==15)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==16)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==21)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==23)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+
+
+p<-(plots[[which(names(combined)==4)]]+ plots[[which(names(combined)==5)]]+plots[[which(names(combined)==9)]]+plots[[which(names(combined)==10)]]+plots[[which(names(combined)==11)]]+ plots[[which(names(combined)==12)]]+ plots[[which(names(combined)==14)]]+ plots[[which(names(combined)==15)]]+plots[[which(names(combined)==16)]]+plots[[which(names(combined)==17)]]+ plots[[which(names(combined)==21)]]+plots[[which(names(combined)==23)]]+plot_layout(ncol=3))
+
+legend<-f.fig2_legend(combined, v_rgb, height=bar_height, width=1, t=-390, b=0, r=0, l=-115,  title.textsize=10, marks.textsize=8)
+
+
+### supplements  ####
+
+right<--97.02084
+bottom<-5.520833
+
+zoom<-1
+lat_ticks<-seq(10,30, b=5)
+lon_ticks<-seq(-120, -100, b=10)
+
+
+i<-which(names(combined)==6)
+plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==13)
+plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==20)
+plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==25)
+plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==7)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==8)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==18)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==19)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==22)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==24)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==26)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==27)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+
+s.p<-(plots[[which(names(combined)==6)]]+ plots[[which(names(combined)==7)]]+plots[[which(names(combined)==8)]]+plots[[which(names(combined)==13)]]+plots[[which(names(combined)==18)]]+ plots[[which(names(combined)==19)]]+ plots[[which(names(combined)==20)]]+ plots[[which(names(combined)==22)]]+plots[[which(names(combined)==24)]]+plots[[which(names(combined)==25)]]+ plots[[which(names(combined)==26)]]+plots[[which(names(combined)==27)]]+plot_layout(ncol=3))
+rm(plots)
+
+
+# legend.sup<-f.fig2_legend(combined, v_rgb, height=bar_height, width=1, t=-390, b=0, r=0, l=-115,  title.textsize=10, marks.textsize=8)
+
+## supplementray figure
+
+end<-Sys.time()
+elapsed<-end-start
+print(elapsed)
+
+```
+
+#### old not used alteanting even and odd days
+```{r}
+
+#Much of this should really be compressed into  a function...
+
+start<-Sys.time()
+
+# changing files will likely break folowin index
+
+figure2_index<-seq(1,24,by=2) 
+supfig_index<-seq(2,24,by=2) 
+
+
+
+combined_select<-vector(mode='list', length = length(figure2_index))
+for(i in 1:length(figure2_index)){
+  j<-figure2_index[i]
+  combined_select[[i]]<-combined[[j]]
+  names(combined_select)[i]<-names(combined)[j]
+}
+combined_sup<-vector(mode='list', length = length(supfig_index))
+for(i in 1:length(supfig_index)){
+  j<-supfig_index[i]
+  combined_sup[[i]]<-combined[[j]]
+  names(combined_sup)[i]<-names(combined)[j]
+}
+
+
+v_rgb_select<-vector(mode='list', length = length(figure2_index))
+for(i in 1:length(figure2_index)){
+  j<-figure2_index[i]
+  v_rgb_select[[i]]<-v_rgb[[j]]
+  # names(v_rgb_select)[i]<-names(v_rgb)[j]
+}
+v_rgb_sup<-vector(mode='list', length = length(figure2_index))
+for(i in 1:length(supfig_index)){
+  j<-supfig_index[i]
+  v_rgb_sup[[i]]<-v_rgb[[j]]
+  # names(v_rgb_sup)[i]<-names(v_rgb)[j]
+}
+
+# plotting parameters
+
+options(warn=-1)
+plots<-vector(mode='list', length = length(combined_select))
+
+
+
+cuts<-c(0, 0.01, 0.02, 0.04,  0.08,  0.1,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2,3,4, 5)
+n<-length(cuts)+1
+custom_color<-rev(rainbow(n))
+cuts<-rescale(cuts)
+title_two<-expression(atop(textstyle("Chl a"), textstyle("mg m"^-3*"")))
+labs<-c(0.1, .5, 1, 2 , 2.5, 5)
+# bar_height<-25
+bar_height<-22.70
+
+# plotting colors & symbols
+circle_color<-"#e41a1c"
+bud_color<-"#377eb8"
+aletta_color<-"#4daf4a"
+
+bud_color<-"black"
+aletta_color<-"midnightblue"
+
 bud_symbol<-13
 aletta_symbol<-12
+  
+  
+# image extent
+# combinded full:
+# class      : Extent 
+# xmin       : -122.4792 
+# xmax       : -97.02084 
+# ymin       : 5.520833 
+# ymax       : 32.97917 
+
+
+right<--104.7671
+right<--100.8555
+# bottom<-11.55
+bottom<-12.5
+# zoom<-.75
+# right<--97.02084
+# bottom<-5.520833
+
+zoom<-.60
+# zoom<-1
+
+f.fig2<-function(combined, v_rgb, i, t, l){
+  t1<-combined[[i]]
+  t2<-v_rgb[[i]]
+  date<-paste0("June", " ", names(combined)[i])
+  
+  eye.a<-filter(a, day==as.numeric(names(combined[i]))) %>% select(., geometry)
+  eye.b<-filter(b, day==as.numeric(names(combined[i]))) %>% select(., geometry)
+
+  
+  lat<-as.numeric(row.names(t(t1)))
+  lon<-as.numeric(colnames(t(t1)))
+  
+  t1<-raster(t(t1))
+
+  extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
+  # extent(t1)<-extent(-120, -100, 10, 33.5)
+  
+  
+  t1_ex<-extent(t1)
+  t2_ex<-extent(t2)
+  extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  rm(t1_ex, t2_ex)
+  
+  
+  t3<-resample(t1, t2)
+  t3<-na.omit(t3)
+  
+  
+  # new extent
+  e<-extent(t1)
+  h<-abs(e[4]-e[3])
+  w<-abs(e[1]-e[2])
+
+  left<-right -(w*zoom)
+  top<-(h*zoom)+bottom
+  new<-as(extent(left, right, bottom, top), 'SpatialPolygons') 
+  crs(new)<-"+proj=longlat +datum=WGS84 +no_defs"
+  
+  t2<-crop(t2, new)
+  t3<-crop(t3, new)
+  
+  rm(t1)
+  
+  f1<- ggRGB(t2, r=1, g=2, b=3, ggObj = T) + ggtitle(date)+theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))+
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          #panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+    scale_y_continuous(expand = c(0, 0))+
+    scale_x_continuous(expand = c(0, 0), breaks=c(-115, -110, -105))
+    # scale_x_continuous(expand = c(0, 0))
+    # scale_x_continuous(expand = c(0, 0), breaks=seq(-120, -100, b=10))
+    
+  
+  f3<-f1+ggR(t3, geom_raster = TRUE, ggLayer=T) +
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+    scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
+                         name=waiver(),breaks=labs)+
+    guides(fill=guide_colourbar(title=bquote(title_two), barheight = 8)) +
+    theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
+    theme(text=element_text(family="Helvetica")) + theme(legend.position = "none") +
+    geom_sf(data = circle, color = circle_color, alpha = 0, inherit.aes = FALSE)+
+    geom_sf(data=eye.a, inherit.aes = FALSE, shape =aletta_symbol, color=aletta_color)+
+    geom_sf(data=eye.b, inherit.aes = FALSE, shape =bud_symbol, color=bud_color)+
+    coord_sf(xlim = c(left,right), ylim = c(bottom, top))
+
+  
+  return(f3)
+}
+f.fig2_no_y<-function(combined, v_rgb, i, t, l){
+  t1<-combined[[i]]
+  t2<-v_rgb[[i]]
+  date<-paste0("June", " ", names(combined)[i])
+  
+  eye.a<-filter(a, day==as.numeric(names(combined[i]))) %>% select(., geometry)
+  eye.b<-filter(b, day==as.numeric(names(combined[i]))) %>% select(., geometry)
+
+  
+  lat<-as.numeric(row.names(t(t1)))
+  lon<-as.numeric(colnames(t(t1)))
+  
+  t1<-raster(t(t1))
+  extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
+  # extent(t1)<-extent(-120, -100, 10, 33.5)
+  
+  t1_ex<-extent(t1)
+  t2_ex<-extent(t2)
+  extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  rm(t1_ex, t2_ex)
+  
+  
+  t3<-resample(t1, t2)
+  t3<-na.omit(t3)
  
+  # new extent
+  e<-extent(t1)
+  h<-abs(e[4]-e[3])
+  w<-abs(e[1]-e[2])
+
+  left<-right -(w*zoom)
+  top<-(h*zoom)+bottom
+  new<-as(extent(left, right, bottom, top), 'SpatialPolygons') 
+  crs(new)<-"+proj=longlat +datum=WGS84 +no_defs"
+  
+  t2<-crop(t2, new)
+  t3<-crop(t3, new)
+  
+  rm(t1)
+  
+  f1<- ggRGB(t2, r=1, g=2, b=3, ggObj = T) + ggtitle(date)+theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))+
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          #panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+    scale_y_continuous(expand = c(0, 0)) +
+    scale_x_continuous(expand = c(0, 0), breaks=c(-115, -110, -105))
+    # scale_x_continuous(expand = c(0, 0), breaks=seq(-110, -100, b=5))
+    # scale_x_continuous(expand = c(0, 0))
+    # scale_x_continuous(expand = c(0, 0), breaks=seq(-120, -100, b=10))
+  
+  f3<-f1+ggR(t3, geom_raster = TRUE, ggLayer=T) +
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(t, 0, 0, l), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+    scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
+                         name=waiver(),breaks=labs)+
+    guides(fill=guide_colourbar(title=bquote(title_two), barheight = 8)) +
+    theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
+    theme(text=element_text(family="Helvetica")) + theme(legend.position = "none") +
+    theme(axis.text.y=element_blank(), axis.ticks.y=element_blank()) +
+    geom_sf(data = circle, color = circle_color, alpha = 0, inherit.aes = FALSE) +
+    geom_sf(data=eye.a, inherit.aes = FALSE, shape =aletta_symbol, color=aletta_color)+
+    geom_sf(data=eye.b, inherit.aes = FALSE, shape =bud_symbol, color=bud_color)+
+    coord_sf(xlim = c(left,right), ylim = c(bottom, top))
+
+        
+  
+  
+  return(f3)
+}
+f.fig2_legend<-function(combined, v_rgb, height, width, t,b,r,l, title.textsize, marks.textsize){
+  t1<-combined[[1]]
+  t2<-v_rgb[[1]]
+  
+  lat<-as.numeric(row.names(t(t1)))
+  lon<-as.numeric(colnames(t(t1)))
+  
+  t1<-raster(t(t1))
+  extent(t1)<-extent(min(lon), max(lon), min(lat), max(lat))
+  # extent(t1)<-extent(-120, -100, 10, 33.5)
+  
+  t1_ex<-extent(t1)
+  t2_ex<-extent(t2)
+  extent(t1)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  extent(t2)<-extent(t1_ex[1], t2_ex[2], t2_ex[3], t2_ex[4])
+  rm(t1_ex, t2_ex)
+  
+  
+  t3<-resample(t1, t2)
+  t3<-na.omit(t3)
+  
+  # new extent
+  e<-extent(t1)
+  h<-abs(e[4]-e[3])
+  w<-abs(e[1]-e[2])
+
+  left<-right -(w*zoom)
+  top<-(h*zoom)+bottom
+  
+  new<-as(extent(left, right, bottom, top), 'SpatialPolygons') 
+  crs(new)<-"+proj=longlat +datum=WGS84 +no_defs"
+  
+  t3<-crop(t3, new)
+  
+  
+  rm(t1)
+
+  
+  p<-ggplot()+ggR(t3, geom_raster = TRUE, ggLayer=T) +
+    theme(axis.line = element_line(colour = "black"),
+          plot.margin = unit(c(0, 0, 0, 0, 0), "cm"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+    scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
+                         name=waiver(),breaks=labs)+
+    guides(fill=guide_colourbar(title=title_two, barheight = height, barwidth = width)) +
+    theme(legend.title =element_text(size=title.textsize), legend.text=element_text(size=marks.textsize)) + 
+    theme(text=element_text(family="Helvetica"))
+  
+  legend <- get_legend(p + theme(legend.box.margin = margin(t, r, b, l)))
+  rm(p, t3, t2) 
+  return(legend)
+} # l = legend margin left, b=barhieght (in cm ) of legend
+
+###  indovidually assin plots old ####
+
+# i<-1
+# plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+# i<-4
+# plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+# i<-7
+# plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+# i<-10
+# plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+# i<-2
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# i<-3
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# i<-5
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# i<-6
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# i<-8
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i3=i, t=0, l=0)
+# i<-9
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# i<-11
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# i<-12
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+
+
+### indivdualy assigne
+
+
+
+
+
+### individually assign plots new ####
+i<-1
+plots[[i]]<-f.fig2(combined=combined_select, v_rgb=v_rgb_select, i=i, t=0, l=0)
+i<-4
+plots[[i]]<-f.fig2(combined=combined_select, v_rgb=v_rgb_select, i=i, t=0, l=0)
+i<-7
+plots[[i]]<-f.fig2(combined=combined_select, v_rgb=v_rgb_select, i=i, t=0, l=0)
+i<-10
+plots[[i]]<-f.fig2(combined=combined_select, v_rgb=v_rgb_select, i=i, t=0, l=0)
+i<-2
+plots[[i]]<-f.fig2_no_y(combined=combined_select, v_rgb=v_rgb_select, i=i, t=0, l=0)
+i<-3
+plots[[i]]<-f.fig2_no_y(combined=combined_select, v_rgb=v_rgb_select, i=i, t=0, l=0)
+i<-5
+plots[[i]]<-f.fig2_no_y(combined=combined_select, v_rgb=v_rgb_select, i=i, t=0, l=0)
+i<-6
+plots[[i]]<-f.fig2_no_y(combined=combined_select, v_rgb=v_rgb_select, i=i, t=0, l=0)
+i<-8
+plots[[i]]<-f.fig2_no_y(combined=combined_select, v_rgb=v_rgb_select, i=i, t=0, l=0)
+i<-9
+plots[[i]]<-f.fig2_no_y(combined=combined_select, v_rgb=v_rgb_select, i=i, t=0, l=0)
+i<-11
+plots[[i]]<-f.fig2_no_y(combined=combined_select, v_rgb=v_rgb_select, i=i, t=0, l=0)
+i<-12
+plots[[i]]<-f.fig2_no_y(combined=combined_select, v_rgb=v_rgb_select, i=i, t=0, l=0)
+
+
+p<-(plots[[1]]+ plots[[2]]+plots[[3]]+plots[[4]]+plots[[5]]+ plots[[6]]+ plots[[7]]+ plots[[8]]+plots[[9]]+plots[[10]]+ plots[[11]]+plots[[12]]+plot_layout(ncol=3))
+
+legend<-f.fig2_legend(combined, v_rgb, height=bar_height, width=1, t=-390, b=0, r=0, l=-115,  title.textsize=10, marks.textsize=8)
+
+
+### finsiheed  main figure. suplmental ####
+rm(combined_select, v_rgb_select, plots)
+plots<-vector(mode='list', length = length(combined_sup))
+
+
+i<-1
+plots[[i]]<-f.fig2(combined=combined_sup, v_rgb=v_rgb_sup, i=i, t=0, l=0)
+i<-4
+plots[[i]]<-f.fig2(combined=combined_sup, v_rgb=v_rgb_sup, i=i, t=0, l=0)
+i<-7
+plots[[i]]<-f.fig2(combined=combined_sup, v_rgb=v_rgb_sup, i=i, t=0, l=0)
+i<-10
+plots[[i]]<-f.fig2(combined=combined_sup, v_rgb=v_rgb_sup, i=i, t=0, l=0)
+i<-2
+plots[[i]]<-f.fig2_no_y(combined=combined_sup, v_rgb=v_rgb_sup, i=i, t=0, l=0)
+i<-3
+plots[[i]]<-f.fig2_no_y(combined=combined_sup, v_rgb=v_rgb_sup, i=i, t=0, l=0)
+i<-5
+plots[[i]]<-f.fig2_no_y(combined=combined_sup, v_rgb=v_rgb_sup, i=i, t=0, l=0)
+i<-6
+plots[[i]]<-f.fig2_no_y(combined=combined_sup, v_rgb=v_rgb_sup, i=i, t=0, l=0)
+i<-8
+plots[[i]]<-f.fig2_no_y(combined=combined_sup, v_rgb=v_rgb_sup, i=i, t=0, l=0)
+i<-9
+plots[[i]]<-f.fig2_no_y(combined=combined_sup, v_rgb=v_rgb_sup, i=i, t=0, l=0)
+i<-11
+plots[[i]]<-f.fig2_no_y(combined=combined_sup, v_rgb=v_rgb_sup, i=i, t=0, l=0)
+i<-12
+plots[[i]]<-f.fig2_no_y(combined=combined_sup, v_rgb=v_rgb_sup, i=i, t=0, l=0)
+
+s.p<-(plots[[1]]+ plots[[2]]+plots[[3]]+plots[[4]]+plots[[5]]+ plots[[6]]+ plots[[7]]+ plots[[8]]+plots[[9]]+plots[[10]]+ plots[[11]]+plots[[12]]+plot_layout(ncol=3))
+rm(plots)
+
+## supplementray figure
+
+end<-Sys.time()
+elapsed<-end-start
+print(elapsed)
+
+```
+
+ 
+
+
+
+# plotting test:
+```{r}
+setwd(wd)
+setwd(fig)
+#
+# 
+# pdf("figure_two_even_dates_figure_1_window_with_eyes.pdf", height=11 , width =8.5)
+# pdf("figure_two_even_dates_full_window.pdf", height=11 , width =8.5)
+
+pdf("figure_two.pdf", height=11 , width =8.5)
+plot_grid(p, legend, ncol=2, rel_widths=c(14,1), align="h")
+dev.off()
+
+
+# pdf("figure_two_odd_dates_full_window.pdf", height=11 , width =8.5)
+# pdf("figure_two_odd_dates_figure_1_window_with_eyes.pdf", height=11 , width =8.5)
+
+pdf("figure_s5.pdf", height=11 , width =8.5)
+plot_grid(s.p, legend, ncol=2, rel_widths=c(14,1), align="h")
+dev.off()
+
+```
+
+
+```{r}
+
+# nope doesn't work probaly due to hegith adjsutment
+
+setwd(wd)
+setwd(fig)
+#
+# 
+# pdf("figure_two_even_dates_figure_1_window_with_eyes.pdf", height=11 , width =8.5)
+# pdf("figure_two_even_dates_full_window.pdf", height=11 , width =8.5)
+
+pdf("figure_two_test.pdf", height=11 , width =8.5)
+plot_grid(p, legend, NULL, legend, ncol=2, rel_widths=c(14,1,1,1), align="h")
+dev.off()
+
+
+```
+
+
+          panel.background = element_rect(colour = "black", fill=NA, size=5),
+          axis.title.x=element_blank(),
+          axis.title.y=element_blank()) +
+    scale_fill_gradientn(colors = custom_color, values=cuts, na.value=NA,limits=c(0,5), 
+                         name=waiver(),breaks=labs)+
+    guides(fill=guide_colourbar(title=bquote(title_two), barheight = 8)) +
+    theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
+    theme(text=element_text(family="Helvetica")) + theme(legend.position = "none") +
+    theme(axis.text.y=element_blank(), axis.ticks.y=element_blank()) +
+    geom_sf(data = circle, color = circle_color, alpha = 0, inherit.aes = FALSE) +
+    geom_sf(data=eye.a, inherit.aes = FALSE, shape =aletta_symbol, color=aletta_color)+
+    geom_image(aes(x=lon, y=lat, image=image), data=eye.b, inherit.aes = TRUE)+
+    # geom_sf(data=eye.b, inherit.aes = FALSE, shape =bud_symbol, color=bud_color)+
+    coord_sf(xlim = c(left,right), ylim = c(bottom, top))
+
+        
+  
+  
+  return(f3)
+}
+
+
+
+
+#### new legend:
+
+```{r}
+
+```
+
+
+
+#### figure 2 and s5
+
+select dates
+ - zoomed in main figure. dates:
+ 4,   5, 9
+ 10, 11, 12
+ 14, 15, 16
+ 17, 21 ,23
+ 
+-supplement fulkl resolution
+ 
+6    7  8
+13, 18, 19
+20  22  24
+25  26  27
+
+ 
+```{r}
+
+#Much of this should really be compressed into  a function...
+
+start<-Sys.time()
+
+# changing files will likely break folowin index
+
+figure2_index<-seq(1,24,by=2) 
+supfig_index<-seq(2,24,by=2) 
+
+
+
+# plotting parameters
+
+options(warn=-1)
+plots<-vector(mode='list', length = length(combined))
+
+
+cuts<-c(0, 0.01, 0.02, 0.04,  0.08,  0.1,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2,3,4, 5)
+n<-length(cuts)+1
+custom_color<-rev(rainbow(n))
+cuts<-rescale(cuts)
+title_two<-expression(atop(textstyle("Chl a"), textstyle("mg m"^-3*"")))
+labs<-c(0.1, .5, 1, 2 , 2.5, 5)
+# bar_height<-25
+bar_height<-22.70
+
+# plotting colors & symbols
+circle_color<-"#e41a1c"
+bud_color<-"#377eb8"
+aletta_color<-"#4daf4a"
+
+bud_color<-"black"
+aletta_color<-"midnightblue"
+
+# bud_symbol<-13
+# aletta_symbol<-12
+
+bud_symbol<-NULL
+aletta_symbol<-13
+
+
+
 lat_ticks<-seq(15,30, b=5)
 lon_ticks<-c(-115, -110, -105)
 
