@@ -186,29 +186,63 @@ plot_y<-252
   
 middle<-c(plot_x/2, plot_y/2)
   
+  # x1<-round((offset_1 * plot_x), 1)
+  # x2<-x1+x_space
+  # x3<-middle[1]+x_space
+  # x4<-x3+x_space
+  #   
+  #   
+  # y1<-round(((1-offset_2 )* plot_y), 1)
+  # y2<-y1-y_space
+  # y3<-y2-y_space
+  # y4<-(abs(y2-plot_y))
+  
+  
+ 
   x1<-round((offset_1 * plot_x), 1)
+  x_equal<-(plot_x-x1)/3
   x2<-x1+x_space
-  x3<-middle[1]+x_space
+  x3<-x1+x_equal
   x4<-x3+x_space
+  x5<-x3+x_equal
+  x6<-x5+x_space
     
     
-  y1<-round(((1-offset_2 )* plot_y), 1)
-  y2<-y1-y_space
-  y3<-y2-y_space
-  y4<-(abs(y2-plot_y))
+  y1<-plot_y/2
   
   
+  # new_eye.b<-data.frame(x=x1, y=y2, image=b$image) 
+  # new_eye.a<-data.frame(x=x1, y=y4)%>%st_as_sf(., coords=c("x", "y"))
+  # center<-c((x3+circle_size), y3)
+  # circle<-st_point(x=, center, dim="XY")%>%sf::st_buffer(., dist=circle_size)
   
-  new_eye.b<-data.frame(x=x1, y=y2, image=b$image) 
-  new_eye.a<-data.frame(x=x1, y=y4)%>%st_as_sf(., coords=c("x", "y"))
-  center<-c((x3+circle_size), y3)
+  
+  new_eye.b<-data.frame(x=x1, y=y1, image=b$image) 
+  new_eye.a<-data.frame(x=x3, y=y1)%>%st_as_sf(., coords=c("x", "y"))
+  center<-c((x5+circle_size), y1)
   circle<-st_point(x=, center, dim="XY")%>%sf::st_buffer(., dist=circle_size)
   
-  empty<-data.frame(x=c(0, 0, plot_x, plot_x), y=c(c(plot_y, 0, plot_y, 0)))%>%st_as_sf(., coords=c("x", "y"))
+  # empty<-data.frame(x=c(0, 0, plot_x, plot_x), y=c(c(plot_y, 0, plot_y, 0)))%>%st_as_sf(., coords=c("x", "y"))
   
-  p<-ggplot(data=empty)+geom_sf(data = circle, color = circle_color, alpha = 0)+
-    geom_image(data=new_eye.b, aes(x, y, image = image))+ scale_size_identity()+
-    geom_sf(data=new_eye.a, shape =aletta_symbol, col=aletta_color,  fill=aletta_color, size=aletta_size)+
+   empty<-data.frame(x=c(0, 0, plot_x, plot_x), y=c(c(plot_y, 0, plot_y, 0)))
+  # st_crs(empty)<-st_crs(32662)
+  # st_crs(new_eye.a)<-st_crs(empty)
+  # st_crs(circle)<-st_crs(32662)
+  
+  
+  p<-ggplot()+
+    geom_sf(data = circle, color = circle_color, alpha = 0)+
+    geom_image(data=new_eye.b, aes(x, y, image = image), asp = 5.5)+ scale_size_identity()+
+    theme_void()+
+    coord_sf(xlim = c(0,plot_x), ylim = c(0, plot_y))
+    # coord_cartesian(xlim = c(0,plot_x), ylim = c(0, plot_y))
+  
+  
+  p<-ggplot(data=empty)+
+    # geom_sf(data = circle, color = circle_color, alpha = 0)+
+    # geom_image(data=new_eye.b, aes(x, y, image = image), size=.075, by="width")+
+    geom_image(data=new_eye.b, aes(x, y, image = image), asp = 1.5)+ scale_size_identity()+
+    # geom_sf(data=new_eye.a, shape =aletta_symbol, col=aletta_color,  fill=aletta_color, size=aletta_size)+
     theme_void()+
     coord_sf(xlim = c(0,plot_x), ylim = c(0, plot_y))
 
@@ -223,13 +257,20 @@ middle<-c(plot_x/2, plot_y/2)
 
 
 ```{r}
+
+ p<-ggplot()+
+    geom_sf(data = circle, color = circle_color, alpha = 0)+
+    geom_image(data=new_eye.b, aes(x, y, image = image), asp = 10)+ scale_size_identity()+
+    theme_void()+
+    coord_sf(xlim = c(0,plot_x), ylim = c(0, plot_y))  
+
 r<-plot_x/plot_y
 width<-5
 height=round((width/r),2)
 
 setwd(wd)
 setwd(fig)
-pdf("legned_two_test3.pdf", width =width, height=height)
+pdf("legned_two_bah.pdf", width =width, height=height)
 p
 dev.off()
 
