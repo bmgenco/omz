@@ -58,7 +58,7 @@ f.fig2_legend_eyes<-function(combined, day,  v_rgb, height, width, t,b,r,l, titl
   top<-(h*zoom)+bottom
   rm(t1) 
 
-   test<-ggplot()+geom_sf(data = circle, color = circle_color, alpha = 0)+
+   p<-ggplot()+geom_sf(data = circle, color = circle_color, alpha = 0)+
           geom_sf(data=eye.a, shape =aletta_symbol, col=aletta_color,  fill=aletta_color, size=aletta_size)+
           geom_image(aes(x=lon, y=lat, image=image), data=eye.b )+
           scale_size_identity()+
@@ -66,18 +66,18 @@ f.fig2_legend_eyes<-function(combined, day,  v_rgb, height, width, t,b,r,l, titl
   
    
    
-   test<-ggplot()+geom_sf(data = circle, color = circle_color, alpha = 0)+
+   p<-ggplot()+geom_sf(data = circle, color = circle_color, alpha = 0)+
           geom_sf(data=eye.a, shape =aletta_symbol, col=aletta_color,  fill=aletta_color, size=aletta_size)+
           geom_image(aes(x=lon, y=lat, image=image), data=eye.b )+
           scale_size_identity()+
           coord_sf(xlim = c(left,right), ylim = c(bottom, top))+
           
           scale_color_manual(name = "points", values = cols.sol, guide = guide_legend(override.aes = list(shape = c(20, 20)))) +
-          scale_fill_manual(name = "circles", values = cols.fill, guide = guide_legend(override.aes = list(shape = c(20, 20), color =cols.fill, size = 8)))     
+          scale_fill_manual(name = "circles", values = cols.fill, guide = guide_legend(override.aes = list(shape = c(20, 20), color =cols.fill, size = 8)))+
+          theme(legend.direction = "vertical",  legend.box = "vertical", legend.key = element_rect(fill = "white"))
      
      
-     
-          theme(legend.key = element_rect(fill = "white")
+  
         
    
    
@@ -89,7 +89,153 @@ f.fig2_legend_eyes<-function(combined, day,  v_rgb, height, width, t,b,r,l, titl
   
   return(legend)
 }
+
+
+
+# make a custom plotextnedim(combin)
+f.fig2_legend_eyes<-function(combined, day, circle_center, height, width, t,b,r,l, title.textsize,){
+  
+  i<-which(names(combined)==day)
+  
+  
+  # inverted dimensions, to be correct once plot is fliiped
+  plot_y<-dim(combined[[i]])[2]
+  plot_x<-dim(combined[[1]])[1]
+  
+  
+  eye.a<-filter(a, day==as.numeric(names(combined[i]))) %>% select(., geometry)
+  eye.b<-filter(b, day==as.numeric(names(combined[i]))) 
+  eye.b<-data.frame(lon=st_geometry(eye.b)[[1]][[1]], lat=st_geometry(eye.b)[[1]][[2]], image=eye.b$image) 
+  
+  
+  
+  
+  new_eye.a<-filter(a, day==as.numeric(names(combined[i]))) %>% select(., geometry)
+  new_eye.b<-filter(b, day==as.numeric(names(combined[i]))) 
+  
+  st_geometry(ne.a)[[1]][1]
+  
+  data.frame(x=10, y=st_geometry(eye.b)[[1]][[2]], image=eye.b$image) 
+  
+  
+    
+    
+
+   p<-ggplot()+geom_sf(data = circle, color = circle_color, alpha = 0)+
+          geom_sf(data=eye.a, shape =aletta_symbol, col=aletta_color,  fill=aletta_color, size=aletta_size)+
+          geom_image(aes(x=lon, y=lat, image=image), data=eye.b )+
+          scale_size_identity()+
+          coord_sf(xlim = c(left,right), ylim = c(bottom, top))
+  
+   
+   
+   p<-ggplot()+geom_sf(data = circle, color = circle_color, alpha = 0)+
+          geom_sf(data=eye.a, shape =aletta_symbol, col=aletta_color,  fill=aletta_color, size=aletta_size)+
+          geom_image(aes(x=lon, y=lat, image=image), data=eye.b )+
+          scale_size_identity()+
+          coord_sf(xlim = c(left,right), ylim = c(bottom, top))+
+          
+          scale_color_manual(name = "points", values = cols.sol, guide = guide_legend(override.aes = list(shape = c(20, 20)))) +
+          scale_fill_manual(name = "circles", values = cols.fill, guide = guide_legend(override.aes = list(shape = c(20, 20), color =cols.fill, size = 8)))+
+          theme(legend.direction = "vertical",  legend.box = "vertical", legend.key = element_rect(fill = "white"))
+     
+     
+  
+        
+   
+   
+   
+  
+    # xlim(left, right) +ylim(bottom,top)
+  
+  legend <- get_legend(p + theme(legend.box.margin = margin(t, r, b, l)))
+  
+  return(legend)
+}
+
+
 ```
+
+
+```{r}
+
+
+# f.fig2_legend_eyes<-function(combined, offset_1, offset_2, day, y_percent, circle_size,height, width, t,b,r,l, title.textsize,){}
+
+
+day<-10
+y_percent<-.2
+
+offset_1<-.1
+offset_2<-.10
+y_space<-30
+x_space<-80
+
+circle_size<-x_space
+
+# 
+#   
+#   i<-which(names(combined)==day)
+#   
+#   plot_x<-dim(combined[[i]])[1]
+#   plot_y<-round(plot_x * y_percent,0)
+  
+# measured pixel distance from lother legend hacky
+plot_x<-3014
+plot_y<-252
+  
+middle<-c(plot_x/2, plot_y/2)
+  
+  x1<-round((offset_1 * plot_x), 1)
+  x2<-x1+x_space
+  x3<-middle[1]+x_space
+  x4<-x3+x_space
+    
+    
+  y1<-round(((1-offset_2 )* plot_y), 1)
+  y2<-y1-y_space
+  y3<-y2-y_space
+  y4<-(abs(y2-plot_y))
+  
+  
+  
+  new_eye.b<-data.frame(x=x1, y=y2, image=b$image) 
+  new_eye.a<-data.frame(x=x1, y=y4)%>%st_as_sf(., coords=c("x", "y"))
+  center<-c((x3+circle_size), y3)
+  circle<-st_point(x=, center, dim="XY")%>%sf::st_buffer(., dist=circle_size)
+  
+  empty<-data.frame(x=c(0, 0, plot_x, plot_x), y=c(c(plot_y, 0, plot_y, 0)))%>%st_as_sf(., coords=c("x", "y"))
+  
+  p<-ggplot(data=empty)+geom_sf(data = circle, color = circle_color, alpha = 0)+
+    geom_image(data=new_eye.b, aes(x, y, image = image))+ scale_size_identity()+
+    geom_sf(data=new_eye.a, shape =aletta_symbol, col=aletta_color,  fill=aletta_color, size=aletta_size)+
+    theme_void()+
+    coord_sf(xlim = c(0,plot_x), ylim = c(0, plot_y))
+
+  # other options
+  # + theme(text = element_text(size =12)) 
+  # theme(axis.title.x=element_blank(), axis.title.y=element_blank())+ theme_bw()+
+  # theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + labs(x=NULL, y=NULL)
+  
+#   return(p)
+
+```
+
+
+```{r}
+r<-plot_x/plot_y
+width<-5
+height=round((width/r),2)
+
+setwd(wd)
+setwd(fig)
+pdf("legned_two_test3.pdf", width =width, height=height)
+p
+dev.off()
+
+
+```
+
 
 
 ```{r}
