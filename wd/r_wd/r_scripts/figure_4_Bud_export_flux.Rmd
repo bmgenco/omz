@@ -46,7 +46,7 @@ f.ipak <- function(pkg){
 }
 
 
-packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT", "ggpattern")
+packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr",  "ggpattern", "cowplot")
 
 # "HURDAT",
 
@@ -84,6 +84,55 @@ x<-data.frame(key=key, name=name, start=date(start), end=date(end), pressure=pre
 return(x)
 
 }
+
+f.tc_poc<-function(x,y,z,s, post, pre){
+
+  pre= pre*-1
+  
+# x<-select(x, date, avg)
+setDT(y)
+setDT(x)
+data<-x[y, on='date']
+# rm(x, y)
+setDT(data)
+setDT(z)
+data<-data[z, on='date']
+# rm(z)
+
+s<-s%>% group_by(key) %>% group_split(.) %>% lapply(., as.data.frame)
+
+ndata<-list(data, s)
+names(ndata)<-c("data", "s")
+
+# to optimized  for big data turn loop below into lapply/mapply
+data<-vector(mode="list", length=length(ndata$s))
+
+for(i in 1:length(data)){
+  
+x<-ndata$s[[i]]
+y<-ndata$data
+
+y$days<-y$date-x$start
+y<-filter(y, days %in% pre:post)
+y$name<-x$name
+y$key<-x$key
+y$pres<-x$pressure
+y$wind<-x$wind
+
+data[[i]]<-y
+}
+
+
+return(data)
+
+}
+
+f.anomaly<-function(c){
+  m<-mean(c)
+  n<-c-m
+  return(n)
+}
+
 ```
 
 # loading Important objects and data sets & intial data wranglaing
@@ -95,11 +144,9 @@ return(x)
 setwd(wd)
 setwd(robj)
 
-
 load("20220201_temp_workspace.RData")
 rm(m.coast, database)
 ```
-
 
 ## load basic hurdat
 
@@ -157,6 +204,7 @@ rm(flat, radii, st, stations_positions_list)
 ```
 
 ## loading POC
+
 ```{r}
 setwd(wd)
 setwd(robj)
@@ -225,7 +273,12 @@ t$DateTime<-as_datetime(t$DateTime)
 remove_200<-unique(t$Key)
  
 h<-t%>% group_by(Key) %>% filter(any(Status== "HU"))
+tc<-t%>% group_by(Key)
 t<-t %>% subset(., !(Key %in% unique(h$Key)))%>% group_by(Key)
+
+tc<-group_split(tc)
+tc<-lapply(tc, as.data.frame)
+
 
 t<-group_split(t)
 t<-lapply(t, as.data.frame)
@@ -237,6 +290,8 @@ h<-lapply(h, as.data.frame)
 
 h_200<-f.storms(h)
 t_200<-f.storms(t)
+tc_200<-f.storms(tc)
+
 
 ```
 
@@ -289,61 +344,255 @@ rm(t, h, h.pts)
 ```
 
 
-# TC mathcup with varaibles
+# TC mathcup with variables
 
+## creat anomalies
 ```{r}
+x$ef.a<-f.anomaly(x$ef)
+x$avg.a<-f.anomaly(x$avg)
 
-s<-h_200%>% group_by(key) %>% group_split(.) %>% lapply(., as.data.frame) 
+y$chl.a<-f.anomaly(y$chl)
+z$sst.a<-f.anomaly(z$sst)
 
-t<-s[[1]]
-
-
-z1<-z
-
-  before<-p$profile_dates[p$profile_dates<=x$data$DateTime]
-          after<-p$profile_dates[p$profile_dates>=x$data$DateTime]
-          
-          if(length(before)==0){x$prior<-NA} else {
-            
-            before_window<-before[which(date(before) >= date(x$data$DateTime)-function_variables$h.prior)]
-
-
-
-# star function here
-
-f.tc_poc-function(x,y,z){
-
-x<-select(x, date, avg)
-setDT(y)
-setDT(x)
-data<-x[y, on='date']
-rm(x, y)
-setDT(data)
-setDT(z)
-data<-data[z, on='date']
-rm(z)
-
-s<-s%>% group_by(key) %>% group_split(.) %>% lapply(., as.data.frame)
-
-f.match<-funcion(data, s){
-  
-#dates not index
-pre<-data$date[(rev(which(data$date<s$start))[1])] 
-overpass<-s$start
-post<-
-return(data)
-}
-
-data<-lapply(data, f.match)
-
-# here list into dataframe
-return(data)
-
-}
 
 ```
 
+## do match up
+- pick window
 ```{r}
+data<-f.tc_poc(x,y,z, s=h_200, pre=18, post=60)
+data<-f.tc_poc(x,y,z, s=t_200, pre=18, post=60)
+data<-f.tc_poc(x,y,z, s=tc_200, pre=18, post=60)
 
 ```
+
+
+# plotting
+
+-plottinf defaults
+```{r}
+lab_chl<-"Chlorophyll-a [μg/L]"
+lab_chl.a<-"Chlorophyll-a Anomaly [μg/L]"
+
+lab_sst<-"SST (°C)"
+lab_sst.a<-"SST Anomaly (°C)"
+
+lab_ef<-"Total export flux (mgC/day)"
+lab_ef.a<-"Total export flux Anomaly (mgC/day)"
+
+
+lab_avg<-"Mean export flux (mgC/m^2/day)"
+lab_avg.a<-"Mean export flux Anomaly (mgC/m^2/day)"
+
+
+```
+
+
+## simple plots per varible 
+
+### with legned
+```{r}
+
+
+
+p1<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=chl, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=chl, col=name)))+ylab(lab_chl)
+
+p2<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=chl.a, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=chl.a, col=name)))+ylab(lab_chl.a)
+
+p3<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=sst, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=sst, col=name)))+ylab(lab_sst)
+
+p4<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=sst.a, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=sst.a, col=name)))+ylab(lab_sst.a)
+
+p5<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=avg, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=avg, col=name)))+ylab(lab_avg)
+
+p6<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=avg.a, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=avg.a, col=name)))+ylab(lab_avg.a)
+
+p7<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=ef, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=ef, col=name)))+ylab(lab_ef)
+
+p8<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=ef.a, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=ef.a, col=name)))+ylab(lab_ef.a)
+
+
+```
+
+### without names
+```{r}
+
+p1<-ggplot()+
+  lapply(data, function(z) geom_point(data = z, aes(x=days, y=chl)))+
+  lapply(data, function(z) geom_line(data = z, aes(x=days, y=chl)))+ylab(lab_chl)
+
+p2<-ggplot()+
+  lapply(data, function(z) geom_point(data = z, aes(x=days, y=chl.a)))+
+  lapply(data, function(z) geom_line(data = z, aes(x=days, y=chl.a)))+ylab(lab_chl.a)
+
+p3<-ggplot()+
+  lapply(data, function(z) geom_point(data = z, aes(x=days, y=sst)))+
+  lapply(data, function(z) geom_line(data = z, aes(x=days, y=sst)))+ylab(lab_sst)
+
+p4<-ggplot()+
+  lapply(data, function(z) geom_point(data = z, aes(x=days, y=sst.a)))+
+  lapply(data, function(z) geom_line(data = z, aes(x=days, y=sst.a)))+ylab(lab_sst.a)
+
+p5<-ggplot()+
+  lapply(data, function(z) geom_point(data = z, aes(x=days, y=avg)))+
+  lapply(data, function(z) geom_line(data = z, aes(x=days, y=avg)))+ylab(lab_avg)
+
+p6<-ggplot()+
+  lapply(data, function(z) geom_point(data = z, aes(x=days, y=avg.a)))+
+  lapply(data, function(z) geom_line(data = z, aes(x=days, y=avg.a)))+ylab(lab_avg.a)
+
+p7<-ggplot()+
+  lapply(data, function(z) geom_point(data = z, aes(x=days, y=ef)))+
+  lapply(data, function(z) geom_line(data = z, aes(x=days, y=ef)))+ylab(lab_ef)
+
+p8<-ggplot()+
+  lapply(data, function(z) geom_point(data = z, aes(x=days, y=ef.a)))+
+  lapply(data, function(z) geom_line(data = z, aes(x=days, y=ef.a)))+ylab(lab_ef.a)
+
+
+```
+
+### single legend  fro pmuiple plots
+```{r}
+
+p1<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=chl, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=chl, col=name)))+ylab(lab_chl)
+
+p2<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=chl.a, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=chl.a, col=name)))+ylab(lab_chl.a)
+
+p3<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=sst, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=sst, col=name)))+ylab(lab_sst)
+
+p4<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=sst.a, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=sst.a, col=name)))+ylab(lab_sst.a)
+
+p5<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=avg, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=avg, col=name)))+ylab(lab_avg)
+
+p6<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=avg.a, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=avg.a, col=name)))+ylab(lab_avg.a)
+
+p7<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=ef, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=ef, col=name)))+ylab(lab_ef)
+
+p8<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=ef.a, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=ef.a, col=name)))+ylab(lab_ef.a)
+
+
+```
+
+### without names
+```{r}
+
+
+p1<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=chl, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=chl, col=name)))+ylab(lab_chl)+
+theme(legend.position="none")
+
+p2<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=chl.a, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=chl.a, col=name)))+ylab(lab_chl.a)+
+theme(legend.position="none")
+
+p3<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=sst, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=sst, col=name)))+ylab(lab_sst)+
+theme(legend.position="none")
+
+p4<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=sst.a, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=sst.a, col=name)))+ylab(lab_sst.a)+
+theme(legend.position="none")
+
+p5<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=avg, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=avg, col=name)))+ylab(lab_avg)+
+theme(legend.position="none")
+
+p6<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=avg.a, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=avg.a, col=name)))+ylab(lab_avg.a)+
+theme(legend.position="none")
+
+p7<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=ef, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=ef, col=name)))+ylab(lab_ef)+
+theme(legend.position="none")
+
+p8<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=ef.a, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=ef.a, col=name)))+ylab(lab_ef.a)+
+theme(legend.position="none")
+
+
+
+pl<-ggplot()+
+lapply(data, function(z) geom_point(data = z, aes(x=days, y=ef.a, col=name)))+
+lapply(data, function(z) geom_line(data = z, aes(x=days, y=ef.a, col=name)))+ylab(lab_ef.a)
+
+
+
+legend <- get_legend(pl)
+
+
+
+```
+
+
+
+# saving_plots
+## single legend
+```{r}
+setwd(wd)
+setwd(fig)
+
+p<-plot_grid(p1,p2,p3,p4,p5,p6,p7,p8, ncol=2)
+pdf("figure_4_prelim200km_all_tcs.pdf", height=11 , width =8.5)
+p
+dev.off()
+
+# plot_grid(p, NULL, legend, ncol=3, rel_widths = c(10,.1,1.5))
+
+```
+
+## simple
+```{r}
+setwd(wd)
+setwd(fig)
+
+pdf("test.pdf", height=11 , width =8.5)
+plot_grid(p1,p2,p3,p4,p5,p6,p7,p8, ncol=1)
+dev.off()
+
+
+
+```
+
+
 
