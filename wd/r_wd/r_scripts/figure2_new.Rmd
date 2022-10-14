@@ -530,7 +530,53 @@ f.fig2_legend<-function(combined, v_rgb, height, width, t,b,r,l, title.textsize,
   legend <- get_legend(p + theme(legend.box.margin = margin(t, r, b, l)))
   rm(p, t3, t2) 
   return(legend)
+  
 } # l = legend margin left, b=barhieght (in cm ) of legend
+
+f.fig2_legend_eyes<-function(offset_1, x_space, plot_x, plot_y, text_size){
+
+  circle_size<-x_space
+  
+  x1<-round((offset_1 * plot_x), 1)
+  x_equal<-(plot_x-x1)/3
+  x2<-x1+x_space
+  x3<-x1+x_equal
+  x4<-x3+x_space
+  x5<-x3+x_equal
+  x6<-x5+(x_space *3)
+  y1<-plot_y/2
+  
+  new_eye.b<-data.frame(x=x1, y=y1, image=b$image) 
+  new_eye.a<-data.frame(x=x3, y=y1)%>%st_as_sf(., coords=c("x", "y"))
+  center<-c((x5+circle_size), y1)
+  circle<-st_point(x=, center, dim="XY")%>%sf::st_buffer(., dist=circle_size)
+  empty<-data.frame(x=c(0, 0, plot_x, plot_x), y=c(c(plot_y, 0, plot_y, 0)))
+  
+text1<-"TC Bud Eye"
+ text2<-"TC Aletta Eye"
+ # text3<-"Station 3.5 - 100km radius"
+  
+ 
+ text3<-"200km Diameter\nStation 3.5 "
+
+   
+ p<-ggplot()+
+    geom_sf(data = circle, color = circle_color, alpha = 0)+
+    geom_sf(data=new_eye.a, shape =aletta_symbol, col=aletta_color,  fill=aletta_color, size=aletta_size)+
+    geom_image(data=new_eye.b, aes(x, y, image = image), asp = 10)+ scale_size_identity()+
+    annotate("text", x=x2, y=y1, label= text1, hjust = 0)+
+    annotate("text", x=x4, y=y1, label= text2, hjust = 0)+
+    annotate("text", x=x6, y=y1, label= text3, hjust = 0)+
+    theme(text = element_text(size = text_size))+   
+    theme_void()+
+    coord_sf(xlim = c(0,plot_x), ylim = c(0, plot_y))
+  
+ # np<-p+coord_flip(ylim=c(0, plot_y))
+ # rm(p)
+ return(p)
+ 
+}
+
 ```
 
 ## figure 2 and s5
@@ -708,27 +754,28 @@ gc()
 
 ## legends
 ```{r}
-# t<--390
+t<--390
 
-t=5
+# t=5
 legend<-f.fig2_legend(combined, v_rgb, height=bar_height, width=1, t=t, b=0, r=0, l=-115,  title.textsize=10, marks.textsize=8)
-t=-1.5
-legend_n<-f.fig2_legend_eyes(combined, v_rgb, height=bar_height, width=1, t=t, b=0, r=0, l=-115, day=10, title.textsize=10, marks.textsize=8)
+# 
+
+# legend_n<-f.fig2_legend_eyes(offset_1=.1, x_space=80, plot_x=3014, plot_y=252, text_size = 12)
+legend_n<-f.fig2_legend_eyes(offset_1=.06, x_space=80, plot_x=3014, plot_y=252, text_size = 6)
 ```
 
-## temp svae plotting objects
-
+### plot 2nd legneg for gimp
 ```{r}
-# setwd(wd)
-# setwd(robj)
-# p<-readRDS("figure_2_plotlist.R")
-# s.p<-readRDS("sup_figure_5_plotlist.R")
-# saveRDS(p, "figure_2_plotlist.RData")
-# saveRDS(s.p, "sup_figure_5_plotlist.RData")
+setwd(wd)
+setwd(fig)
+
+pdf("figure_two_2nd_legend.pdf", width =5, height=.46)
+legend_n
+dev.off()
+
+
 
 ```
-
-
 
 # save plots
 
@@ -736,20 +783,22 @@ legend_n<-f.fig2_legend_eyes(combined, v_rgb, height=bar_height, width=1, t=t, b
 setwd(wd)
 setwd(fig)
 
-# pdf("figure_two.pdf", height=11 , width =8.5)
-# plot_grid(p, legend, ncol=2, rel_widths=c(14,1), align="h")
-# dev.off()
-# 
-# 
-# pdf("figure_s5.pdf", height=11 , width =8.5)
-# plot_grid(s.p, legend, ncol=2, rel_widths=c(14,1), align="h")
-# dev.off()
-
-legends<-plot_grid(legend, legend_n, ncol=1)
-pdf("figure_two.pdf", height=11 , width =8.5)
-plot_grid(p, legends, ncol=2, rel_widths=c(14,1), align="h")
+pdf("figure_two_no_2nd_legend.pdf", height=11 , width =8.5)
+plot_grid(p, legend, ncol=2, rel_widths=c(14,1), align="h")
 dev.off()
 
+
+pdf("figure_s5_no_2nd_legend.pdf", height=11 , width =8.5)
+plot_grid(s.p, legend, ncol=2, rel_widths=c(14,1), align="h")
+dev.off()
+# 
+# legends<-plot_grid(legend, legend_n, ncol=1)
+# pdf("figure_two_test_plot_legend_flipped_correctly.pdf", height=11 , width =8.5)
+# plot_grid(p, legends, ncol=2, rel_widths=c(14,1), align="h")
+# dev.off()
+# 
+# dev.off()
+# gc()
 
 
 ```

@@ -127,11 +127,68 @@ return(data)
 
 }
 
+
+
+
 f.anomaly<-function(c){
   m<-mean(c)
   n<-c-m
   return(n)
 }
+
+f.ind_storms<-function(x, filter){
+  st_geometry(x)<-NULL
+  x$DateTime<-as_datetime(x$DateTime)
+  
+  if(filter==TRUE) {x<-x %>% group_by(Key) %>% filter(any(Status== "HU"))} else{
+    x<-x %>% group_by(Key)}
+  
+  
+  x<-group_split(x)
+  x<-lapply(x, as.data.frame)
+  return(x)
+  
+}
+
+f.remove_close_storms<-function(x, pre){
+
+names(x) = unlist(lapply(x,FUN=function(x)max(x$DateTime)))
+x<-x[order(as.integer(names(x)))]  
+y<-vector(mode="list", length=length(x))  
+
+for(i in 1:length(x)){
+    j<-i-1
+      if(j>=1) {t.dif<-as.integer(min(x[[i]]$DateTime)-max(x[[j]]$DateTime))} else {
+        t.dif<-(pre*2)}
+   
+   if(t.dif<= pre){y[[i]]<-NULL} else {y[[i]]<-x[[i]]}
+    
+ y<-y[lengths(y) != 0] 
+names(y)<-unlist(lapply(y,FUN=function(y) unique(y$Key)))
+
+    
+   }
+return(y)
+   
+}
+
+f.exclusion_list<-function(removed,allstorms){
+  
+  x<-names(removed)
+  y<-unlist(lapply(allstorms,FUN=function(allstorms) unique(allstorms$Key)))
+  include<-y[(y %in% x)]
+  rm(x, y, removed)
+  
+  x<-f.storms(allstorms)
+  
+  x<-filter(x, key %in% include)
+  return(x)
+  
+  
+}
+
+# f.funky_mean<-function(c)  
+
 
 ```
 
@@ -241,110 +298,59 @@ can problly combine 4 spearte datsets int one with factacrotial category
 
 ## spatial temporal subsetting
 ```{r}
+all<-h
+
+
 bbox<-st_bbox(circle_3.5_200km)
 
 g<-filter(h, DateTime >=date(min(x$date))-60) # save 'h' in order to adjust function variables if needed.
-h.pts<- sf::st_as_sf(g, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>% 
+h.pts_200<- sf::st_as_sf(g, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>% 
 sf::st_crop(., c(xmin=bbox$xmin[[1]], ymin=bbox$ymin[[1]], xmax=bbox$xmax[[1]], ymax=bbox$ymax[[1]])) #subset by user defined 
 rm(g, bbox)
-```
-
-## split and recombine 200 km storms
-
-```{r}
-
-all<-h
-t<-h.pts 
-st_geometry(t)<-NULL
-# t$ymin<--Inf
-# t$ymax<-Inf
-# t$DateTime<-as.Date(t$DateTime)
-t$DateTime<-as_datetime(t$DateTime)
-
-# unique(t$Status)
- 
-# see:  https://www.nhc.noaa.gov/data/hurdat/hurdat2-format-atl-1851-2021.pdf
-#"TS" tropical cyclone of tropical storm intensity (34-63 knots)
-# "TD" Tropical cyclone of tropical depression intensity (< 34 knots)
-# LO – A low that is neither a tropical cyclone, a subtropical cyclone, nor an extra tropical cyclone (of any intensity)
-# DB – Disturbance (of any intensity)
-# splits in individual storms to hurricanes and all else. If an individual storm was bot below and a hurricane and a hurricane in the subset it mark it as a hurricane
-
-remove_200<-unique(t$Key)
- 
-h<-t%>% group_by(Key) %>% filter(any(Status== "HU"))
-tc<-t%>% group_by(Key)
-t<-t %>% subset(., !(Key %in% unique(h$Key)))%>% group_by(Key)
-
-tc<-group_split(tc)
-tc<-lapply(tc, as.data.frame)
-
-
-t<-group_split(t)
-t<-lapply(t, as.data.frame)
-
-h<-group_split(h)
-h<-lapply(h, as.data.frame)
-
-#standard atmospheric presures in millibars
-
-h_200<-f.storms(h)
-t_200<-f.storms(t)
-tc_200<-f.storms(tc)
-
-
-```
-
-
-## split and recombine 400 km storms only
-
-```{r}
-setwd(wd)
-setwd(robj)
 
 bbox<-st_bbox(circle_3.5_400km)
 
-
-g<-filter(all, DateTime >=date(min(x$date))-60) # save 'h' in order to adjust function variables if needed.
-
-h.pts<- sf::st_as_sf(g, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>% 
-sf::st_crop(., c(xmin=bbox$xmin[[1]], ymin=bbox$ymin[[1]], xmax=bbox$xmax[[1]], ymax=bbox$ymax[[1]])) #subset by user defined 
-
-# h.pts<-st_difference(h.pts, st_combine(st_geometry(cl))) # remove all points over land
-rm(g)
-
-t<-h.pts 
-st_geometry(t)<-NULL
-
-
-t$DateTime<-as_datetime(t$DateTime)
-all_400<-t
-
-t<-t %>% subset(., !(Key %in% remove_200))
-h<-t%>% group_by(Key) %>% filter(any(Status== "HU"))
-t<-t %>% subset(., !(Key %in% unique(h$Key)))%>% group_by(Key)
-
-all_400<-all_400 %>% group_by(Key)
-all_400<-group_split(all_400)
-all_400<-lapply(all_400, as.data.frame)
-
-
-t<-group_split(t)
-t<-lapply(t, as.data.frame)
-
-h<-group_split(h)
-h<-lapply(h, as.data.frame)
-
-h_400<-f.storms(h)
-t_400<-f.storms(t)
-
-all_400<-f.storms(all_400)
-rm(t, h, h.pts)
+g<-filter(h, DateTime >=date(min(x$date))-60) # save 'h' in order to adjust function variables if needed.
+h.pts_400<- sf::st_as_sf(g, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>% 
+  sf::st_crop(., c(xmin=bbox$xmin[[1]], ymin=bbox$ymin[[1]], xmax=bbox$xmax[[1]], ymax=bbox$ymax[[1]])) #subset by user defined 
+rm(g, bbox)
 
 ```
 
+## subeting for figure 4 anlysis
+-400 km and 200km pts
+-TCs and HU for each ass needed
+-set 'pre" variabel to exclude storms that where with that number of days ahead of selected storms
+- if filter = TRUE only returns hurricane status 
 
-# TC mathcup with variables
+
+```{r}
+
+# spatial and storm status
+
+pre=35
+
+# if filter = TRUE opnly returns hurricane status 
+
+all_400<-f.ind_storms(h.pts_400, filter=FALSE)
+all_200<-f.ind_storms(h.pts_200, filter=FALSE)
+h_200<-f.ind_storms(h.pts_200, filter=TRUE)
+
+
+# remove previous
+
+all_400_remove<-f.remove_close_storms(x=all_400, pre=pre)
+
+# finde storms to exlcude
+
+h_200<-f.exclusion_list(removed=all_400_remove, allstorms = h_200)
+
+
+
+# final before plotting 
+
+```
+
 
 ## creat anomalies
 ```{r}
@@ -360,9 +366,13 @@ z$sst.a<-f.anomaly(z$sst)
 ## do match up
 - pick window
 ```{r}
-data<-f.tc_poc(x,y,z, s=h_200, pre=18, post=60)
-data<-f.tc_poc(x,y,z, s=t_200, pre=18, post=60)
-data<-f.tc_poc(x,y,z, s=tc_200, pre=18, post=60)
+
+
+
+
+data<-f.tc_poc(x,y,z, s=h_200, pre=18, post=45)
+# data<-f.tc_poc(x,y,z, s=t_200, pre=18, post=60)
+# data<-f.tc_poc(x,y,z, s=tc_200, pre=18, post=60)
 
 ```
 
@@ -468,7 +478,7 @@ p8<-ggplot()+
 
 ```
 
-### single legend  fro pmuiple plots
+### single legend  for mutiple plots
 ```{r}
 
 p1<-ggplot()+
@@ -506,7 +516,7 @@ lapply(data, function(z) geom_line(data = z, aes(x=days, y=ef.a, col=name)))+yla
 
 ```
 
-### without names
+### without legends
 ```{r}
 
 
@@ -571,11 +581,17 @@ legend <- get_legend(pl)
 ```{r}
 setwd(wd)
 setwd(fig)
+# 
+# p<-plot_grid(p1,p2,p3,p4,p5,p6,p7,p8, ncol=2)
+# pdf("test.pdf", height=11 , width =8.5)
+# plot_grid(p, NULL, legend, ncol=3, rel_widths = c(10,.1,1.5))
+# dev.off()
 
-p<-plot_grid(p1,p2,p3,p4,p5,p6,p7,p8, ncol=2)
-pdf("figure_4_prelim200km_all_tcs.pdf", height=11 , width =8.5)
-p
+ptest<-plot_grid(p1, p7, ncol=2)
+pdf("test2.pdf", width=11 , height=6)
+plot_grid(ptest, NULL, legend, ncol=3, rel_widths = c(10,.1,1.5))
 dev.off()
+
 
 # plot_grid(p, NULL, legend, ncol=3, rel_widths = c(10,.1,1.5))
 
