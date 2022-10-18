@@ -1526,6 +1526,117 @@ t<- ggplot(x, aes(x=date, y=ef)) +
 
 ```
 
+# misc
+## old figure 4 code chunks
+
+### split and recombine 200 km storms
+
+```{r}
+
+
+
+
+
+st_geometry(t)<-NULL
+# t$ymin<--Inf
+# t$ymax<-Inf
+# t$DateTime<-as.Date(t$DateTime)
+t$DateTime<-as_datetime(t$DateTime)
+
+# unique(t$Status)
+ 
+# see:  https://www.nhc.noaa.gov/data/hurdat/hurdat2-format-atl-1851-2021.pdf
+#"TS" tropical cyclone of tropical storm intensity (34-63 knots)
+# "TD" Tropical cyclone of tropical depression intensity (< 34 knots)
+# LO – A low that is neither a tropical cyclone, a subtropical cyclone, nor an extra tropical cyclone (of any intensity)
+# DB – Disturbance (of any intensity)
+# splits in individual storms to hurricanes and all else. If an individual storm was bot below and a hurricane and a hurricane in the subset it mark it as a hurricane
+
+remove_200<-unique(t$Key)
+ 
+h<-t%>% group_by(Key) %>% filter(any(Status== "HU"))
+tc<-t%>% group_by(Key)
+t<-t %>% subset(., !(Key %in% unique(h$Key)))%>% group_by(Key)
+
+tc<-group_split(tc)
+tc<-lapply(tc, as.data.frame)
+
+
+t<-group_split(t)
+t<-lapply(t, as.data.frame)
+
+h<-group_split(h)
+h<-lapply(h, as.data.frame)
+
+#standard atmospheric presures in millibars
+
+
+h_200<-f.storms(h)
+t_200<-f.storms(t)
+tc_200<-f.storms(tc)
+
+
+```
+
+
+### split and recombine 400 km storms only
+
+```{r}
+setwd(wd)
+setwd(robj)
+
+bbox<-st_bbox(circle_3.5_400km)
+
+
+g<-filter(all, DateTime >=date(min(x$date))-60) # save 'h' in order to adjust function variables if needed.
+h.pts<- sf::st_as_sf(g, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>%
+sf::st_crop(., c(xmin=bbox$xmin[[1]], ymin=bbox$ymin[[1]], xmax=bbox$xmax[[1]], ymax=bbox$ymax[[1]])) #subset by user defined
+
+# h.pts<-st_difference(h.pts, st_combine(st_geometry(cl))) # remove all points over land
+rm(g)
+
+t<-h.pts
+st_geometry(t)<-NULL
+
+
+t$DateTime<-as_datetime(t$DateTime)
+all_400<-t
+
+# t<-t %>% subset(., !(Key %in% remove_200))
+# h<-t%>% group_by(Key) %>% filter(any(Status== "HU"))
+# t<-t %>% subset(., !(Key %in% unique(h$Key)))%>% group_by(Key)
+
+all_400<-all_400 %>% group_by(Key)
+all_400<-group_split(all_400)
+all_400<-lapply(all_400, as.data.frame)
+
+# 
+# t<-group_split(t)
+# t<-lapply(t, as.data.frame)
+# 
+# h<-group_split(h)
+# h<-lapply(h, as.data.frame)
+# 
+# h_400<-f.storms(h)
+# t_400<-f.storms(t)
+
+
+
+# all_400<-f.storms(all_400)
+
+
+# 
+all_400_removed<-f.remove_close_storms(x=all_400, pre=60)
+
+# subtract names from to get eculsion list
+
+
+rm(t, h, h.pts)
+
+```
+
+
+
 
 ```
 

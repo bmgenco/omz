@@ -1241,10 +1241,12 @@ gdal errors with v_rgb seem to be corrected by not load older robjects of v_rgb.
  
  
 ```{r}
+setwd(wd)
 setwd(robj)
-saveRDS(combined, "combined_chl_fig2.R")
+# saveRDS(combined, "combined_chl_fig2.R")
+saveRDS(combined, "combined_chl_fig2.RData")
 #saveRDS(v_rgb,"plots_rgb_fig2.R")
-saveRDS(v_rgb,"viirs_rgb.R")
+# saveRDS(v_rgb,"viirs_rgb.R")
 
 ```
 
@@ -1252,7 +1254,8 @@ saveRDS(v_rgb,"viirs_rgb.R")
 
 ```{r}
 setwd(robj)
-combined<-readRDS("combined_chl_fig2.R")
+# combined<-readRDS("combined_chl_fig2.R")
+combined<-readRDS("combined_chl_fig2.RData")
 #v_rgb<-readRDS("plots_rgb_fig2.R")
 # v_rgb<-readRDS("viirs_rgb.R")
 stations_positions_list<-readRDS("OC1806A_stations_positions_list.R")
