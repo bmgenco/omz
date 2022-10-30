@@ -330,6 +330,8 @@ rm(g, bbox)
 
 pre=35
 
+
+pre=10000
 # if filter = TRUE opnly returns hurricane status 
 
 all_400<-f.ind_storms(h.pts_400, filter=FALSE)

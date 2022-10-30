@@ -293,7 +293,7 @@ circle_3.5<-sf::st_buffer(flat, dist=radii)%>%sf::st_transform(., "+proj=longlat
 rm(st, flat, stations_positions_list)
 
 # save all
-# station_circle_list<-list(circle_1, circle_2, circle_3, circle_3.5, circle_4, circle_5 )
+# station_circle_list<-list(circle_1, circle_2, cir  cle_3, circle_3.5, circle_4, circle_5 )
 # rm(circle_1, circle_2, circle_3, circle_3.5, circle_4, circle_5)
 ```
 
@@ -1042,7 +1042,7 @@ plot_list$e<-plot_e
 ```
 
 
-#plot_f
+##plot_f
 
 ```{r}
 gc()
@@ -1087,7 +1087,7 @@ plot_list$f<-plot_f
 ```
 
 
-#plot_g
+## plot_g
 
 ```{r}
 txt<-gtxt
@@ -1527,6 +1527,66 @@ t<- ggplot(x, aes(x=date, y=ef)) +
 ```
 
 # misc
+
+## new figure four
+
+-Above aver poc and 200km TS
+```{r}
+
+season
+
+w<-inner_join(x,y, by='date') %>% inner_join(., z,  by='date' ) %>% select(., - ef)
+h_rect<-rects$h
+t_rect<-rects$t
+
+txt<-atxt
+stdp<-1013.25
+adj<-stdp+3.45*(stdp-min(h_rect$y2))
+
+h_rect$y2<-abs(h_rect$y2-adj)
+t_rect$y2<-abs(t_rect$y2-adj)
+
+# ` hurrican categories
+
+#1 > 980
+#2 965 to 979
+#3 945 to 964
+#4 920 to 944
+#5  < 920 
+
+a.breaks<-c( 872, 900, 920, plyr::round_any((944+920)/2, 5, f=floor), plyr::round_any((964+945)/2, 5, f=ceiling), plyr::round_any((979+965)/2,5, f=floor), 980, 1000) %>% round(., 0) %>% append(., c(round(stdp,2),  round(adj,2)))
+
+a.labs<-(a.breaks)
+a.breaks<-abs(a.breaks-adj)
+
+scale.a<-(max(w$avg)/max(c(t_rect$y2, h_rect$y2)))
+poc_lim<-mean(w$avg)
+
+
+plot_a<- ggplot()+ theme_bw()+
+geom_hline(yintercept=(mean(w$avg)+sd(w$avg)), data=w, linetype="dashed", color ="grey")+
+geom_rect(data=t_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.a), color=rect_fill_non, fill=rect_fill_non, alpha=0.5)+
+
+geom_rect(data=h_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.a), color=rect_fill, fill=rect_fill, alpha=0.5)+
+geom_point(data=w, aes(date, avg), color=line_col, lwd=1)+
+  
+scale_y_continuous(name =txt$ylab, sec.axis = sec_axis(~./scale.a, name=txt$ylab2,  breaks = a.breaks , labels= a.labs), limits = c(poc_lim, NA))+
+labs(title=txt$title, caption = txt$capt)+
+theme(plot.title = element_text(hjust = 0.5))+
+theme(plot.caption =element_text(hjust = 0.5))+
+scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months", position = "top")+
+theme(axis.title.x=element_blank(), plot.tag = element_text(face = "bold"))+
+labs(tag = txt$panel)
+
+
+plot_list$a<-plot_a
+
+
+```
+
+
+
+
 ## old figure 4 code chunks
 
 ### split and recombine 200 km storms

@@ -1,0 +1,127 @@
+---
+title: "export_flux_for mike"
+output: html_document
+date: '2022-10-28'
+---
+# Setup
+## Directories and defaults
+Use r proj file for relative directories
+see: https://yihui.org/knitr/options/
+
+
+```{r setup}
+rm(list=ls())
+# relative directories
+robj<-"r_objects"
+fig<-"../../figures"
+gis_data<-"../../data/gis_data"
+output<-"../../output"
+
+
+knitr::opts_chunk$set(echo =FALSE, warning = FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+
+```
+
+## packages and working directory
+
+Installed custom hurdat package using r markdown menu
+* download  tar from archive as no longer maintained on cran repository
+* https://cran.r-project.org/src/contrib/Archive/HURDAT/
++ include as git submodule instead
+
+```{r}
+wd<-getwd()
+
+f.ipak <- function(pkg){
+  # loads packages, quietly, given by a vector of package names e.g., pkg<-c("ggplot", "tidyverse")
+  # will install  packages listed , and their dependencies, if needed.
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg))
+    install.packages(new.pkg, dependencies = TRUE, quiet=T, verbose = F)
+  sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
+}
+
+# packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "RColorBrewer", "marmap", "extrafont", "oce", "MODIS", "measurements")  # set packages here
+# tidyverse: is all of the following packages: ggplot2, dplyr, tidyr, readr, purr, tibble, sringr, & forcats.
+
+packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT", "ggpattern")
+
+# "HURDAT",
+
+f.ipak(packages)
+# lapply(packages, require, character.only = TRUE)
+# rm(f.ipak, packages)
+print(paste0("Current Working Directory is ", getwd()))
+
+```
+## load basic hurdat
+
+```{r}
+setwd(wd)
+setwd(robj)
+# h<-get_hurdat(basin="EP")
+# saveRDS(h, "hurdat.R")
+
+h<-readRDS("hurdat.R")
+h$DateTime<-with_tz(h$DateTime, tz="UTC")
+
+# for 2018 slection:
+# h<-filter(h, year(DateTime)=="2018")
+
+```
+
+
+## loading POC
+
+```{r}
+setwd(wd)
+setwd(robj)
+
+data<-read_rds("vgpm_integrated_all_years_202200607.R")
+x<-data$st3.5
+rm(data)
+
+window_area<-round((x$`window_area (m^2)`[1]*1e-6),0)
+lab_total<-paste0("Station ", "3.5", ":", " Total Export Flux - ", window_area, " km^2 area")
+
+x$date<-ymd(x$date)
+x<-select(x, date, `mean_export_flux (mgC/m^2/day) for_window_area (total/sum_grid_area)`, `total_export_flux (mgC/day)`)
+names(x)<-c("date", "avg", "ef")
+x$ef<-x$ef/1000000
+
+sst<-readRDS("st35_sst_modis.R")
+z<-select(sst, date, `SST_mean (area weighted)`)
+rm(sst)
+names(z)<-c("date", "sst")
+z$date<-ymd(z$date)
+
+chl<-readRDS("st35_chl_modis.R")
+y<-select(chl, date, 'chl_mean (area weighted)')
+rm(chl)
+names(y)<-c("date", "chl")
+y$date<-ymd(y$date)
+
+```
+here
+
+## creat anomalies
+```{r}
+x$ef.a<-f.anomaly(x$ef)
+x$avg.a<-f.anomaly(x$avg)
+
+y$chl.a<-f.anomaly(y$chl)
+z$sst.a<-f.anomaly(z$sst)
+
+xnames<-c("date", "avg_EF_mgC_m2_day", "total_EF_mgC_day", "total_EF_anomaly_mgC_day", "avg_EF_mgC_m2_day")
+
+
+conv<-3.944e+10
+94.11872*conv
+
+
+
+```
+
+
+
