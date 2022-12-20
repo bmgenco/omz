@@ -55,6 +55,21 @@ f.ipak(packages)
 print(paste0("Current Working Directory is ", getwd()))
 
 ```
+
+
+# Functions
+
+```{r}
+f.anomaly<-function(c){
+  m<-mean(c)
+  n<-c-m
+  return(n)
+}
+
+```
+
+# Loading Data
+
 ## load basic hurdat
 
 ```{r}
@@ -105,7 +120,7 @@ y$date<-ymd(y$date)
 ```
 here
 
-## creat anomalies
+### creat anomalies
 ```{r}
 x$ef.a<-f.anomaly(x$ef)
 x$avg.a<-f.anomaly(x$avg)
@@ -113,15 +128,22 @@ x$avg.a<-f.anomaly(x$avg)
 y$chl.a<-f.anomaly(y$chl)
 z$sst.a<-f.anomaly(z$sst)
 
-xnames<-c("date", "avg_EF_mgC_m2_day", "total_EF_mgC_day", "total_EF_anomaly_mgC_day", "avg_EF_mgC_m2_day")
+xnames<-c("date", "avg_EF_mgC_m2_day", "total_EF_mgC_day", "total_EF_anomaly_mgC_day", "avg_EF_anomaly_mgC_m2_day")
+ynames<-c("date", "avg_CHL_mg_m3_day","avg_CHL_anomaly_mg_m3_day")
+znames<-c("date", "avg_SST_C", "SST_anomaly_C")
 
+names(x)<-xnames
+names(y)<-ynames
+names(z)<-znames
 
-conv<-3.944e+10
-94.11872*conv
+# conv<-3.944e+10
+# 94.11872*conv
 
+rm(xnames, ynames, znames)
 
 
 ```
 
 
 
+names()
