@@ -937,7 +937,7 @@ median(st2$chlorophyll)
 ```
 ## hurricane metrics
 * MSW Maximum Sustained Wind
-* TS ranslational Speed (m/s)
+* TS translational Speed (m/s)
 * wind speed to translational speed (WS/TS)
 
 ```{r}
@@ -983,6 +983,16 @@ names(z)<-c("time", "wind")
 # 
 # a<-z[09:20,]
 # a<-z[16:26,]
+
+## added for suplementray table:
+
+y$wind_speed_ms<-y$max_sustained_wind_knots/1.94384
+t<-subset(y, select=c(-delta, -max_sustained_wind_knots))
+
+t$ratio<-round(t$wind_speed_ms/t$speed, digits=2)
+t$ratio_cubed<-signif((t$wind_speed_ms^3)/t$speed, digits=3)
+
+
 
 ```
 ## added 2022-02-09
