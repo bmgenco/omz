@@ -65,7 +65,6 @@ f.anomaly<-function(c){
   n<-c-m
   return(n)
 }
-
 ```
 
 # Loading Data
@@ -75,14 +74,10 @@ f.anomaly<-function(c){
 ```{r}
 setwd(wd)
 setwd(robj)
-# h<-get_hurdat(basin="EP")
+h<-get_hurdat(basin="EP")
 # saveRDS(h, "hurdat.R")
-
-h<-readRDS("hurdat.R")
-h$DateTime<-with_tz(h$DateTime, tz="UTC")
-
-# for 2018 slection:
-# h<-filter(h, year(DateTime)=="2018")
+# h<-readRDS("hurdat.R")
+h$DateTime<-force_tz(h$DateTime, tz="UTC")
 
 ```
 
@@ -141,9 +136,108 @@ names(z)<-znames
 
 rm(xnames, ynames, znames)
 
+x1<-full_join(y,z, by="date")%>% full_join(., x, by="date")
+# missing_values<- x1[rowSums(is.na(x1)) > 0,] # a few misinf vlauers. see august 2020 for export flux
+rm(x,y,z)
 
 ```
 
+
+## filled and non-filled dataset
+
+x1= non_filled
+
+```{r}
+start<-min(x1$date)
+end<-max(x1$date)%>%+7
+d<-data.frame(seq(ymd(start), ymd(end), b="days"), NA)
+names(d)<-c("date", "remove")
+
+
+x1[is.na(x1)]<--1 #save an values for later
+
+x2<-full_join(d, x1, by="date") %>% select(., -remove) 
+x2<-x2%>% fill(names(x2), .direction =  "down")
+x2[x2==-1]<-NA
+# rm(x1,d)
+
+```
+
+#@ spatil selction of storms
+
+```{r}
+# 
+ # save_h<-h
+h<-save_h
+
+h<-filter(h, DateTime >=date(min(x2$date))-60) 
+h$date<-date(h$DateTime)
+h<-select(h, date,Key, Name, Status, Pressure, Wind, Lon, Lat)
+
+# distance<-100000 #200 km
+distance<-200000 #400 km
+
+setwd(wd)
+setwd(robj)
+stations_positions_list<-readRDS("OC1806A_stations_positions_list.R")
+st<-stations_positions_list[[3]][4,cbind(2,3)]
+st<-sf::st_as_sf(st, coords =c("longitude", "latitude"),  crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+flat<-sf::st_transform(st, "+proj=aeqd +lat_0=18.5005 +lon_0=-108.502" )
+circle_3.5<-sf::st_buffer(flat, dist=distance)%>%sf::st_transform(., "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+bbox<-st_bbox(circle_3.5)
+
+h.pts<- sf::st_as_sf(h, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>% 
+sf::st_crop(., c(xmin=bbox$xmin[[1]], ymin=bbox$ymin[[1]], xmax=bbox$xmax[[1]], ymax=bbox$ymax[[1]])) #subset by user defined 
+
+h<-st_set_geometry(h.pts, NULL)
+
+# smotthing out multitiem points
+
+
+new.h<-h %>% distinct(date, .keep_all = TRUE)
+
+
+rm(circle_3.5, flat, stations_positions_list, st)
+
+```
+
+# non filledseanal signal
+
+```{r}
+start<-min(x1$date)%>%as.POSIXct()
+end<-max(x1$date)%>%as.character()
+
+t<-x1%>%select(.,avg_CHL_mg_m3_day, avg_SST_C, avg_EF_mgC_m2_day ) %>% ts(.,start=start, end=end, frequency =7 )
+t1<-decompose(t, type ="additive", filter=NULL)
+
+
+```
+
+
+# testing:
+```{r}
+print(ts(x1$avg_SST_C, frequency = 7), calendar = T)
+```
+
+
+## selct hurdat to match
+```{r}
+# adjust viraiable "distance"
+# ef_200_st3.5<-full_join(x2, new.h, by="date")
+ef_400_st3.5<-full_join(x2, newh, by="date")
+
+
+```
+
+save
+
+```{r}
+setwd(wd)
+setwd(output)
+write.csv(ef_200_st3.5, "ef_200_st35.csv", row.names=FALSE)
+write.csv(ef_400_st3.5, "ef_400_st35.csv", row.names=FALSE)
+
+```
 
 
 names()
