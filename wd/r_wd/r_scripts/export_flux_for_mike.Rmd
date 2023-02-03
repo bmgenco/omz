@@ -47,7 +47,7 @@ f.ipak <- function(pkg){
 
 # remotes::install_github("R-Finance/xtsExtra")
 
-packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT", "ggpattern", "zoo", "xts", "dsa",  "tsibble", "feasts", "tsbox")
+packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT", "ggpattern", "zoo", "xts", "dsa",  "tsibble", "feasts", "tsbox", "rsoi")
 
 # "HURDAT",
 
@@ -212,7 +212,7 @@ rm(circle_3.5, flat, stations_positions_list, st)
 
 ### xts
 ```{r}
-x1<-x1 %>% filter(date <= '2020-08-12') 
+# x1<-x1 %>% filter(date <= '2020-08-12') 
 t<-(x1)%>%select(.,avg_CHL_mg_m3_day, avg_SST_C, avg_EF_mgC_m2_day )
 names(t)<-c("CHL", "SST", "EF")
 # t<-(x1)%>%select(., avg_SST_C)
@@ -242,24 +242,24 @@ trend.ef<-ts_trend(t.ef)
 # autoplot(trend.chl, col="green")
 # autoplot(trend.ef, col="black")
 
-plot.sst<-ts_plot(
-  `Raw series` = t.sst,
-  `Loess trend` = ts_trend(t.sst),
-  title = "Average SST",
-  subtitle = "for 200 km circle")
-
-
-plot.chl<-ts_plot(
-  "8-day data" = t.chl,
-  "Loess trend" = ts_trend(t.chl),
-  title = " Mean CHL_mg/m3/day",
-  subtitle = "for 200 km circle")
-
-plot.ef<-ts_plot(
-  "8-day data" = t.ef,
-  "Loess trend" = ts_trend(t.ef),
-  title = "Mean export flux (mgC/m^2/day)",
-  subtitle = "for 200 km circle")
+# plot.sst<-ts_plot(
+#   `Raw series` = t.sst,
+#   `Loess trend` = ts_trend(t.sst),
+#   title = "Average SST",
+#   subtitle = "for 200 km circle")
+# 
+# 
+# plot.chl<-ts_plot(
+#   "8-day data" = t.chl,
+#   "Loess trend" = ts_trend(t.chl),
+#   title = " Mean CHL_mg/m3/day",
+#   subtitle = "for 200 km circle")
+# 
+# plot.ef<-ts_plot(
+#   "8-day data" = t.ef,
+#   "Loess trend" = ts_trend(t.ef),
+#   title = "Mean export flux (mgC/m^2/day)",
+#   subtitle = "for 200 km circle")
 
 ## ggplot options
 
@@ -276,6 +276,11 @@ p3<-ts_ggplot(t.ef, ts_trend(t.ef))+scale_color_manual(values = c("black", "purp
 
 
 
+## test
+
+s<-spectrum(t.sst)
+f.sst<-fft(t.sst%)
+
 # stuff that dpes wqorkk.
 
 test<-t %>% model(stl = STL(value))
@@ -289,6 +294,18 @@ test<-ts_trend(t)
 
 
 test<-decompose(t)
+
+```
+
+
+# matching ONI index to trend
+
+```{r}
+oni<-download_oni()
+
+oni<-oni%>% filter()
+t.oni<-xts(oni$ONI, oni$Date)
+
 
 ```
 
