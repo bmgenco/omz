@@ -45,7 +45,9 @@ f.ipak <- function(pkg){
 # packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "RColorBrewer", "marmap", "extrafont", "oce", "MODIS", "measurements")  # set packages here
 # tidyverse: is all of the following packages: ggplot2, dplyr, tidyr, readr, purr, tibble, sringr, & forcats.
 
-packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT", "ggpattern")
+# remotes::install_github("R-Finance/xtsExtra")
+
+packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT", "ggpattern", "zoo", "xts", "dsa",  "tsibble", "feasts", "tsbox")
 
 # "HURDAT",
 
@@ -163,12 +165,12 @@ x2[x2==-1]<-NA
 
 ```
 
-#@ spatil selction of storms
+#@ spatil selection of storms
 
 ```{r}
 # 
  # save_h<-h
-h<-save_h
+# h<-save_h
 
 h<-filter(h, DateTime >=date(min(x2$date))-60) 
 h$date<-date(h$DateTime)
@@ -203,15 +205,158 @@ rm(circle_3.5, flat, stations_positions_list, st)
 
 # non filledseanal signal
 
+## alertanaive paackages
+
+- ealry enddate removes missinf d data
+- xts and ts
+
+### xts
+```{r}
+x1<-x1 %>% filter(date <= '2020-08-12') 
+t<-(x1)%>%select(.,avg_CHL_mg_m3_day, avg_SST_C, avg_EF_mgC_m2_day )
+names(t)<-c("CHL", "SST", "EF")
+# t<-(x1)%>%select(., avg_SST_C)
+t.d<-na.omit(x1)%>%select(., date)%>% .[,1]
+#rename will break some code below
+
+t<-xts(t, t.d)
+
+```
+
+### xts and ttibbel and feast
+
+```{r}
+# t<-ts_tsibble(t)
+
+t.sst<-ts_tsibble(t) %>% filter(., id=="SST")
+t.chl<-ts_tsibble(t) %>% filter(., id=="CHL")
+t.ef<-ts_tsibble(t) %>% filter(., id=="EF")
+
+trends<-ts_trend(t)
+
+trend.sst<-ts_trend(t.sst)
+trend.chl<-ts_trend(t.chl)
+trend.ef<-ts_trend(t.ef)
+
+# autoplot(trend.sst, col="red")
+# autoplot(trend.chl, col="green")
+# autoplot(trend.ef, col="black")
+
+plot.sst<-ts_plot(
+  `Raw series` = t.sst,
+  `Loess trend` = ts_trend(t.sst),
+  title = "Average SST",
+  subtitle = "for 200 km circle")
+
+
+plot.chl<-ts_plot(
+  "8-day data" = t.chl,
+  "Loess trend" = ts_trend(t.chl),
+  title = " Mean CHL_mg/m3/day",
+  subtitle = "for 200 km circle")
+
+plot.ef<-ts_plot(
+  "8-day data" = t.ef,
+  "Loess trend" = ts_trend(t.ef),
+  title = "Mean export flux (mgC/m^2/day)",
+  subtitle = "for 200 km circle")
+
+## ggplot options
+
+p1<-ts_ggplot(t.chl, ts_trend(t.chl))+scale_color_manual(values = c("darkgreen", "purple"), labels=c("Mean CHL [mg/m3/day]", "Loews Trend"))+ theme_tsbox()
+
+
+p2<-ts_ggplot(t.sst, ts_trend(t.sst))+scale_color_manual(values = c("red", "purple"), labels=c("Mean SST (°C)", "Loews Trend"))+ theme_tsbox()
+
+
+
+p3<-ts_ggplot(t.ef, ts_trend(t.ef))+scale_color_manual(values = c("black", "purple"), labels=c("Mean Export Flux (mgC/m^2/day)", "Loews Trend"))+ theme_tsbox()
+
+
+
+
+
+# stuff that dpes wqorkk.
+
+test<-t %>% model(stl = STL(value))
+
+test<-tidy_fft(t$value)
+
+
+test2<-ts_decompose(t)
+
+test<-ts_trend(t)
+
+
+test<-decompose(t)
+
+```
+
+
+
+### xts and ts
+requres t as xts object
+```{r}
+# seems like ther should be an easri way..
+
+
+
+remove(t.d)
+periodicity(t$avg_SST_C)
+
+# weekly hack
+
+ts.sst<-ts(x1$avg_SST_C, frequency=52, start=c(2002, 07))
+ts.chl<-ts(x1$avg_CHL_mg_m3_day, frequency=52, start=c(2002, 07))
+
+
+d.sst<-decompose(ts.sst, type = "multiplicative")
+s<-spectrum(ts, demean=T)
+
+
+test<-stl(ts)
+
+# messing asbout:
+test<-stl.xts(t, s.window="periodic")
+
+s<-spectrum(t$avg_SST_C, demean=F)
+
+test<-fft(t)
+
+
+
+plot(fft(t), type = "l")
+
+test<-acf(t, demean=T)
+s<-spectrum(t, demean=T)
+
+```
+
+
+
+
+## with ts whioch is  apin for 8 day observersations
+
 ```{r}
 start<-min(x1$date)%>%as.POSIXct()
-end<-max(x1$date)%>%as.character()
+end<-max(x1$date)%>%as.POSIXct()
 
-t<-x1%>%select(.,avg_CHL_mg_m3_day, avg_SST_C, avg_EF_mgC_m2_day ) %>% ts(.,start=start, end=end, frequency =7 )
+start<-c(20)
+
+start<-min(x1$date)
+end<-max(x1$date)
+
+
+t<-x1%>%select(.,avg_CHL_mg_m3_day, avg_SST_C, avg_EF_mgC_m2_day ) %>% ts(.,start=start, end=end, deltat =(8/365) )
+
+t<-x1%>%select(.,avg_EF_mgC_m2_day ) %>% ts(.,start=start, end=end, deltat =(7/365) )
+
+
 t1<-decompose(t, type ="additive", filter=NULL)
 
 
 ```
+
 
 
 # testing:
@@ -224,7 +369,7 @@ print(ts(x1$avg_SST_C, frequency = 7), calendar = T)
 ```{r}
 # adjust viraiable "distance"
 # ef_200_st3.5<-full_join(x2, new.h, by="date")
-ef_400_st3.5<-full_join(x2, newh, by="date")
+ef_400_st3.5<-full_join(x2, new.h, by="date")
 
 
 ```
