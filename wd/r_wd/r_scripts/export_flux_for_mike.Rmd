@@ -6,7 +6,13 @@ date: '2022-10-28'
 # Setup
 ## Directories and defaults
 Use r proj file for relative directories
-see: https://yihui.org/knitr/options/
+-see: https://yihui.org/knitr/options/
+-use acf() function
+-spectral pacakge? 
+--https://cran.r-project.org/web/packages/spectral/spectral.pdf
+
+notes:
+https://www.reddit.com/r/RStudio/comments/up56mo/how_to_do_a_fast_fourier_transform_in_r/
 
 
 ```{r setup}
@@ -232,7 +238,7 @@ t.sst<-ts_tsibble(t) %>% filter(., id=="SST")
 t.chl<-ts_tsibble(t) %>% filter(., id=="CHL")
 t.ef<-ts_tsibble(t) %>% filter(., id=="EF")
 
-trends<-ts_trend(t)
+# trends<-ts_trend(t)
 
 trend.sst<-ts_trend(t.sst)
 trend.chl<-ts_trend(t.chl)
@@ -279,8 +285,7 @@ p3<-ts_ggplot(t.ef, ts_trend(t.ef))+scale_color_manual(values = c("black", "purp
 ## test
 
 s<-spectrum(t.sst)
-f.sst<-fft(t.sst%)
-
+f.chl<-fft(t.chl$value)
 # stuff that dpes wqorkk.
 
 test<-t %>% model(stl = STL(value))
@@ -303,9 +308,28 @@ test<-decompose(t)
 ```{r}
 oni<-download_oni()
 
-oni<-oni%>% filter()
+oni<-oni%>% filter(Date>= min(t.chl$time), Date<=max(t.chl$time))
 t.oni<-xts(oni$ONI, oni$Date)
 
+cutoff<-'2020-08-12'
+
+pdo<-download_pdo()
+t.sst<-filter(t.sst, time<=cutoff)
+pdo<-pdo%>% filter(Date>= min(t.sst$time), Date<=cutoff)
+pdo$PDO<-scale(pdo$PDO)
+t.pdo<-xts(pdo$PDO, pdo$Date)
+
+# ccf need tim series to be smae smapling ferqucny..
+
+t.chl$value<-scale(t.chl$value)
+t.sst$value<-scale(t.sst$value)
+
+t.pdo$value<-scale(t.pdo$value)
+ts_plot(t.pdo,  t.sst, ts_trend(t.sst), -ts_trend(t.pdo))
+
+
+
+ts_plot(-1*ts_trend(t.oni), -1*ts_trend(t.pdo))
 
 ```
 
