@@ -53,7 +53,7 @@ f.ipak <- function(pkg){
 
 # remotes::install_github("R-Finance/xtsExtra")
 
-packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT", "ggpattern", "zoo", "xts", "dsa",  "tsibble", "feasts", "tsbox", "rsoi")
+packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT", "ggpattern", "zoo", "xts", "dsa",  "tsibble", "feasts", "tsbox", "rsoi", "cowplot.pa")
 
 # "HURDAT",
 
@@ -88,8 +88,8 @@ noise<-Filter(Negate(is.null), noise)
 noise<-bind_rows(noise)
 noise<-filter(noise, duplicated(noise$date)==F)
 
-
-signal<-filter(x, date!=noise$date)
+signal<-x[!x$date %in% noise$date,]
+# signal<-filter(x, date!=noise$date)
 split<-list(signal, noise)
 names(split)<-c("signal", "noise")
 return(split)}
@@ -233,7 +233,7 @@ rm(circle_3.5, flat, stations_positions_list, st)
  split date
 
 ```{r}
-data<-f.noise(x=1, h.date=new.h$date, prior=14, post=24)
+data<-f.noise(x=x1, h.date=new.h$date, prior=14, post=24)
 
 ```
 
@@ -241,7 +241,7 @@ data<-f.noise(x=1, h.date=new.h$date, prior=14, post=24)
 ```{r}
 test.1<-ggplot()+geom_point(data=data$signal, aes(x=date, y=avg_CHL_mg_m3_day))+ 
 geom_point(data=data$noise, aes(x=date, y=avg_CHL_mg_m3_day), col="red")
-test.1
+test.2<-ts_ggplot(signal.chl)+geom_point(data=data$noise, aes(x=date, y=avg_CHL_mg_m3_day), col="red")
 ```
 
 
@@ -265,6 +265,7 @@ test.1
 ```{r}
 
 t<-na.omit(x1) %>%filter(date <= '2020-08-12') 
+# t<-na.omit(x1)
 t.d<-select(t, date)%>% .[,1]
 t<-t%>%select(.,avg_CHL_mg_m3_day, avg_SST_C, avg_EF_mgC_m2_day )
 names(t)<-c("CHL", "SST", "EF")
@@ -342,11 +343,159 @@ p9<-ts_ggplot(noise.ef, ts_trend(noise.ef))+scale_color_manual(values = c("black
 #### comparing trends
 
 ```{r}
-sst.dif<-signal_trend.sst-trend.sst
-chl.dif<-signal_trend.chl-trend.chl
-ef.dif<-signal_trend.ef-trend.ef
+
+sst_trend.dif<-trend.sst-signal_trend.sst
+chl_trend.dif<-trend.chl-signal_trend.chl
+ef_trend.dif<-trend.ef-signal_trend.ef
+
+
+
+
+dif1
+
+p<-ts_ggplot(t.chl, signal.chl)
+
 
 ```
+
+
+
+
+# matching ONI index to trend
+
+```{r}
+oni<-download_oni()
+oni<-oni%>% filter(Date>= min(t.chl$time), Date<=max(t.chl$time))
+t.oni<-xts(oni$ONI, oni$Date)
+
+cutoff<-'2020-08-12'
+start<-min(data$signal$date)
+pdo<-download_pdo()
+# heat.sst<-filter(t.sst, time<=cutoff)
+pdo<-pdo%>% filter(Date>= start, Date<=cutoff)
+# pdo<-pdo%>%filter(Date>= min(t.chl$time), Date<=max(t.chl$time))
+
+
+pdo$PDO<-scale(pdo$PDO)
+t.pdo<-xts(pdo$PDO, pdo$Date)
+
+# ccf need tim series to be smae smapling ferqucny..
+
+t.chl$CHL<-scale(t.chl$CHL)
+t.sst$SST<-scale(t.sst$SST)
+t.ef$EF<-scale(t.ef$EF)
+
+# t.pdo$value<-scale(t.pdo$value)
+p13<-ts_ggplot(t.pdo,  t.chl, ts_trend(t.chl), -ts_trend(t.pdo))+ theme_tsbox() + ggtitle("CHL")
+p14<-ts_ggplot(t.pdo,  t.sst, ts_trend(t.sst), -ts_trend(t.pdo))+ theme_tsbox()+ggtitle("SST")
+p15<-ts_ggplot(t.pdo,  t.ef, ts_trend(t.ef), -ts_trend(t.pdo))+ theme_tsbox() + ggtitle("EF")
+
+p16<-ts_ggplot(t.pdo,  t.chl, ts_trend(t.chl), ts_trend(t.pdo))+ theme_tsbox() + ggtitle("CHL")
+p17<-ts_ggplot(t.pdo,  t.sst, ts_trend(t.sst), ts_trend(t.pdo))+ theme_tsbox()+ggtitle("SST")
+p18<-ts_ggplot(t.pdo,  t.ef, ts_trend(t.ef), ts_trend(t.pdo))+ theme_tsbox() + ggtitle("EF")
+
+trend.pdo<--1*ts_trend(t.pdo)
+
+
+test<-(ts_trend(t.chl))
+test
+%>%ts_frequency(., to="month", aggregate = "mean")
+test1<-ts_frequency(((t) %>% filter(., id=="CHL")), to=12, aggregate = "mean")
+
+trend.chl<- t.chl %>%ts_frequency(., to="month", aggregate="mean") 
+%>% ts_trend()
+
+
+cor(-ts_trend(t.pdo), ts_trend(t.chl))
+
+
+```
+
+```{r}
+
+
+p10<-ggplot()+geom_point(data=data$signal, aes(x=date, y=avg_CHL_mg_m3_day, color="Signal"))+ 
+geom_point(data=data$noise, aes(x=date, y=avg_CHL_mg_m3_day, color="Noise"))+ 
+geom_line(data=ts_df(trend.chl), aes(x=time, y=value, color="Trend"))+
+labs(y="Mean CHL [mg/m3/day]")+
+scale_color_manual(values=c(Signal="darkgreen", Noise="#640064", Trend="black"))+
+theme(legend.position="bottom") +
+theme(legend.title=element_blank())
+
+
+
+
+
+p11<-ggplot()+geom_point(data=data$signal, aes(x=date, y=avg_SST_C, color="Signal"))+ 
+geom_point(data=data$noise, aes(x=date, y=avg_SST_C, color="Noise"))+ 
+geom_line(data=ts_df(trend.sst), aes(x=time, y=value, color="Trend"))+
+xlim(min(signal$date), max(data$signal$date))+
+ylim(20, 30)+
+labs(y="Mean SST (°C)")+
+scale_color_manual(values=c(Signal="red", Noise="#00ffff", Trend="black"))+
+theme(legend.position="bottom") +
+theme(legend.title=element_blank())
+
+
+
+p12<-ggplot()+geom_point(data=data$signal, aes(x=date, y=avg_EF_mgC_m2_day, color="Signal"))+ 
+geom_point(data=data$noise, aes(x=date, y=avg_EF_mgC_m2_day, color="Noise"))+ 
+geom_line(data=ts_df(trend.ef), aes(x=time, y=value, color="Trend"))+
+ylim(35, 130)+
+labs(y="Mean Export Flux (mgC/m^2/day)")+
+scale_color_manual(values=c(Signal="brown", Noise="#2aa5a5", Trend="black"))+
+theme(legend.position="bottom") +
+theme(legend.title=element_blank())
+
+
+```
+
+
+
+# plots 1
+```{r}
+plots<-vector(mode='list')
+
+#time series with trends
+plots[[1]]<-p1
+plots[[2]]<-p2
+plots[[3]]<-p3
+
+plots
+
+
+
+
+```
+
+saving plots
+```{r}
+
+# setwd(fig)
+# pdf("figure_a1.png", height=11 , width =8.5)
+# plot_grid(plots[[1]], plots[[2]], plots[[3]], ncol=1, labels="auto")
+# dev.off()
+
+
+# setwd(fig)
+# pdf("figure_a2.pdf", height=11 , width =8.5)
+# plot_grid(p4,p7,p5,p8,p6,p9, ncol=2, labels="auto")
+# dev.off()
+
+
+# setwd(fig)
+# pdf("figure_a3.pdf", height=11 , width =8.5)
+# plot_grid(p10, p11,p12, ncol=1, labels="auto")
+# dev.off()
+
+setwd(fig)
+pdf("figure_a4.pdf", height=11 , width =8.5)
+plot_grid(p13, p14,p15, ncol=1)
+dev.off()
+
+
+```
+
 
 
 ```{r}
@@ -386,48 +535,6 @@ test<-decompose(t)
 ```
 
 
-# matching ONI index to trend
-
-```{r}
-oni<-download_oni()
-oni<-oni%>% filter(Date>= min(t.chl$time), Date<=max(t.chl$time))
-t.oni<-xts(oni$ONI, oni$Date)
-
-cutoff<-'2020-08-12'
-
-pdo<-download_pdo()
-# heat.sst<-filter(t.sst, time<=cutoff)
-# pdo<-pdo%>% filter(Date>= min(t.sst$time), Date<=cutoff)
-pdo<-pdo%>%filter(Date>= min(t.chl$time), Date<=max(t.chl$time))
-
-
-pdo$PDO<-scale(pdo$PDO)
-t.pdo<-xts(pdo$PDO, pdo$Date)
-
-# ccf need tim series to be smae smapling ferqucny..
-
-t.chl$value<-scale(t.chl$value)
-# t.sst$value<-scale(t.sst$value)
-
-# t.pdo$value<-scale(t.pdo$value)
-ts_plot(t.pdo,  t.chl, ts_trend(t.chl), -ts_trend(t.pdo))
-
-trend.pdo<--1*ts_trend(t.pdo)
-
-
-test<-(ts_trend(t.chl))
-test
-%>%ts_frequency(., to="month", aggregate = "mean")
-test1<-ts_frequency(((t) %>% filter(., id=="CHL")), to=12, aggregate = "mean")
-
-trend.chl<- t.chl %>%ts_frequency(., to="month", aggregate="mean") 
-%>% ts_trend()
-
-
-cor(-ts_trend(t.pdo), ts_trend(t.chl))
-
-
-```
 
 
 
