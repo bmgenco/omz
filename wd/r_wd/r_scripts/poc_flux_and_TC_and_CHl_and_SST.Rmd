@@ -299,25 +299,36 @@ rm(st, flat, stations_positions_list)
 
 
 # loading POC
+* Important set end date to remove NA's in in EF and SST
+** 2022-08-3 & 2020-09-05m 
+*** TC overpass in thes dates?
+**missing SST 2021-0907
+
 
 ```{r}
 setwd(wd)
 setwd(robj)
 
+end_date<-'2020-08-12'
+
 # data<-read_rds("vgpm_integrated_20220512.R")
 data<-read_rds("vgpm_integrated_all_years_202200607.R")
 poc<-data$st3.5
+
+
 sst<-readRDS("st35_sst_modis.R")
 chl<-readRDS("st35_chl_modis.R")
+
+poc$date<-ymd(poc$date)
+poc<-poc%>%filter(date <= end_date)
 
 x<-poc
 window_area<-round((x$`window_area (m^2)`[1]*1e-6),0)
 
-
 # lab_avg<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " " '
 lab_total<-paste0("Station ", "3.5", ":", " Total Export Flux - ", window_area, " km^2 area")
 
-x$date<-ymd(x$date)
+
 x<-select(x, date, `mean_export_flux (mgC/m^2/day) for_window_area (total/sum_grid_area)`, `total_export_flux (mgC/day)`)
 
 names(x)<-c("date", "avg", "ef")
@@ -333,6 +344,8 @@ names(z)<-c("date", "sst")
 z$date<-ymd(z$date)
 
 
+y<-y%>%filter(date <= end_date)
+z<-y%>%filter(date <= end_date)
 
 rm(data, sst, chl)
 
@@ -342,6 +355,7 @@ rm(data, sst, chl)
 
 
 # computing sst
+* dont run
 
 ## stations
 -all stations not needed
@@ -668,6 +682,114 @@ storms_around_st3.5$t<-t
 
 
 
+# new plots
+* use mee
+## definig plot varibales
+
+
+```{r}
+
+w<-inner_join(x,y, by='date') %>% inner_join(., z,  by='date' ) %>% select(., - ef)
+# rm(poc, chl, sst)
+
+#save original for scale etc
+rects<-vector(mode="list")
+rects$t<-t_rect
+rects$h<-h_rect
+rects$t_4<-t_4_rect
+
+
+ # rectangel parameters:
+rect_color<-"white"
+sz<-0.25
+alph<-.25
+# rect_fill<-"cornsilk1" 
+rect_fill<-"#fc8d62"
+rect_fill_non<-"#8da0cb"
+# rect_fill_outside<-"#66c2a5"
+ # rect_fill_outside<-"grey48"
+rect_fill_outside<-"gray38"
+
+
+# line colors
+
+line_col<-"#66c2a5"
+line_col<-"black"
+tcolor<-"red"
+chcolor<-"darkgreen"
+
+
+title<-paste0("Station ", "3.5", ": ", "Positive Anomaly Average Export Flux")
+capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). Positve aanomalies only (above or eqaul to mean). Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5 \nOrange = Hurricane strength,  Blue = less than " ". Grey dashed horizontal line is 1 SD (σ) above mean export flux for time series. 1013.25 mb is standard atmospheric pressue at sea level for reference.'
+ylab<-"Mean export flux (mgC/m^2/day)"
+ylab2<-"Cyclone eye pressure - millibars (mb)"
+panel<-"a"
+atxt<-list(title, capt, ylab, ylab2, panel)
+names(atxt)<-c("title", "capt", "ylab", "ylab2", "panel")
+
+title<-paste0("Station ", "3.5", ": ", "Average Export Flux and Chlorophyll-a")
+capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). MODIS derived Chl-a in green. Input of VGPM NPP model. \nDashed horizontal lines are 1 SD (σ) above mean for time series (EF = grey, chl-a = green).'
+ylab2<-"Chlorophyll-a [μg/L]"
+panel<-"b"
+btxt<-list(title, capt, ylab, ylab2, panel)
+names(btxt)<-c("title", "capt", "ylab", "ylab2", "panel")
+
+
+title<-paste0("Station ", "3.5", ": ", "Average Export Flux and SST")
+capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). MODIS derived SST in red. Input of VGPM NPP model. \nDashed horizontal lines are 1 SD (σ) above/below mean for time series (EF = grey, SST =red).'
+ylab2<-"SST (°C)"
+panel<-"c"
+ctxt<-list(title, capt, ylab, ylab2, panel)
+names(ctxt)<-c("title", "capt", "ylab", "ylab2", "panel")
+
+title<-paste0("Station ", "3.5", ": ", "Chlorophyll-a and SST")
+capt<-'MODIS derived Chl-a in green, and SST in red. Inputs of VGPM NPP model. \nDashed lines are 1 SD (σ) above/below mean for time series (chl-a = green, SST =red).'
+ylab<-"Chlorophyll-a [μg/L]"
+ylab2<-"SST (°C)"
+panel<-"d"
+dtxt<-list(title, capt, ylab, ylab2, panel)
+names(dtxt)<-c("title", "capt", "ylab", "ylab2", "panel")
+
+title<-paste0("Station ", "3.5", ": ", "Chlorophyll-a and storms within 400km^2 box")
+capt<-'MODIS derived Chl-a in green. Input of VGPM NPP model. Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " ". \nStorms outside flux box but wihin 400km^2 in grey (dashed). Green dashed horizontal line is mean Chl-a for time series. 1013.25 mb is standard atmospheric pressue at sea level for reference.'
+ylab<-"Chlorophyll-a [μg/L]"
+ylab2<-"Cyclone eye pressure - millibars (mb)"
+panel<-"e"
+etxt<-list(title, capt, ylab, ylab2, panel)
+names(etxt)<-c("title", "capt", "ylab", "ylab2", "panel")
+
+title<-paste0("Station ", "3.5", ": ", "SST and storms within 400km^2 box")
+capt<-'MODIS derived SST in red. Input of VGPM NPP model. Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " ". \nStorms outside flux box but wihin 400km^2 in grey (dashed). Red dashed horizontal line is mean SST for time series. 1013.25 mb is standard atmospheric pressue at sea level for reference.'
+ylab<-"SST (°C)"
+panel<-"f"
+ftxt<-list(title, capt, ylab, ylab2, panel)
+names(ftxt)<-c("title", "capt", "ylab", "ylab2", "panel")
+
+
+title<-paste0("Station ", "3.5", ": ", "Average Export Flux and storms within 400km^2 box")
+capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " ". \nStorms outside flux box but wihin 400km^2 in grey (dashed). Blackdashed horizontal line is mean export flux for time series. 1013.25 mb is standard atmospheric pressue at sea level for reference.'
+ylab<-"Mean export flux (mgC/m^2/day)"
+panel<-"g"
+gtxt<-list(title, capt, ylab, ylab2, panel)
+names(gtxt)<-c("title", "capt", "ylab", "ylab2", "panel")
+
+plot_list<-vector(mode="list")
+
+```
+
+
+
+
+
+
+## sup figure
+## figure 4
+## online figure
+
+
+
+# Make plots older
+## varaibles
 variables for a ---> ? and sime seris plots
 
 ```{r}
@@ -767,9 +889,6 @@ names(gtxt)<-c("title", "capt", "ylab", "ylab2", "panel")
 plot_list<-vector(mode="list")
 
 ```
-
-
-
 
 ## plot a
 -Above aver poc and 200km TS
@@ -1171,7 +1290,6 @@ plot_list$g<-plot_g
 ```{r}
 
 
-
 geom_line(aes(y=chlorophyll * scale.chla), color=fcolor) +
   geom_line(aes(y=celsius), color=tcolor) +
   xlab("Date") +
@@ -1295,11 +1413,6 @@ f3<-f1 +
 
 
 ```   
-
-```{r}
-
-
-```
 
 
 
