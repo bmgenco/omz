@@ -308,13 +308,14 @@ rm(st, flat, stations_positions_list)
 ```{r}
 setwd(wd)
 setwd(robj)
+# 
+# end_date<-'2020-08-12'
 
-end_date<-'2020-08-12'
 
 # data<-read_rds("vgpm_integrated_20220512.R")
 data<-read_rds("vgpm_integrated_all_years_202200607.R")
 poc<-data$st3.5
-
+end_date<-max(poc$date)
 
 sst<-readRDS("st35_sst_modis.R")
 chl<-readRDS("st35_chl_modis.R")
@@ -345,7 +346,7 @@ z$date<-ymd(z$date)
 
 
 y<-y%>%filter(date <= end_date)
-z<-y%>%filter(date <= end_date)
+z<-z%>%filter(date <= end_date)
 
 rm(data, sst, chl)
 
@@ -686,7 +687,105 @@ storms_around_st3.5$t<-t
 * use mee
 ## definig plot varibales
 
+### all plots
+* dont run
 
+```{r}
+# 
+# w<-inner_join(x,y, by='date') %>% inner_join(., z,  by='date' ) %>% select(., - ef)
+# # rm(poc, chl, sst)
+# 
+# #save original for scale etc
+# rects<-vector(mode="list")
+# rects$t<-t_rect
+# rects$h<-h_rect
+# rects$t_4<-t_4_rect
+# 
+# 
+#  # rectangel parameters:
+# rect_color<-"white"
+# sz<-0.25
+# alph<-.25
+# # rect_fill<-"cornsilk1" 
+# rect_fill<-"#fc8d62"
+# rect_fill_non<-"#8da0cb"
+# # rect_fill_outside<-"#66c2a5"
+#  # rect_fill_outside<-"grey48"
+# rect_fill_outside<-"gray38"
+# 
+# 
+# # line colors
+# 
+# line_col<-"#66c2a5"
+# line_col<-"black"
+# tcolor<-"red"
+# chcolor<-"darkgreen"
+# 
+# title<-paste0("Station ", "3.5", ": ", "Positive Anomaly Average Export Flux")
+# capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). Positve aanomalies only (above or eqaul to mean). Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5 \nOrange = Hurricane strength,  Blue = less than " ". Grey dashed horizontal line is 1 SD (σ) above mean export flux for time series. 1013.25 mb is standard atmospheric pressue at sea level for reference.'
+# ylab<-"Mean export flux (mgC/m^2/day)"
+# ylab2<-"Cyclone eye pressure - millibars (mb)"
+# panel<-"a"
+# atxt<-list(title, capt, ylab, ylab2, panel)
+# names(atxt)<-c("title", "capt", "ylab", "ylab2", "panel")
+# 
+# title<-paste0("Station ", "3.5", ": ", "Average Export Flux and Chlorophyll-a")
+# capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). MODIS derived Chl-a in green. Input of VGPM NPP model. \nDashed horizontal lines are 1 SD (σ) above mean for time series (EF = grey, chl-a = green).'
+# ylab2<-"Chlorophyll-a [μg/L]"
+# panel<-"b"
+# btxt<-list(title, capt, ylab, ylab2, panel)
+# names(btxt)<-c("title", "capt", "ylab", "ylab2", "panel")
+# 
+# 
+# title<-paste0("Station ", "3.5", ": ", "Average Export Flux and SST")
+# capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). MODIS derived SST in red. Input of VGPM NPP model. \nDashed horizontal lines are 1 SD (σ) above/below mean for time series (EF = grey, SST =red).'
+# ylab2<-"SST (°C)"
+# panel<-"c"
+# ctxt<-list(title, capt, ylab, ylab2, panel)
+# names(ctxt)<-c("title", "capt", "ylab", "ylab2", "panel")
+# 
+# title<-paste0("Station ", "3.5", ": ", "Chlorophyll-a and SST")
+# capt<-'MODIS derived Chl-a in green, and SST in red. Inputs of VGPM NPP model. \nDashed lines are 1 SD (σ) above/below mean for time series (chl-a = green, SST =red).'
+# ylab<-"Chlorophyll-a [μg/L]"
+# ylab2<-"SST (°C)"
+# panel<-"d"
+# dtxt<-list(title, capt, ylab, ylab2, panel)
+# names(dtxt)<-c("title", "capt", "ylab", "ylab2", "panel")
+# 
+# title<-paste0("Station ", "3.5", ": ", "Chlorophyll-a and storms within 400km^2 box")
+# capt<-'MODIS derived Chl-a in green. Input of VGPM NPP model. Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " ". \nStorms outside flux box but wihin 400km^2 in grey (dashed). Green dashed horizontal line is mean Chl-a for time series. 1013.25 mb is standard atmospheric pressue at sea level for reference.'
+# ylab<-"Chlorophyll-a [μg/L]"
+# ylab2<-"Cyclone eye pressure - millibars (mb)"
+# panel<-"e"
+# etxt<-list(title, capt, ylab, ylab2, panel)
+# names(etxt)<-c("title", "capt", "ylab", "ylab2", "panel")
+# 
+# title<-paste0("Station ", "3.5", ": ", "SST and storms within 400km^2 box")
+# capt<-'MODIS derived SST in red. Input of VGPM NPP model. Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " ". \nStorms outside flux box but wihin 400km^2 in grey (dashed). Red dashed horizontal line is mean SST for time series. 1013.25 mb is standard atmospheric pressue at sea level for reference.'
+# ylab<-"SST (°C)"
+# panel<-"f"
+# ftxt<-list(title, capt, ylab, ylab2, panel)
+# names(ftxt)<-c("title", "capt", "ylab", "ylab2", "panel")
+# 
+# 
+# title<-paste0("Station ", "3.5", ": ", "Average Export Flux and storms within 400km^2 box")
+# capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " ". \nStorms outside flux box but wihin 400km^2 in grey (dashed). Blackdashed horizontal line is mean export flux for time series. 1013.25 mb is standard atmospheric pressue at sea level for reference.'
+# ylab<-"Mean export flux (mgC/m^2/day)"
+# panel<-"g"
+# gtxt<-list(title, capt, ylab, ylab2, panel)
+# names(gtxt)<-c("title", "capt", "ylab", "ylab2", "panel")
+# 
+# plot_list<-vector(mode="list")
+
+```
+
+
+
+## option 1
+* sup a: anmoaly, b:export + chla, c: stt/chla
+* fig4/online: export and storms (including 400km)
+
+### define plots
 ```{r}
 
 w<-inner_join(x,y, by='date') %>% inner_join(., z,  by='date' ) %>% select(., - ef)
@@ -718,7 +817,6 @@ line_col<-"black"
 tcolor<-"red"
 chcolor<-"darkgreen"
 
-
 title<-paste0("Station ", "3.5", ": ", "Positive Anomaly Average Export Flux")
 capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). Positve aanomalies only (above or eqaul to mean). Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5 \nOrange = Hurricane strength,  Blue = less than " ". Grey dashed horizontal line is 1 SD (σ) above mean export flux for time series. 1013.25 mb is standard atmospheric pressue at sea level for reference.'
 ylab<-"Mean export flux (mgC/m^2/day)"
@@ -735,56 +833,164 @@ btxt<-list(title, capt, ylab, ylab2, panel)
 names(btxt)<-c("title", "capt", "ylab", "ylab2", "panel")
 
 
-title<-paste0("Station ", "3.5", ": ", "Average Export Flux and SST")
-capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). MODIS derived SST in red. Input of VGPM NPP model. \nDashed horizontal lines are 1 SD (σ) above/below mean for time series (EF = grey, SST =red).'
+title<-paste0("Station ", "3.5", ": ", "Chlorophyll-a and SST")
+capt<-'MODIS derived Chl-a in green, and SST in red. Inputs of VGPM NPP model. \nDashed lines are 1 SD (σ) above/below mean for time series (chl-a = green, SST =red).'
+ylab<-"Chlorophyll-a [μg/L]"
 ylab2<-"SST (°C)"
 panel<-"c"
 ctxt<-list(title, capt, ylab, ylab2, panel)
 names(ctxt)<-c("title", "capt", "ylab", "ylab2", "panel")
 
-title<-paste0("Station ", "3.5", ": ", "Chlorophyll-a and SST")
-capt<-'MODIS derived Chl-a in green, and SST in red. Inputs of VGPM NPP model. \nDashed lines are 1 SD (σ) above/below mean for time series (chl-a = green, SST =red).'
-ylab<-"Chlorophyll-a [μg/L]"
-ylab2<-"SST (°C)"
-panel<-"d"
-dtxt<-list(title, capt, ylab, ylab2, panel)
-names(dtxt)<-c("title", "capt", "ylab", "ylab2", "panel")
-
-title<-paste0("Station ", "3.5", ": ", "Chlorophyll-a and storms within 400km^2 box")
-capt<-'MODIS derived Chl-a in green. Input of VGPM NPP model. Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " ". \nStorms outside flux box but wihin 400km^2 in grey (dashed). Green dashed horizontal line is mean Chl-a for time series. 1013.25 mb is standard atmospheric pressue at sea level for reference.'
-ylab<-"Chlorophyll-a [μg/L]"
-ylab2<-"Cyclone eye pressure - millibars (mb)"
-panel<-"e"
-etxt<-list(title, capt, ylab, ylab2, panel)
-names(etxt)<-c("title", "capt", "ylab", "ylab2", "panel")
-
-title<-paste0("Station ", "3.5", ": ", "SST and storms within 400km^2 box")
-capt<-'MODIS derived SST in red. Input of VGPM NPP model. Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " ". \nStorms outside flux box but wihin 400km^2 in grey (dashed). Red dashed horizontal line is mean SST for time series. 1013.25 mb is standard atmospheric pressue at sea level for reference.'
-ylab<-"SST (°C)"
-panel<-"f"
-ftxt<-list(title, capt, ylab, ylab2, panel)
-names(ftxt)<-c("title", "capt", "ylab", "ylab2", "panel")
-
 
 title<-paste0("Station ", "3.5", ": ", "Average Export Flux and storms within 400km^2 box")
 capt<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " ". \nStorms outside flux box but wihin 400km^2 in grey (dashed). Blackdashed horizontal line is mean export flux for time series. 1013.25 mb is standard atmospheric pressue at sea level for reference.'
 ylab<-"Mean export flux (mgC/m^2/day)"
-panel<-"g"
-gtxt<-list(title, capt, ylab, ylab2, panel)
-names(gtxt)<-c("title", "capt", "ylab", "ylab2", "panel")
+online_txt<-list(title, capt, ylab, ylab2, panel)
+names(online_txt)<-c("title", "capt", "ylab", "ylab2")
 
 plot_list<-vector(mode="list")
 
 ```
 
+### sup figure
+#### plot a
+-Above aver poc and 200km TS
+```{r}
+txt<-atxt
+w<-inner_join(x,y, by='date') %>% inner_join(., z,  by='date' ) %>% select(., - ef)
+h_rect<-rects$h
+t_rect<-rects$t
 
 
+stdp<-1013.25
+adj<-stdp+3.45*(stdp-min(h_rect$y2))
+
+h_rect$y2<-abs(h_rect$y2-adj)
+t_rect$y2<-abs(t_rect$y2-adj)
+
+# ` hurrican categories
+
+#1 > 980
+#2 965 to 979
+#3 945 to 964
+#4 920 to 944
+#5  < 920 
+
+a.breaks<-c( 872, 900, 920, plyr::round_any((944+920)/2, 5, f=floor), plyr::round_any((964+945)/2, 5, f=ceiling), plyr::round_any((979+965)/2,5, f=floor), 980, 1000) %>% round(., 0) %>% append(., c(round(stdp,2),  round(adj,2)))
+
+a.labs<-(a.breaks)
+a.breaks<-abs(a.breaks-adj)
+
+scale.a<-(max(w$avg)/max(c(t_rect$y2, h_rect$y2)))
+poc_lim<-mean(w$avg)
 
 
+plot_a<- ggplot()+ theme_bw()+
+geom_hline(yintercept=(mean(w$avg)+sd(w$avg)), data=w, linetype="dashed", color ="grey")+
+geom_rect(data=t_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.a), color=rect_fill_non, fill=rect_fill_non, alpha=0.5)+
+geom_rect(data=h_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.a), color=rect_fill, fill=rect_fill, alpha=0.5)+
+geom_point(data=w, aes(date, avg), color=line_col, lwd=1)+
+  
+scale_y_continuous(name =txt$ylab, sec.axis = sec_axis(~./scale.a, name=txt$ylab2,  breaks = a.breaks , labels= a.labs), limits = c(poc_lim, NA))+
 
-## sup figure
-## figure 4
-## online figure
+# labs(title=txt$title, caption = txt$capt)+  
+labs(title=txt$title)+
+theme(plot.title = element_text(hjust = 0.5))+
+# theme(plot.caption =element_text(hjust = 0.5))+
+scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months", position = "top")+
+theme(axis.title.x=element_blank(), plot.tag = element_text(face = "bold"))+
+labs(tag = txt$panel)
+
+
+plot_list$a<-plot_a
+
+```
+
+#### plot b
+- poc and chl
+```{r}
+txt<-btxt
+w<-inner_join(x,y, by='date') %>% inner_join(., z,  by='date' ) %>% select(., - ef)
+scale.b<-max(w$avg)/max(w$chl)
+
+
+plot_b<- ggplot()+ theme_bw()+
+geom_hline(yintercept=(mean(w$avg)+sd(w$avg)), data=w, linetype="dashed", color ="grey")+
+geom_hline(yintercept=scale.b*(mean(w$chl)+sd(w$chl)), data=w, linetype="dashed", color =chcolor)+
+geom_line(data=w, aes(date, avg), color=line_col, lwd=.5)+
+geom_line(data=w, aes(date, chl*scale.b), color=chcolor, lwd=.5)+
+scale_y_continuous(name =txt$ylab, sec.axis = sec_axis(~./scale.b, name=txt$ylab2))+
+
+# labs(title=txt$title, caption = txt$capt)+  
+labs(title=txt$title)+
+theme(plot.title = element_text(hjust = 0.5))+
+# theme(plot.caption =element_text(hjust = 0.5))+
+scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months", position = "top")+
+theme(axis.title.x=element_blank(), plot.tag = element_text(face = "bold"))+
+labs(tag = txt$panel)   
+
+plot_list$b<-plot_b
+# rm(scale, txt)
+
+```
+
+
+#### plot c
+
+-chl and sst
+```{r}
+txt<-ctxt
+w<-inner_join(x,y, by='date') %>% inner_join(., z,  by='date' ) %>% select(., - ef)
+
+d.breaks<-seq(from=22, to =27, by =1)
+labs<-d.breaks
+
+adj<-floor(min(w$sst))
+# labs<-plyr::round_any(t.breaks, 1, f=round)
+
+d.breaks<-d.breaks-adj
+w$sst<-w$sst-adj
+
+scale.c<-max(w$chl)/max(w$sst)
+
+plot_c<- ggplot()+ theme_bw()+
+geom_hline(yintercept=(mean(w$chl)+sd(w$chl)), data=w, linetype="dashed", color =chcolor)+
+geom_hline(yintercept=scale.c*(mean(w$sst)-sd(w$sst)), data=w, linetype="dashed", color =tcolor)+
+geom_line(data=w, aes(date, sst*scale.c), color=tcolor, lwd=.5)+
+geom_line(data=w, aes(date, chl), color=chcolor, lwd=.5)+
+
+scale_y_continuous(name =txt$ylab, sec.axis = sec_axis(~./scale.c, name=txt$ylab2, breaks = d.breaks, labels= labs))+
+
+# labs(title=txt$title, caption = txt$capt)+  
+labs(title=txt$title)+
+theme(plot.title = element_text(hjust = 0.5))+
+# theme(plot.caption =element_text(hjust = 0.5))+
+scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months", position = "top")+
+theme(axis.title.x=element_blank(), plot.tag = element_text(face = "bold"))+
+labs(tag = txt$panel)
+
+plot_list$c<-plot_c
+# rm(labs, adj, w, scale, d.breaks)
+
+```
+
+# single plot
+
+```{r}
+
+
+n<-length(plot_list)
+number_h_ratio<-33/7
+nh<-(number_h_ratio*n)
+
+setwd(wd)
+setwd(fig)
+pdf("figure_s7_v1.pdf", height=nh , width =14)
+cowplot::plot_grid(plotlist = plot_list, nrow=(length(plot_list)), ncol=1)
+dev.off()
+```
+### figure 4
+### online figure -svg
 
 
 
