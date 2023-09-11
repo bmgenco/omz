@@ -1,0 +1,54 @@
+
+[General]
+CollectionFormat = ODVCF6
+DataField = Ocean
+DataType = Profiles
+Description = Argo profile data (http://www.argo.net/)
+NumberOfMetaVariables = 28
+NumberOfVariables = 11
+PrimaryVariableIndex = 1
+SampleQualityFlagSchema = ODV
+StationQualityFlagSchema = ODV
+
+[Meta Variables]
+0001 = Cruise;;INDEXED_TEXT;4;0;0;ARGO;METACRUISE;
+0002 = Station;;TEXT;21;0;0;ARGO;METASTATION;
+0003 = Type;;TEXT;2;0;0;ARGO;METATYPE;
+0004 = Longitude;degrees_east;FLOAT;4;3;0;ARGO;METALONGITUDE;
+0005 = Latitude;degrees_north;FLOAT;4;3;0;ARGO;METALATITUDE;
+0006 = Year;;SHORT;2;0;0;ARGO;METAYEAR;
+0007 = Month;;BYTE;1;0;0;ARGO;METAMONTH;
+0008 = Day;;BYTE;1;0;0;ARGO;METADAY;
+0009 = Hour;;BYTE;1;0;0;ARGO;METAHOUR;
+0010 = Minute;;BYTE;1;0;0;ARGO;METAMINUTE;
+0011 = Second;;FLOAT;4;0;0;ARGO;METASECOND;
+0012 = Accession Number;;UNSIGNED_INTEGER;4;0;0;ODV;METAACCESSIONNUMBER;
+0013 = PrimaryVarMin;;FLOAT;4;2;0;ODV;METAPRIMVARMIN;
+0014 = PrimaryVarMax;;FLOAT;4;2;0;ODV;METAPRIMVARMAX;
+0015 = Direction;;INDEXED_TEXT;4;0;0;ARGO;METABASIC;DIRECTION | Direction of the station profiles
+0016 = Data Mode;;INDEXED_TEXT;4;0;0;ARGO;METABASIC;DATA_MODE | Delayed mode or real time data
+0017 = WMO Instrument Type;;INDEXED_TEXT;4;0;0;ARGO;METABASIC;WMO_INST_TYPE | Coded instrument type | Argo reference table 8
+0018 = Platform Type;;INDEXED_TEXT;4;0;0;ARGO;METABASIC;PLATFORM_TYPE | Argo reference table 23
+0019 = Platform Number;;INDEXED_TEXT;4;0;0;ARGO;METABASIC;PLATFORM_NUMBER | Platform unique identifier
+0020 = Serial Number;;INDEXED_TEXT;4;0;0;ARGO;METABASIC;FLOAT_SERIAL_NO | Serial number of the float
+0021 = Firmware Version;;INDEXED_TEXT;4;0;0;ARGO;METABASIC;FIRMWARE_VERSION | Instrument firmware version
+0022 = Vertical Sampling Scheme;;INDEXED_TEXT;4;0;0;ARGO;METABASIC;VERTICAL_SAMPLING_SCHEME
+0023 = Data State Indicator;;INDEXED_TEXT;4;0;0;ARGO;METABASIC;DATA_STATE_INDICATOR | Degree of processing the data have passed through | Argo reference table 6
+0024 = Project Name;;INDEXED_TEXT;4;0;0;ARGO;METAPROJECT;PROJECT_NAME | Program under which the float was deployed
+0025 = Principal Investigator;;INDEXED_TEXT;4;0;0;ARGO;METABASIC;PI_NAME | Name of the principal investigator
+0026 = Data Centre;;INDEXED_TEXT;4;0;0;ARGO;METABASIC;DATA_CENTRE | Data centre in charge of float data processing | Argo reference table 4
+0027 = Unique Identifier in Data Centre;;INDEXED_TEXT;4;0;0;ARGO;METABASIC;DC_REFERENCE | Station unique identifier in data centre | Data centre convention
+0028 = Data Type;;INDEXED_TEXT;4;0;0;ARGO;METAGTSPPDATATYPE;DATA_TYPE | Data type | Argo reference table 1
+
+[Variables]
+0001 = Pressure (original);decibar;FLOAT;4;1;0;ARGO;BASIC;PRES | Sea water pressure, equals 0 at sea-level
+0002 = Pressure (adjusted);decibar;FLOAT;4;1;0;ARGO;BASIC;PRES_ADJUSTED | Sea water pressure, equals 0 at sea-level
+0003 = Temperature (original);degrees_Celsius;FLOAT;4;3;0;ARGO;BASIC;TEMP | Sea temperature in-situ ITS-90 scale
+0004 = Temperature (adjusted);degrees_Celsius;FLOAT;4;3;0;ARGO;BASIC;TEMP_ADJUSTED | Sea temperature in-situ ITS-90 scale
+0005 = Practical Salinity (original);psu;FLOAT;4;3;0;ARGO;BASIC;PSAL | Practical salinity
+0006 = Practical Salinity (adjusted);psu;FLOAT;4;3;0;ARGO;BASIC;PSAL_ADJUSTED | Practical salinity
+0007 = Dissolved Oxygen (original);~$m~#mol kg~^-~^1;FLOAT;4;0;0;ARGO;BASIC;DOXY
+0008 = Dissolved Oxygen (adjusted);~$m~#mol kg~^-~^1;FLOAT;4;0;0;ARGO;BASIC;DOXY_ADJUSTED
+0009 = Pressure displacement Temperature;decibar;FLOAT;4;2;0;ARGO;BASIC;TEMP_dPRES | TEMP pressure displacement from original sampled value
+0010 = Pressure displacement Practical Salinity;decibar;FLOAT;4;2;0;ARGO;BASIC;PSAL_dPRES | PSAL pressure displacement from original sampled value
+0011 = Pressure displacement Dissolved Oxygen;decibar;FLOAT;4;2;0;ARGO;BASIC;DOXY_dPRES | DOXY pressure displacement from original sampled value

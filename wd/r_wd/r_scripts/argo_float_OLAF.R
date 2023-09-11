@@ -1,8 +1,10 @@
 rm(list=ls())
 
 # wd<-"/home/brandon/vestawd/omz/wd/r_wd/r_scripts"
+wd<-"/home/brandon/vestawd/omz/wd/r_wd/"
+
 # wd<-"/home/brandon/europawd/omz/wd/r_wd/"
-wd<-"/home/brandon/callistowd/omz/wd/r_wd"
+# wd<-"/home/brandon/callistowd/omz/wd/r_wd"
 
 robj<-"r_objects"
 setwd(wd)
@@ -137,6 +139,7 @@ f.subset<-f.subset<-function(profile.windows, floats.sp){
 }
 
 
+
 profile.windows<-f.profile.select((storm_profiles), days_around =5)
 floats.sp<-f.spacetime_agro(storm_profiles)
 window.sp<-f.subset(profile.windows, floats.sp)
@@ -153,6 +156,11 @@ setwd(wd)
 # saveRDS(olaf_profiles, "olaf_profiles_list.R")
 
 ## bah
+## updates 2023-07-31
+setwd(wd)
+setwd(robj)
+olaf_profiles<-readRDS("olaf_profiles_list.R")
+
 
 x<-olaf_profiles$window.sp
 z<-x$`6903093` %>% filter(., CYCLE_NUMBER %in% c(48, 49, 50, 51, 52))
