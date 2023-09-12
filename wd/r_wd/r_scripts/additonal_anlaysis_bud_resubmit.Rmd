@@ -11,6 +11,12 @@ misc script fro small anlysis
 ## Directories and defaults
 ```{r setup}
 rm(list=ls())
+
+r_scriptwd<-getwd()
+wd<-substring(r_scriptwd,1,nchar(r_scriptwd) -10) # hardcoding repalce here
+knitr::opts_knit$set(root.dir = wd)
+
+
 # relative directories
 robj<-"r_objects"
 fig<-"../../figures"
@@ -19,12 +25,12 @@ output<-"../../output"
 
 sst_data<-"../../data/POC_Flux_data_sets/annual_vgpm_modis_sst_netcdf"
 chl_data<-"../../data/POC_Flux_data_sets/annual_vgpm_modis_chl_netcdf"
- 
+
 #absolute directory
 # drop_img<-"/home/brandon/Dropbox/MERCED/dissertation/presentations/images"
 
 knitr::opts_chunk$set(echo =FALSE, warning = FALSE)
-knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+#knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file()) #deleated local rproj file. giut hub issues
 
 ```
 
