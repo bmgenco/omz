@@ -1,0 +1,25 @@
+	-----File Import Start
+	
+	>>Collection:	/home/brandon/vestawd/omz/wd/r_wd/Profiles/Argo_Profile_Collection_2022-03-11T15-20-13
+	
+	Variables:
+		1: Pressure (original) [decibar]	PRES | Sea water pressure, equals 0 at sea-level
+		2: Pressure (adjusted) [decibar]	PRES_ADJUSTED | Sea water pressure, equals 0 at sea-level
+		3: Temperature (original) [degrees_Celsius]	TEMP | Sea temperature in-situ ITS-90 scale
+		4: Temperature (adjusted) [degrees_Celsius]	TEMP_ADJUSTED | Sea temperature in-situ ITS-90 scale
+		5: Practical Salinity (original) [psu]	PSAL | Practical salinity
+		6: Practical Salinity (adjusted) [psu]	PSAL_ADJUSTED | Practical salinity
+		7: Dissolved Oxygen (original) [~$m~#mol kg~^-~^1]	DOXY
+		8: Dissolved Oxygen (adjusted) [~$m~#mol kg~^-~^1]	DOXY_ADJUSTED
+		9: Pressure displacement Temperature [decibar]	TEMP_dPRES | TEMP pressure displacement from original sampled value
+		10: Pressure displacement Practical Salinity [decibar]	PSAL_dPRES | PSAL pressure displacement from original sampled value
+		11: Pressure displacement Dissolved Oxygen [decibar]	DOXY_dPRES | DOXY pressure displacement from original sampled value
+	
+	ADD file: /home/brandon/vestawd/omz/wd/r_wd/Profiles/5905068_Sprof.nc
+	148 station(s) processed successfully; 0 station(s) failed.
+	
+	
+	-----File Import End
+	
+	
+	IMPORT FILE SUMMARY: Total=1	Used=1	Errors=0	Warnings=0
