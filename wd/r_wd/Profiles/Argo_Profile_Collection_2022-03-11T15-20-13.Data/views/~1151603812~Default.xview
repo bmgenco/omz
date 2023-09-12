@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<View collection="Argo_Profile_Collection_2022-03-11T15-20-13" xview="0.23">
+<GeographicMap>
+<MapDomain lon_min="252.20863" lon_max="254.35942" lat_max="18.06949" lat_min="16.26949"/>
+</GeographicMap>
+<MapWindow>
+<Symbol type="0" color="1" small_size="0.333333" size="-0.1"/>
+<Window>
+<Geometry y_length_bb="7.5" y_offset_bb="1" y_bottom="16.2695" y_top="18.0695" x_length_bb="8.5" x_offset_bb="1.5" y_projection="100" x_left="252.209" x_projection="100" x_right="254.359"/>
+</Window>
+</MapWindow>
+<PickedStations>
+<Station accession_number="119" frame_color="4" line_style="0" text_alignment="6" line_color="4" symbol_type="-1" fill_color="4" sequence_id="119" frame_width="1"/>
+<Station accession_number="120" frame_color="1" line_style="0" text_alignment="5" line_color="1" symbol_type="-1" fill_color="1" sequence_id="120" frame_width="1"/>
+<Station accession_number="121" frame_color="3" line_style="0" text_alignment="8" line_color="3" symbol_type="-1" fill_color="3" sequence_id="121" frame_width="1"/>
+</PickedStations>
+<DataWindow>
+<AxisVariables>
+<!--Temperature (adjusted) [degrees_Celsius]-->
+<xAxis var_id="3" is_reversed="F" var_list="1"/>
+<!--Pressure (adjusted) [decibar]-->
+<yAxis var_id="1" is_reversed="T" var_list="1"/>
+</AxisVariables>
+<Modes window_mode="0" plot_mode="0" window_type="0"/>
+<Symbol type="0" color="0" small_size="0.3" size="0.8"/>
+<DataMark color="17" size="0.2"/>
+<Window>
+<Geometry y_length_bb="9.1" y_offset_bb="9.9" y_bottom="500" y_top="0" x_length_bb="7" x_offset_bb="14" x_left="0" x_right="30"/>
+<GraphicsObjects>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="90" x_coordinate="13.0753" y_coordinate="14.45" font_size="10.4911" text_alignment="2" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Pressure (adjusted) [decibar]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="17.5" y_coordinate="9.35725" font_size="10.4911" text_alignment="1" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Temperature (adjusted) [degrees_Celsius]" frame_width="-1"/>
+</GObject>
+</GraphicsObjects>
+</Window>
+</DataWindow>
+<DataWindow>
+<AxisVariables>
+<!--Dissolved Oxygen (original) [μmol kg-1]-->
+<xAxis var_id="6" is_reversed="F" var_list="1"/>
+<!--Pressure (adjusted) [decibar]-->
+<yAxis var_id="1" is_reversed="T" var_list="1"/>
+</AxisVariables>
+<Modes window_mode="0" plot_mode="0" window_type="0"/>
+<Symbol type="0" color="0" small_size="0.3" size="0.8"/>
+<DataMark color="17" size="0.2"/>
+<Window>
+<Geometry y_length_bb="9" y_offset_bb="10" y_bottom="500" y_top="0" x_length_bb="7.5" x_offset_bb="2.5" x_left="-25" x_right="200"/>
+<GraphicsObjects>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="90" x_coordinate="1.57225" y_coordinate="14.5" font_size="10.5648" text_alignment="2" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Pressure (adjusted) [decibar]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="6.25" y_coordinate="9.45344" font_size="10.5648" text_alignment="1" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Dissolved Oxygen (original) [~$m~#mol kg~^-~^1]" frame_width="-1"/>
+</GObject>
+</GraphicsObjects>
+</Window>
+</DataWindow>
+<BasicVariables>
+<!--Pressure (original) [decibar]-->
+<Variable var_id="0" max_value="500.00" min_value="0.00"/>
+<!--Pressure (adjusted) [decibar]-->
+<Variable var_id="1" max_value="500.00" min_value="0.00"/>
+<!--Temperature (original) [degrees_Celsius]-->
+<Variable var_id="2" max_value="35.0000" min_value="0.0000"/>
+<!--Temperature (adjusted) [degrees_Celsius]-->
+<Variable var_id="3" max_value="35.0000" min_value="0.0000"/>
+<!--Practical Salinity (original) [psu]-->
+<Variable var_id="4" max_value="45.0000" min_value="33.0000"/>
+<!--Practical Salinity (adjusted) [psu]-->
+<Variable var_id="5" max_value="35.0000" min_value="33.2500"/>
+<!--Dissolved Oxygen (original) [μmol kg-1]-->
+<Variable var_id="6" max_value="200.0" min_value="-25.0"/>
+<!--Dissolved Oxygen (adjusted) [μmol kg-1]-->
+<Variable var_id="7" max_value="225.0" min_value="-25.0"/>
+<!--Pressure displacement Temperature [decibar]-->
+<Variable var_id="8" max_value="1.500" min_value="-1.500"/>
+<!--Pressure displacement Practical Salinity [decibar]-->
+<Variable var_id="9" max_value="1.500" min_value="-1.500"/>
+<!--Pressure displacement Dissolved Oxygen [decibar]-->
+<Variable var_id="10" max_value="0.001" min_value="-0.001"/>
+</BasicVariables>
+<IsoSurfaceVariables>
+<!--Pressure (adjusted) [decibar] @ Pressure (original) [decibar]=first-->
+<IsoVariable surface_value="first" var_id="1" surface_var_id="0"/>
+<!--Temperature (original) [degrees_Celsius] @ Pressure (original) [decibar]=first-->
+<IsoVariable surface_value="first" var_id="2" surface_var_id="0"/>
+<!--Temperature (adjusted) [degrees_Celsius] @ Pressure (original) [decibar]=first-->
+<IsoVariable surface_value="first" var_id="3" surface_var_id="0"/>
+<!--Practical Salinity (original) [psu] @ Pressure (original) [decibar]=first-->
+<IsoVariable surface_value="first" var_id="4" surface_var_id="0"/>
+</IsoSurfaceVariables>
+<StationSelectionCriteria>
+<Period first_year="2020" last_year="2020" first_month="7" first_day="22" last_day="13" last_month="9"/>
+</StationSelectionCriteria>
+<CurrentSelection stationID="120" sampleID="50"/>
+</View>

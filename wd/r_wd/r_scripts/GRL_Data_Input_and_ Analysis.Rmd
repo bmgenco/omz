@@ -60,6 +60,7 @@ tdata<-"../../data/2018_data/temp/OC1806A/130001/data" # Cruise flow Temp
 wdata<-"../../data/2018_data/anem/OC1806A/130002/data" # Cruise wind/anemometer
 gps_data<-"../../data/2018_data/gnss/data" # Cruise gps raw
 corrected_fdata<-"../../data/2018_data/fluor/corrected_fluorometer/FLOW_THROUGH-20210511T213127Z-001/FLOW_THROUGH/CHL"
+output<-"../../output"
 
 knitr::opts_knit$set(root.dir=wd)
 ```
@@ -937,8 +938,16 @@ median(st2$chlorophyll)
 ```
 ## hurricane metrics
 * MSW Maximum Sustained Wind
-* TS ranslational Speed (m/s)
+* TS translational Speed (m/s)
 * wind speed to translational speed (WS/TS)
+
+
+```{r}
+setwd(robj)
+bud_list<-readRDS("2018_hurricane_bud_track_data.R") #times in utc
+x<-bud_list$bud_data
+```
+
 
 ```{r}
 setwd(robj)
@@ -984,8 +993,29 @@ names(z)<-c("time", "wind")
 # a<-z[09:20,]
 # a<-z[16:26,]
 
+## added for suplementray table:
+
+y$wind_speed_ms<-y$max_sustained_wind_knots/1.94384
+t<-subset(y, select=c(-delta, -max_sustained_wind_knots))
+
+t$ratio<-round(t$wind_speed_ms/t$speed, digits=2)
+t$ratio_cubed<-signif((t$wind_speed_ms^3)/t$speed, digits=3)
+
+t<-t%>%select(., -date, -distance) %>% relocate(lat, .after=lon)
+
+setwd(wd)
+setwd(output)
+
+# write.csv(t, "sup_table_2.csv")
+
 ```
 ## added 2022-02-09
+
+```{r}
+setwd(robj)
+stations_positions_list<-readRDS("OC1806A_stations_positions_list.R")
+```
+
 
 ```{r}
 
@@ -1000,6 +1030,10 @@ stations_positions_list<-readRDS("OC1806A_stations_positions_list.R")
 #   
 
 y<-select(y,  time, lat,lon, max_sustained_wind_knots, speed, delta) # time is MDT
+# y<-select(y,  time, lat, lon, wind_speed_ms, speed, delta) # time is MDT
+
+
+
 row.names(y)<-1:dim(y)[1]
 op<-st_as_sf(y, coords = c("lon", "lat"),crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
 st<-st_as_sf(stations_positions_list$ctd_centroids, coords = c("longitude", "latitude"),crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") 
@@ -1065,7 +1099,7 @@ print(matched)#
 # 
 # match<-select(match,  time, max_sustained_wind_knots, speed, max_sustained_wind_knots, delta, station, distance)
 
-
+# t2<-matched %>%select(., time, wind_speed_ms, speed, station, distance_km, hours_after)
 
 ```
 

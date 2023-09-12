@@ -1,0 +1,250 @@
+---
+title: "tables_fix"
+output: html_document
+date: '2023-01-26'
+---
+# setup
+
+## Directories and defaults
+```{r setup}
+rm(list=ls())
+# relative directories
+robj<-"r_objects"
+fig<-"../../figures"
+gis_data<-"../../data/gis_data"
+output<-"../../output"
+
+knitr::opts_chunk$set(echo =FALSE, warning = FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+
+```
+
+## packages and working directory
+```{r}
+wd<-getwd()
+
+f.ipak <- function(pkg){
+  # loads packages, quietly, given by a vector of package names e.g., pkg<-c("ggplot", "tidyverse")
+  # will install  packages listed , and their dependencies, if needed.
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg))
+    install.packages(new.pkg, dependencies = TRUE, quiet=T, verbose = F)
+  sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
+}
+
+# packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "RColorBrewer", "marmap", "extrafont", "oce", "MODIS", "measurements")  # set packages here
+# tidyverse: is all of the following packages: ggplot2, dplyr, tidyr, readr, purr, tibble, sringr, & forcats.
+
+packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT", "ggpattern")
+
+# "HURDAT",
+
+f.ipak(packages)
+# lapply(packages, require, character.only = TRUE)
+# rm(f.ipak, packages)
+print(paste0("Current Working Directory is ", getwd()))
+
+```
+
+
+
+#load data:
+
+
+```{r}
+# download from online. Basin is eastern pacific
+ h<-get_hurdat(basin="EP")
+
+```
+
+# slect bud
+
+```{r}
+h$DateTime<-force_tz(h$DateTime, tz="UTC")
+conv<-1.94384 # convert to m/s
+```
+
+## substeting
+```{r}
+storm_name<-"BUD"
+b<-filter(h, Name == storm_name & year(DateTime) == 2018)
+b$max_sustained_wind_m_s<-b$Wind/conv
+h.pts<- sf::st_as_sf(b, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+b.pts<-h.pts[1:22,] # last point before land fall
+
+
+```
+
+## older table 
+
+```{r}
+setwd(robj)
+bud_list<-readRDS("2018_hurricane_bud_track_data.R") #times in utc
+x<-bud_list$bud_data
+
+x$time<-ymd_hm(paste(x$date, x$hour_minute, tz="UTC"))
+# x$time<-with_tz(x$time, tz="US/Mountain")
+x$date<-ymd(paste(x$date, tz="UTC"))
+# x$date<-with_tz(x$date, tz="US/Mountain")
+x<-as.data.frame(x)
+```
+
+
+```{r}
+
+
+
+tmp<-SpatialPointsDataFrame(coords = cbind(x$lat, x$lon), proj4string =CRS("+proj=longlat") , data = x)
+
+y <- sp::spDists(tmp, longlat=T, segments=T)
+x$distance<-c(0,y)
+
+y<-subset(x, select=c(date, time, distance, lat, lon))
+y<-subset(x, select=c(date, time, max_sustained_wind_knots, distance, lat, lon))
+
+# below is imperfect, change for larger fucntion. as is requrie manual edirts
+
+y$delta= NA
+for(i in seq(1, nrow(y), by=2 )){
+  y[i,"delta"] = y[i+1,"delta"] = y[i+1,"time"] - y[i,"time"]
+}
+
+y$delta<-shift(y$delta, n=1, fill="NA", type="lag")
+y$delta[23]<-2
+
+y$time
+y$speed<-(y$distance*1000)/(as.numeric(y$delta)*3600)
+y<-y[-1,]
+y<-na.omit(y)
+
+# impornat!!! drop time after land fall
+y<-y[1:21,]
+
+
+# https://mhallwor.github.io/_pages/basics_SpatialPoints
+
+z<-subset(y, select=c(date, max_sustained_wind_knots))
+z<-subset(y, select=c(time, max_sustained_wind_knots))
+z$max_sustained_wind_knots<-z$max_sustained_wind_knots/1.94384
+names(z)<-c("time", "wind")
+# 
+# a<-z[09:20,]
+# a<-z[16:26,]
+
+## added for suplementray table:
+
+y$wind_speed_ms<-y$max_sustained_wind_knots/1.94384
+t<-subset(y, select=c(-delta, -max_sustained_wind_knots))
+
+t$ratio<-round(t$wind_speed_ms/t$speed, digits=2)
+t$ratio_cubed<-signif((t$wind_speed_ms^3)/t$speed, digits=3)
+
+t<-t%>%select(., -date, -distance) %>% relocate(lat, .after=lon)
+
+setwd(wd)
+setwd(output)
+
+# write.csv(t, "sup_table_2.csv")
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+setwd(robj)
+stations_positions_list<-readRDS("OC1806A_stations_positions_list.R")
+# 
+#  setDT(f)
+#   setDT(t)
+#   setkey(f, time)
+#   setkey(t, time)
+#   f<-f[t, roll='nearest']
+#   
+
+y<-select(y,  time, lat,lon, max_sustained_wind_knots, speed, delta) # time is UTC
+# y<-select(y,  time, lat, lon, wind_speed_ms, speed, delta) # time is MDT
+
+
+
+row.names(y)<-1:dim(y)[1]
+op<-st_as_sf(y, coords = c("lon", "lat"),crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+st<-st_as_sf(stations_positions_list$ctd_centroids, coords = c("longitude", "latitude"),crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") 
+# test<-st_nearest_points(st, op) #closest paire points might be usefule for 
+
+# test2<-cbind(op[st_nearest_feature(st, op),], st)
+
+
+# make belo a function
+
+op.f<-filter(op, time<=st$time[1])
+st.f<-st[1,]
+match1<-cbind(op[st_nearest_feature(st.f, op.f),], st.f) 
+match1$distance_km<-round(as.integer(st_distance(match1$geometry, match1$geometry.1)/1000), 0)
+match1<-match1 %>% st_drop_geometry(.) 
+
+op.f<-filter(op, time<=st$time[2])
+st.f<-st[2,]
+match2<-cbind(op[st_nearest_feature(st.f, op.f),], st.f) 
+match2$distance_km<-round(as.integer(st_distance(match2$geometry, match2$geometry.1)/1000), 0)
+match2<-match2 %>% st_drop_geometry(.) 
+
+
+op.f<-filter(op, time<=st$time[3])
+st.f<-st[3,]
+match3<-cbind(op[st_nearest_feature(st.f, op.f),], st.f)
+match3$distance_km<-round(as.integer(st_distance(match3$geometry, match3$geometry.1)/1000), 0)
+match3<-match3 %>% st_drop_geometry(.) 
+
+op.f<-filter(op, time<=st$time[4])
+st.f<-st[4,]
+match3.5<-cbind(op[st_nearest_feature(st.f, op.f),], st.f) 
+match3.5$distance_km<-round(as.integer(st_distance(match3.5$geometry, match3.5$geometry.1)/1000), 0)
+match3.5<-match3.5 %>% st_drop_geometry(.) 
+
+op.f<-filter(op, time<=st$time[5])
+st.f<-st[5,]
+match4<-cbind(op[st_nearest_feature(st.f, op.f),], st.f)
+match4$distance_km<-round(as.integer(st_distance(match4$geometry, match4$geometry.1)/1000), 0)
+match4<-match4 %>% st_drop_geometry(.)  
+
+op.f<-filter(op, time<=st$time[6])
+st.f<-st[6,]
+match5<-cbind(op[st_nearest_feature(st.f, op.f),], st.f)
+match5$distance_km<-round(as.integer(st_distance(match5$geometry, match5$geometry.1)/1000), 0)
+match5<-match5 %>% st_drop_geometry(.) 
+
+matched<-rbind(match1, match2, match3, match3.5, match4, match5)
+matched$hours_after<-as.integer(round((matched$time.1-matched$time), 1))
+
+matched<-(select(matched, -geometry.1, time.1))
+
+
+
+
+```
+
+
+
+## comparing hurdta package to csv:
+try on vesta
+
+```{r}
+setwd(wd)
+data_d<-"../../data/2018_data"
+setwd(data_d)
+bud<-read_csv("hurricane_bud/bud_hurdat2.csv", skip = 1, col_names = F)
+```
+
+
+```{r}
+st_write(b.pts, dsn="bud_hurdat_points_PDT.kml", driver="KML")
+
+
+```
+```
+

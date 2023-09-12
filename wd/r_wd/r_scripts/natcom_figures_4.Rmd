@@ -1,0 +1,639 @@
+---
+title: "poc_flux_and_TC_and_CHl_and_SST"
+author: "Brandon M. Genco"
+date: "06/15/2023"
+output: html_document
+---
+code re purposed from "Hurricane 0instu_matchup_2.rmd"
+and then "poc_flux_and_TC_and_CHl_and_SST.rmd"
+
+# Setup
+## Directories and defaults
+Use r proj file for relative directories
+see: https://yihui.org/knitr/options/
+
+
+```{r setup}
+rm(list=ls())
+# relative directories
+robj<-"r_objects"
+fig<-"../../figures"
+gis_data<-"../../data/gis_data"
+output<-"../../output"
+
+sst_data<-"../../data/POC_Flux_data_sets/annual_vgpm_modis_sst_netcdf"
+chl_data<-"../../data/POC_Flux_data_sets/annual_vgpm_modis_chl_netcdf"
+ 
+#absolute directory
+# drop_img<-"/home/brandon/Dropbox/MERCED/dissertation/presentations/images"
+
+knitr::opts_chunk$set(echo =FALSE, warning = FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+
+```
+
+## packages and working directory
+
+Installed custom hurdat package using r markdown menu
+* download  tar from archive as no longer maintained on cran repository
+* https://cran.r-project.org/src/contrib/Archive/HURDAT/
++ include as git submodule instead
+
+```{r}
+wd<-getwd()
+
+f.ipak <- function(pkg){
+  # loads packages, quietly, given by a vector of package names e.g., pkg<-c("ggplot", "tidyverse")
+  # will install  packages listed , and their dependencies, if needed.
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg))
+    install.packages(new.pkg, dependencies = TRUE, quiet=T, verbose = F)
+  sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
+}
+
+# packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "RColorBrewer", "marmap", "extrafont", "oce", "MODIS", "measurements")  # set packages here
+# tidyverse: is all of the following packages: ggplot2, dplyr, tidyr, readr, purr, tibble, sringr, & forcats.
+
+packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT", "ggpattern")
+
+# "HURDAT",
+
+f.ipak(packages)
+# lapply(packages, require, character.only = TRUE)
+# rm(f.ipak, packages)
+print(paste0("Current Working Directory is ", getwd()))
+
+```
+
+## functions
+
+```{r}
+f.grid_square_area2<-function(x) {
+  x.area<-vector(mode="numeric", length = nrow(x)) 
+  
+  for(i in 1:length(x.area)){
+    bbox<-st_bbox(x[[2]][[i]])
+    box<-vector(mode="numeric", length=4)
+    names(box)<-c("xmin","ymin","ymax", "xmax")
+    box$ymin<-round(bbox$ymin[[1]]-(5/120),3)
+    box$ymax<-round(bbox$ymax[[1]]+(5/120),3)
+    box$xmin<-round(bbox$xmin[[1]] +-(5/120),3)
+    box$xmax<-round(bbox$xmax[[1]] +(5/120),3)
+    x.area[i]<- rgeos::bbox2SP(n = box$ymax[[1]], s = box$ymin[[1]], w = box$xmin[[1]], e = box$xmax[[1]],
+                               proj4string = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")) %>% st_as_sf(.,) %>% st_area(.,) %>% round(., -1)
+  }
+  sum_grid_area<-sum(x.area)
+  x$value<-x.area
+  y<-vector(mode = "list", length=2)
+  names(y)<-c("grid_area", "sum_grid_area")
+  y$grid_area<-x
+  y$sum_grid_area<-sum_grid_area
+  
+  return(y)}
+
+f.sst_data_nc<-function(z){
+  
+  sst_integrated<-as.data.frame(matrix(ncol = 7, nrow =length(files)))
+  names(sst_integrated)<-c("date",  "SST_mean (area weighted)", "SST_mean (basic)", "SST_median", "SST_variance", "window_area (m^2)", "sum_grid_area (m^2)")
+  
+  for(i in 1:length(files)){
+    file<-files[i]
+    t<-tidync(file)%>% hyper_filter(lat = lat >= min(z$lat) & lat <= max(z$lat), lon = lon>= min(z$lon) & lon<= max(z$lon)) %>% hyper_tibble()
+    # t$sst[t$sst == -9999] <- NA
+    x<-t$sst
+    x.sf<-t%>%st_as_sf(., coords = c("lon", "lat" ), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+    
+    bbox<-st_bbox(x.sf)
+    box<-vector(mode="numeric", length=4)
+    names(box)<-c("xmin","ymin","ymax", "xmax")
+    box$ymin<-round(bbox$ymin[[1]]-(5/120),3)
+    box$ymax<-round(bbox$ymax[[1]]+(5/120),3)
+    box$xmin<-round(bbox$xmin[[1]] +-(5/120),3)
+    box$xmax<-round(bbox$xmax[[1]] +(5/120),3)
+    
+    area <- rgeos::bbox2SP(n = box$ymax[[1]], s = box$ymin[[1]], w = box$xmin[[1]], e = box$xmax[[1]],
+                           proj4string = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")) %>% st_as_sf(.,) %>% st_area(.,)
+    rm(box, bbox)
+    
+    t<-str_split(file, '\\.')
+    t<-t[[1]][2]
+    t<-str_split(t, "")
+    y<-c(t[[1]][1:4])%>% toString(.) %>% gsub(",","",.) %>% gsub(" ","",.)   
+    yd<-c(t[[1]][5:7])%>% toString(.) %>% gsub(",","",.) %>% gsub(" ","",.)
+    origin<-toString(c(y,"-01-01")) %>% gsub(",","",.) %>% gsub(" ","",.)
+    
+    
+    names(x.sf)<-c("value", "geometry")
+    y<-f.grid_square_area2(x.sf)
+    q<-y$grid_area$value/y$sum_grid_area
+    wa<-sum(q*x)
+   
+    sst_integrated[i,1]<-as.character(as.Date(as.numeric(yd), origin=origin)) # date  
+    sst_integrated[i,2]<-wa
+    sst_integrated[i,3]<-mean(x) # vgpm_median
+    sst_integrated[i,4]<-median(x) # vgpm_mean
+    sst_integrated[i,5]<-var(x) # vgpm_variance
+    sst_integrated[i,6]<-as.numeric(area) # window_area (m^2) 
+    sst_integrated[i,7]<-y$sum_grid_area # sum_grid_area (m^2)
+    
+  }
+  
+  
+  # n<-names(vgpm_integrated)
+  # vgpm_integrated<-dplyr::select(vgpm_integrated, n[1], n[12], n[13], n[6], n[7], n[9], n[10], n[8],n[2], n[3],  n[11], n[4], n[5] )
+  
+  return(sst_integrated)}
+
+f.chl_data_nc<-function(z){
+  
+  chl_integrated<-as.data.frame(matrix(ncol = 7, nrow =length(files)))
+  names(chl_integrated)<-c("date",  "chl_mean (area weighted)", "chl_mean (basic)", "chl_median", "chl_variance", "window_area (m^2)", "sum_grid_area (m^2)")
+  
+  for(i in 1:length(files)){
+    file<-files[i]
+    t<-tidync(file)%>% hyper_filter(lat = lat >= min(z$lat) & lat <= max(z$lat), lon = lon>= min(z$lon) & lon<= max(z$lon)) %>% hyper_tibble()
+    # t$sst[t$sst == -9999] <- NA
+    x<-t$chl
+    x.sf<-t%>%st_as_sf(., coords = c("lon", "lat" ), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+    
+    bbox<-st_bbox(x.sf)
+    box<-vector(mode="numeric", length=4)
+    names(box)<-c("xmin","ymin","ymax", "xmax")
+    box$ymin<-round(bbox$ymin[[1]]-(5/120),3)
+    box$ymax<-round(bbox$ymax[[1]]+(5/120),3)
+    box$xmin<-round(bbox$xmin[[1]] +-(5/120),3)
+    box$xmax<-round(bbox$xmax[[1]] +(5/120),3)
+    
+    area <- rgeos::bbox2SP(n = box$ymax[[1]], s = box$ymin[[1]], w = box$xmin[[1]], e = box$xmax[[1]],
+                           proj4string = CRS("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs")) %>% st_as_sf(.,) %>% st_area(.,)
+    rm(box, bbox)
+    
+    t<-str_split(file, '\\.')
+    t<-t[[1]][2]
+    t<-str_split(t, "")
+    y<-c(t[[1]][1:4])%>% toString(.) %>% gsub(",","",.) %>% gsub(" ","",.)   
+    yd<-c(t[[1]][5:7])%>% toString(.) %>% gsub(",","",.) %>% gsub(" ","",.)
+    origin<-toString(c(y,"-01-01")) %>% gsub(",","",.) %>% gsub(" ","",.)
+    
+    
+    names(x.sf)<-c("value", "geometry")
+    y<-f.grid_square_area2(x.sf)
+    q<-y$grid_area$value/y$sum_grid_area
+    wa<-sum(q*x)
+    
+    chl_integrated[i,1]<-as.character(as.Date(as.numeric(yd), origin=origin)) # date  
+    chl_integrated[i,2]<-wa
+    chl_integrated[i,3]<-mean(x) # vgpm_median
+    chl_integrated[i,4]<-median(x) # vgpm_mean
+    chl_integrated[i,5]<-var(x) # vgpm_variance
+    chl_integrated[i,6]<-as.numeric(area) # window_area (m^2) 
+    chl_integrated[i,7]<-y$sum_grid_area # sum_grid_area (m^2)
+    
+  }
+  
+  
+  # n<-names(vgpm_integrated)
+  # vgpm_integrated<-dplyr::select(vgpm_integrated, n[1], n[12], n[13], n[6], n[7], n[9], n[10], n[8],n[2], n[3],  n[11], n[4], n[5] )
+  
+  return(chl_integrated)}
+```
+
+
+# Important objects and data sets
+## temp load/save works save for next steps
+
+## load basic hurdat
+
+```{r}
+setwd(wd)
+setwd(robj)
+# h<-get_hurdat(basin="EP")
+# saveRDS(h, "hurdat.R")
+
+h<-readRDS("hurdat.R")
+h$DateTime<-with_tz(h$DateTime, tz="UTC")
+```
+
+
+
+## stations and buffer
+
+```{r}
+setwd(wd)
+setwd(robj)
+
+radii<-100000 ## radius in km for POC select
+
+# radii<-2*radii ## for selecting TC that intesect
+
+stations_positions_list<-readRDS("OC1806A_stations_positions_list.R")
+
+
+st<-stations_positions_list[[3]][4,cbind(2,3)]
+st<-sf::st_as_sf(st, coords =c("longitude", "latitude"),  crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+flat<-sf::st_transform(st, "+proj=aeqd +lat_0=18.5005 +lon_0=-108.502" )
+circle_3.5<-sf::st_buffer(flat, dist=radii)%>%sf::st_transform(., "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+
+rm(st, flat, stations_positions_list)
+
+```
+
+
+# loading POC
+* Important set end date to remove NA's in in EF and SST
+** 2022-08-13 & 2020-09-05m 
+*** TC overpass in thes dates?
+**missing SST 2021-0907
+
+
+```{r}
+setwd(wd)
+setwd(robj)
+# 
+# end_date<-'2020-08-12'
+
+
+# data<-read_rds("vgpm_integrated_20220512.R")
+data<-read_rds("vgpm_integrated_all_years_202200607.R")
+poc<-data$st3.5
+end_date<-max(poc$date)
+
+sst<-readRDS("st35_sst_modis.R")
+chl<-readRDS("st35_chl_modis.R")
+
+poc$date<-ymd(poc$date)
+poc<-poc%>%filter(date <= end_date)
+
+x<-poc
+window_area<-round((x$`window_area (m^2)`[1]*1e-6),0)
+
+# lab_avg<-'8-Day resolution: Non-lagged EF (proportion of modeled VGPM). Colored lines are individual tropical disturbances that pass within the export flux box around station 3.5: Orange = Hurricane strength,  Blue = less than " " '
+lab_total<-paste0("Station ", "3.5", ":", " Total Export Flux - ", window_area, " km^2 area")
+
+
+x<-select(x, date, `mean_export_flux (mgC/m^2/day) for_window_area (total/sum_grid_area)`, `total_export_flux (mgC/day)`)
+
+names(x)<-c("date", "avg", "ef")
+x$ef<-x$ef/1000000
+
+
+y<-select(chl, date, 'chl_mean (area weighted)')
+names(y)<-c("date", "chl")
+y$date<-ymd(y$date)
+
+z<-select(sst, date, `SST_mean (area weighted)`)
+names(z)<-c("date", "sst")
+z$date<-ymd(z$date)
+
+
+y<-y%>%filter(date <= end_date)
+z<-z%>%filter(date <= end_date)
+
+rm(data, sst, chl)
+
+```
+
+
+# selecting TCs by space and time
+-requires POC for time window
+_
+```{r}
+
+bbox<-st_bbox(circle_3.5)
+
+# x<-filter(h, Status == "HU") %>% filter(., DateTime >=date(min(poc$date))-60) # save 'h' in order to adjust function variables if needed.
+g<-filter(h, DateTime >=date(min(poc$date))-60) # save 'h' in order to adjust function variables if needed.
+h.pts<- sf::st_as_sf(g, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>% 
+sf::st_crop(., c(xmin=bbox$xmin[[1]], ymin=bbox$ymin[[1]], xmax=bbox$xmax[[1]], ymax=bbox$ymax[[1]])) #subset by user defined 
+
+# h.pts<-st_difference(h.pts, st_combine(st_geometry(cl))) # remove all points over land
+rm(g)
+
+```
+
+
+## split and recombine
+```{r}
+t<-h.pts 
+st_geometry(t)<-NULL
+t$ymin<--Inf
+t$ymax<-Inf
+# t$DateTime<-as.Date(t$DateTime)
+t$DateTime<-as_datetime(t$DateTime)
+
+ unique(t$Status)
+ 
+# see:  https://www.nhc.noaa.gov/data/hurdat/hurdat2-format-atl-1851-2021.pdf
+#"TS" tropical cyclone of tropical storm intensity (34-63 knots)
+# "TD" Tropical cyclone of tropical depression intensity (< 34 knots)
+# LO – A low that is neither a tropical cyclone, a subtropical cyclone, nor an extratropical cyclone (of any intensity)
+# DB – Disturbance (of any intensity)
+# splits in invidiaudla storms to hurricanes and all else. If an individual storm was bot bleow and a husrrcian and a hurricane in teh subste it mark it as a hurricane
+
+remove_200<-unique(t$Key)
+ 
+h<-t%>% group_by(Key) %>% filter(any(Status== "HU"))
+t<-t %>% subset(., !(Key %in% unique(h$Key)))%>% group_by(Key)
+
+t<-group_split(t)
+t<-lapply(t, as.data.frame)
+
+h<-group_split(h)
+h<-lapply(h, as.data.frame)
+
+# need to convert above using to this-> https://stackoverflow.com/questions/29648907/using-geom-rect-for-time-series-shading-in-r
+
+start<-vector(mode="character", length=length(h))
+end<-vector(mode="character", length=length(h))
+pres<-vector(mode="integer", length=length(h))
+
+for(i in 1:length(h)){
+  start[[i]]<-as.character(min(h[[i]]$DateTime))
+  end[[i]]<-as.character(max(h[[i]]$DateTime))
+  pres[[i]]<-median(h[[i]]$Pressure)
+  # pres[[i]]<-min(h[[i]]$Pressure)
+}
+
+h_rect<-data.frame(start=date(start), end=date(end), y1=-Inf, y2=pres)
+
+start<-vector(mode="character", length=length(t))
+end<-vector(mode="character", length=length(t))
+pres<-vector(mode="integer", length=length(t))
+
+for(i in 1:length(t)){
+  start[[i]]<-as.character(min(t[[i]]$DateTime))
+  end[[i]]<-as.character(max(t[[i]]$DateTime))
+  pres[[i]]<-median(t[[i]]$Pressure)
+  #   
+}
+
+t_rect<-data.frame(start=date(start), end=date(end), y1=-Inf, y2=pres)
+rm(t,h)
+
+
+
+#standar atmospheirc presures in millibars
+
+
+```
+
+# 400 km storms only
+
+so 400 with 200 excluded.. prob
+
+```{r}
+setwd(wd)
+setwd(robj)
+
+
+h<-readRDS("hurdat.R")
+h$DateTime<-with_tz(h$DateTime, tz="UTC")
+
+radii<-100000 ## radius in km for POC select
+
+radii<-2*radii ## for selecting TC that intersect
+
+stations_positions_list<-readRDS("OC1806A_stations_positions_list.R")
+
+st<-stations_positions_list[[3]][4,cbind(2,3)]
+st<-sf::st_as_sf(st, coords =c("longitude", "latitude"),  crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+flat<-sf::st_transform(st, "+proj=aeqd +lat_0=18.5005 +lon_0=-108.502" )
+circle_3.5_400km<-sf::st_buffer(flat, dist=radii)%>%sf::st_transform(., "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+
+bbox<-st_bbox(circle_3.5_400km)
+
+# x<-filter(h, Status == "HU") %>% filter(., DateTime >=date(min(poc$date))-60) # save 'h' in order to adjust function variables if needed.
+g<-filter(h, DateTime >=date(min(poc$date))-60) # save 'h' in order to adjust function variables if needed.
+g<-h
+
+h.pts<- sf::st_as_sf(g, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>% 
+sf::st_crop(., c(xmin=bbox$xmin[[1]], ymin=bbox$ymin[[1]], xmax=bbox$xmax[[1]], ymax=bbox$ymax[[1]])) #subset by user defined 
+
+# h.pts<-st_difference(h.pts, st_combine(st_geometry(cl))) # remove all points over land
+rm(g, poc)
+
+t_4<-h.pts 
+st_geometry(t_4)<-NULL
+t_4$ymin<--Inf
+t_4$ymax<-Inf
+# t$DateTime<-as.Date(t$DateTime)
+t_4$DateTime<-as_datetime(t_4$DateTime)
+
+
+#commneted out below. for paper statistics only
+h_4<-t_4 %>% subset(., !(Key %in% remove_200))
+h_4_all<-t_4
+
+t_4<-t_4 %>% subset(., !(Key %in% remove_200))%>% group_by(Key)
+
+
+
+
+t_4<-group_split(t_4)
+t_4<-lapply(t_4, as.data.frame)
+
+start<-vector(mode="character", length=length(t_4))
+end<-vector(mode="character", length=length(t_4))
+pres<-vector(mode="integer", length=length(t_4))
+
+for(i in 1:length(t_4)){
+  start[[i]]<-as.character(min(t_4[[i]]$DateTime))
+  end[[i]]<-as.character(max(t_4[[i]]$DateTime))
+  pres[[i]]<-median(t_4[[i]]$Pressure)
+  #
+}
+
+t_4_rect<-data.frame(start=date(start), end=date(end), y1=-Inf, y2=pres)
+
+# uncomment for streamlining
+# rm(remove_200)
+
+
+```
+
+# new plots
+* use mee
+## definig plot varibales
+
+## option 1
+
+* fig4/online: export and storms (including 400km)
+
+### define plots
+```{r}
+
+w<-inner_join(x,y, by='date') %>% inner_join(., z,  by='date' ) %>% select(., - ef)
+# rm(poc, chl, sst)
+
+#save original for scale etc
+rects<-vector(mode="list")
+rects$t<-t_rect
+rects$h<-h_rect
+rects$t_4<-t_4_rect
+
+
+ # rectangel parameters:
+rect_color<-"white"
+sz<-0.25
+alph<-.25
+# rect_fill<-"cornsilk1" 
+rect_fill<-"#fc8d62"
+rect_fill_non<-"#8da0cb"
+# rect_fill_outside<-"#66c2a5"
+ # rect_fill_outside<-"grey48"
+rect_fill_outside<-"gray38"
+
+
+# line colors
+
+line_col<-"#66c2a5"
+line_col<-"black"
+tcolor<-"red"
+chcolor<-"darkgreen"
+
+# title<-paste0("Station ", "3.5", ": ", "Export Flux and storms within 400km^2 box")
+# title<-expression(Station~3.5:~Export~Flux~and~storms~within~400*km^2~box)
+
+ylab<-expression(Export~flux~(mgC~m^-2~day^-1))
+ylab2<-"Cyclone eye pressure - millibars (mb)"
+fig4_txt<-list(ylab, ylab2)
+names(fig4_txt)<-c("ylab", "ylab2")
+
+
+
+```
+
+
+## v1
+```{r}
+txt<-fig4_txt
+
+w<-inner_join(x,y, by='date') %>% inner_join(., z, by='date' ) %>% select(., - ef)
+h_rect<-rects$h
+t_rect<-rects$t
+t_4_rect<-rects$t_4
+
+stdp<-1013.25
+ff<-1.745
+adj<-stdp+ff*(stdp-min(h_rect$y2))
+
+h_rect$y2<-abs(h_rect$y2-adj)
+t_rect$y2<-abs(t_rect$y2-adj)
+t_4_rect$y2<-abs(t_4_rect$y2-adj)
+
+g.breaks<-c( 872, 900, 920, plyr::round_any((944+920)/2, 5, f=floor), plyr::round_any((964+945)/2, 5, f=ceiling), plyr::round_any((979+965)/2,5, f=floor), 980, 1000) %>% round(., 0) %>% append(., c(round(stdp,2),  round(adj,2)))
+
+labs<-(g.breaks)
+g.breaks<-abs(g.breaks-adj)
+
+t_4_rect<-filter(t_4_rect, start >=date(min(w$date)))
+t_rect<-filter(t_rect, start >=date(min(w$date)))
+h_rect<-filter(h_rect, start >=date(min(w$date)))
+
+scale.g<-(max(w$avg)/max(c(t_rect$y2, h_rect$y2, t_4_rect$y2)))
+
+
+plot_v1<-ggplot()+ theme_bw()+
+geom_segment(data=t_4_rect, mapping=aes(x=start, xend=end, yend=y2*scale.g, y=-Inf), linetype ="dashed", color=rect_fill_outside, alpha=.5)+  
+geom_hline(yintercept=(mean(w$avg)), data=w, linetype="dashed", color ="black")+
+geom_rect(data=t_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.g), color=rect_fill_non, fill=rect_fill_non, alpha=.5)+
+geom_rect(data=h_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.g), color=rect_fill, fill=rect_fill, alpha=.5)+ 
+geom_point(data=w, aes(date, avg), color="black", lwd=.6)+
+geom_line(data=w, aes(date, avg), color="black", lwd=0.4)+
+scale_y_continuous(name =txt$ylab, sec.axis = sec_axis(~./scale.g, name=txt$ylab2,  breaks = g.breaks , labels= labs))+
+# scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months", position = "top")+
+# scale_x_date(date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months", position = "top", limits = date(c("2002-01-01","2022-06-01")))+
+# scale_x_date(limits = as.Date(c('2002-01-01', '2022-06-01')), date_breaks = "1 years", date_labels = "%Y", date_minor_breaks = "6 months", position = "top")+
+# scale_x_date(limits = as.Date(c('2002-01-01', '2022-01-01')), date_breaks = "1 years", date_labels = "%Y", position = "top")+
+scale_x_date(limits = as.Date(c('2002-05-01', '2022-02-01')), date_breaks = "1 years", date_labels = "%Y", position = "top", expand = c(0, 0))+
+theme(axis.title.x=element_blank(), plot.tag = element_text(face = "bold"))
+
+
+
+# expand = c(0, 0))
+# 
+# limits = as.Date(c('1/1/2002', '6/1/2022'))
+
+
+```
+
+
+### saving figure v1
+
+```{r}
+
+number_h_ratio<-33/7
+
+
+setwd(wd)
+setwd(fig)
+pdf("figure_four_v1.pdf", height=number_h_ratio , width =14)
+plot_v1
+dev.off()
+```
+
+## v2 
+
+```{r}
+txt<-fig4_txt
+
+w<-inner_join(x,y, by='date') %>% inner_join(., z, by='date' ) %>% select(., - ef)
+h_rect<-rects$h
+t_rect<-rects$t
+t_4_rect<-rects$t_4
+
+stdp<-1013.25
+ff<-1.745
+adj<-stdp+ff*(stdp-min(h_rect$y2))
+
+h_rect$y2<-abs(h_rect$y2-adj)
+t_rect$y2<-abs(t_rect$y2-adj)
+t_4_rect$y2<-abs(t_4_rect$y2-adj)
+
+g.breaks<-c( 872, 900, 920, plyr::round_any((944+920)/2, 5, f=floor), plyr::round_any((964+945)/2, 5, f=ceiling), plyr::round_any((979+965)/2,5, f=floor), 980, 1000) %>% round(., 0) %>% append(., c(round(stdp,2),  round(adj,2)))
+
+labs<-(g.breaks)
+g.breaks<-abs(g.breaks-adj)
+
+t_4_rect<-filter(t_4_rect, start >=date(min(w$date)))
+t_rect<-filter(t_rect, start >=date(min(w$date)))
+h_rect<-filter(h_rect, start >=date(min(w$date)))
+
+scale.g<-(max(w$avg)/max(c(t_rect$y2, h_rect$y2, t_4_rect$y2)))
+
+
+plot_v2<-ggplot()+ theme_bw()+
+# geom_segment(data=t_4_rect, mapping=aes(x=start, xend=end, yend=y2*scale.g, y=-Inf), linetype ="dashed", color=rect_fill_outside, alpha=.5)+  
+geom_hline(yintercept=(mean(w$avg)), data=w, linetype="dashed", color ="black")+
+geom_rect(data=t_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.g), color=rect_fill_non, fill=rect_fill_non, alpha=.5)+
+geom_rect(data=h_rect, mapping=aes(xmin=start, xmax=end, ymin=-Inf, ymax=y2*scale.g), color=rect_fill, fill=rect_fill, alpha=.5)+ 
+geom_point(data=w, aes(date, avg), color="black", lwd=.6)+
+geom_line(data=w, aes(date, avg), color="black", lwd=0.4)+
+scale_y_continuous(name =txt$ylab, sec.axis = sec_axis(~./scale.g, name=txt$ylab2,  breaks = g.breaks , labels= labs))+
+scale_x_date(limits = as.Date(c('2002-05-01', '2022-02-01')), date_breaks = "1 years", date_labels = "%Y", position = "top", expand = c(0, 0))+
+theme(axis.title.x=element_blank(), plot.tag = element_text(face = "bold"))
+
+
+
+# expand = c(0, 0))
+# 
+# limits = as.Date(c('1/1/2002', '6/1/2022'))
+
+
+```
+
+
+### saving figure v1
+
+```{r}
+
+number_h_ratio<-33/7
+
+
+setwd(wd)
+setwd(fig)
+pdf("figure_four_v2.pdf", height=number_h_ratio , width =14)
+plot_v2
+dev.off()
+```
+

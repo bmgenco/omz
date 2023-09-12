@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<View collection="Argo_Profile_Collection_2022-03-11T15-18-41" xview="0.23">
+<GeographicMap>
+<MapDomain lat_min="-90.00000" lon_min="-180.00000" lon_max="180.00000" lat_max="90.00000"/>
+</GeographicMap>
+<MapWindow>
+<Symbol type="0" color="1" small_size="0.333333" size="-0.1"/>
+<Window>
+<Geometry x_right="180" x_offset_bb="1.5" y_bottom="-90" y_top="90" x_length_bb="8.5" y_length_bb="7.5" x_left="-180" x_projection="100" y_offset_bb="1" y_projection="100"/>
+</Window>
+</MapWindow>
+<DataWindow>
+<AxisVariables>
+<!--Pressure (adjusted) [decibar]-->
+<xAxis var_id="1" is_reversed="F" var_list="1"/>
+<!--Pressure (original) [decibar]-->
+<yAxis var_id="0" is_reversed="T" var_list="1"/>
+</AxisVariables>
+<Modes window_mode="0" plot_mode="0" window_type="0"/>
+<DataMark color="17" size="0.2"/>
+<Window>
+<Geometry x_right="1e+10" x_offset_bb="14.5" y_bottom="-1e+10" y_top="1e+10" x_length_bb="14" y_length_bb="17" x_left="-1e+10" y_offset_bb="2.5"/>
+</Window>
+</DataWindow>
+<DataWindow>
+<AxisVariables>
+<!--Temperature (original) [degrees_Celsius]-->
+<xAxis var_id="2" is_reversed="F" var_list="1"/>
+<!--Pressure (original) [decibar]-->
+<yAxis var_id="0" is_reversed="T" var_list="1"/>
+</AxisVariables>
+<Modes window_mode="0" plot_mode="0" window_type="0"/>
+<DataMark color="17" size="0.2"/>
+<Window>
+<Geometry x_right="1e+10" x_offset_bb="2.5" y_bottom="-1e+10" y_top="1e+10" x_length_bb="7.5" y_length_bb="9" x_left="-1e+10" y_offset_bb="10.5"/>
+</Window>
+</DataWindow>
+<IsoSurfaceVariables>
+<!--Pressure (adjusted) [decibar] @ Pressure (original) [decibar]=first-->
+<IsoVariable var_id="1" surface_value="first" surface_var_id="0"/>
+<!--Temperature (original) [degrees_Celsius] @ Pressure (original) [decibar]=first-->
+<IsoVariable var_id="2" surface_value="first" surface_var_id="0"/>
+<!--Temperature (adjusted) [degrees_Celsius] @ Pressure (original) [decibar]=first-->
+<IsoVariable var_id="3" surface_value="first" surface_var_id="0"/>
+<!--Practical Salinity (original) [psu] @ Pressure (original) [decibar]=first-->
+<IsoVariable var_id="4" surface_value="first" surface_var_id="0"/>
+</IsoSurfaceVariables>
+</View>

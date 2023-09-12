@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<View collection="Argo_Profile_Collection_2022-03-11T15-20-13" xview="0.23">
+<GeographicMap>
+<MapDomain lon_min="247.42440" lon_max="255.48361" lat_max="20.83743" lat_min="11.88357"/>
+</GeographicMap>
+<MapWindow>
+<Symbol type="0" color="1" small_size="0.1" size="-0.1"/>
+<Window>
+<Geometry y_length_bb="5.5" y_offset_bb="1" y_bottom="11.8836" y_top="20.8374" x_length_bb="4.75" x_offset_bb="1" y_projection="100" x_left="247.424" x_projection="100" x_right="255.484"/>
+</Window>
+</MapWindow>
+<DataWindow>
+<AxisVariables>
+<!--Pressure (adjusted) [decibar]-->
+<xAxis var_id="1" is_reversed="F" var_list="1"/>
+<!--Pressure (original) [decibar]-->
+<yAxis var_id="0" is_reversed="T" var_list="1"/>
+</AxisVariables>
+<Modes window_mode="1" plot_mode="9" window_type="0"/>
+<Symbol type="0" color="0" small_size="1" size="0.8"/>
+<DataMark color="17" size="0.2"/>
+<Window>
+<Geometry y_length_bb="5" y_offset_bb="15" y_bottom="2250" y_top="0" x_length_bb="4.25" x_offset_bb="1.5" x_left="0" x_right="2250"/>
+<GraphicsObjects>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="5.75" y_coordinate="20.2" font_size="8.60833" text_alignment="4" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Quality - X Variable" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="90" x_coordinate="0.675984" y_coordinate="17.5" font_size="7.94615" text_alignment="2" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Pressure (original) [decibar]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="3.625" y_coordinate="14.5889" font_size="7.94615" text_alignment="1" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Pressure (adjusted) [decibar]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="F" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="1.5" y_coordinate="20" font_size="8" text_alignment="6" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="var=2" frame_width="0"/>
+</GObject>
+</GraphicsObjects>
+</Window>
+</DataWindow>
+<DataWindow>
+<AxisVariables>
+<!--Temperature (original) [degrees_Celsius]-->
+<xAxis var_id="2" is_reversed="F" var_list="1"/>
+<!--Pressure (original) [decibar]-->
+<yAxis var_id="0" is_reversed="T" var_list="1"/>
+</AxisVariables>
+<Modes window_mode="1" plot_mode="9" window_type="0"/>
+<Symbol type="0" color="0" small_size="1" size="0.8"/>
+<DataMark color="17" size="0.2"/>
+<Window>
+<Geometry y_length_bb="5" y_offset_bb="15" y_bottom="2250" y_top="0" x_length_bb="4.25" x_offset_bb="7.3" x_left="0" x_right="32.5"/>
+<GraphicsObjects>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="11.55" y_coordinate="20.2" font_size="8.60833" text_alignment="4" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Quality - X Variable" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="90" x_coordinate="6.47598" y_coordinate="17.5" font_size="7.94615" text_alignment="2" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Pressure (original) [decibar]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="9.425" y_coordinate="14.5889" font_size="7.94615" text_alignment="1" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Temperature (original) [degrees_Celsius]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="F" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="7.3" y_coordinate="20" font_size="8" text_alignment="6" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="var=3" frame_width="0"/>
+</GObject>
+</GraphicsObjects>
+</Window>
+</DataWindow>
+<DataWindow>
+<AxisVariables>
+<!--Temperature (adjusted) [degrees_Celsius]-->
+<xAxis var_id="3" is_reversed="F" var_list="1"/>
+<!--Pressure (original) [decibar]-->
+<yAxis var_id="0" is_reversed="T" var_list="1"/>
+</AxisVariables>
+<Modes window_mode="1" plot_mode="9" window_type="0"/>
+<Symbol type="0" color="0" small_size="1" size="0.8"/>
+<DataMark color="17" size="0.2"/>
+<Window>
+<Geometry y_length_bb="5" y_offset_bb="15" y_bottom="2250" y_top="0" x_length_bb="4.25" x_offset_bb="13.1" x_left="0" x_right="32.5"/>
+<GraphicsObjects>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="17.35" y_coordinate="20.2" font_size="8.60833" text_alignment="4" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Quality - X Variable" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="90" x_coordinate="12.279" y_coordinate="17.5" font_size="7.94615" text_alignment="2" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Pressure (original) [decibar]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="15.225" y_coordinate="14.5889" font_size="7.94615" text_alignment="1" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Temperature (adjusted) [degrees_Celsius]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="F" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="13.1" y_coordinate="20" font_size="8" text_alignment="6" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="var=4" frame_width="0"/>
+</GObject>
+</GraphicsObjects>
+</Window>
+</DataWindow>
+<DataWindow>
+<AxisVariables>
+<!--Practical Salinity (original) [psu]-->
+<xAxis var_id="4" is_reversed="F" var_list="1"/>
+<!--Pressure (original) [decibar]-->
+<yAxis var_id="0" is_reversed="T" var_list="1"/>
+</AxisVariables>
+<Modes window_mode="1" plot_mode="9" window_type="0"/>
+<Symbol type="0" color="0" small_size="1" size="0.8"/>
+<DataMark color="17" size="0.2"/>
+<Window>
+<Geometry y_length_bb="5" y_offset_bb="15" y_bottom="2250" y_top="0" x_length_bb="4.25" x_offset_bb="18.9" x_left="33" x_right="45"/>
+<GraphicsObjects>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="23.15" y_coordinate="20.2" font_size="8.60833" text_alignment="4" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Quality - X Variable" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="90" x_coordinate="18.076" y_coordinate="17.5" font_size="7.94615" text_alignment="2" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Pressure (original) [decibar]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="21.025" y_coordinate="14.5889" font_size="7.94615" text_alignment="1" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Practical Salinity (original) [psu]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="F" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="18.9" y_coordinate="20" font_size="8" text_alignment="6" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="var=5" frame_width="0"/>
+</GObject>
+</GraphicsObjects>
+</Window>
+</DataWindow>
+<DataWindow>
+<AxisVariables>
+<!--Practical Salinity (adjusted) [psu]-->
+<xAxis var_id="5" is_reversed="F" var_list="1"/>
+<!--Pressure (original) [decibar]-->
+<yAxis var_id="0" is_reversed="T" var_list="1"/>
+</AxisVariables>
+<Modes window_mode="1" plot_mode="9" window_type="0"/>
+<Symbol type="0" color="0" small_size="1" size="0.8"/>
+<DataMark color="17" size="0.2"/>
+<Window>
+<Geometry y_length_bb="5" y_offset_bb="15" y_bottom="2250" y_top="0" x_length_bb="4.25" x_offset_bb="24.7" x_left="33.25" x_right="35"/>
+<GraphicsObjects>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="28.95" y_coordinate="20.2" font_size="8.60833" text_alignment="4" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Quality - X Variable" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="90" x_coordinate="23.876" y_coordinate="17.5" font_size="7.94615" text_alignment="2" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Pressure (original) [decibar]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="26.825" y_coordinate="14.5889" font_size="7.94615" text_alignment="1" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Practical Salinity (adjusted) [psu]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="F" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="24.7" y_coordinate="20" font_size="8" text_alignment="6" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="var=6" frame_width="0"/>
+</GObject>
+</GraphicsObjects>
+</Window>
+</DataWindow>
+<DataWindow>
+<AxisVariables>
+<!--Dissolved Oxygen (original) [μmol kg-1]-->
+<xAxis var_id="6" is_reversed="F" var_list="1"/>
+<!--Pressure (original) [decibar]-->
+<yAxis var_id="0" is_reversed="T" var_list="1"/>
+</AxisVariables>
+<Modes window_mode="1" plot_mode="9" window_type="0"/>
+<Symbol type="0" color="0" small_size="1" size="0.8"/>
+<DataMark color="17" size="0.2"/>
+<Window>
+<Geometry y_length_bb="5" y_offset_bb="8.25" y_bottom="2250" y_top="0" x_length_bb="4.25" x_offset_bb="1.5" x_left="-25" x_right="200"/>
+<GraphicsObjects>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="5.75" y_coordinate="13.45" font_size="8.60833" text_alignment="4" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Quality - X Variable" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="90" x_coordinate="0.675984" y_coordinate="10.75" font_size="7.94615" text_alignment="2" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Pressure (original) [decibar]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="3.625" y_coordinate="7.83891" font_size="7.94615" text_alignment="1" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Dissolved Oxygen (original) [~$m~#mol kg~^-~^1]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="F" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="1.5" y_coordinate="13.25" font_size="8" text_alignment="6" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="var=7" frame_width="0"/>
+</GObject>
+</GraphicsObjects>
+</Window>
+</DataWindow>
+<DataWindow>
+<AxisVariables>
+<!--Dissolved Oxygen (adjusted) [μmol kg-1]-->
+<xAxis var_id="7" is_reversed="F" var_list="1"/>
+<!--Pressure (original) [decibar]-->
+<yAxis var_id="0" is_reversed="T" var_list="1"/>
+</AxisVariables>
+<Modes window_mode="1" plot_mode="9" window_type="0"/>
+<Symbol type="0" color="0" small_size="1" size="0.8"/>
+<DataMark color="17" size="0.2"/>
+<Window>
+<Geometry y_length_bb="5" y_offset_bb="8.25" y_bottom="2250" y_top="0" x_length_bb="4.25" x_offset_bb="7.3" x_left="-25" x_right="225"/>
+<GraphicsObjects>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="11.55" y_coordinate="13.45" font_size="8.60833" text_alignment="4" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Quality - X Variable" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="90" x_coordinate="6.47598" y_coordinate="10.75" font_size="7.94615" text_alignment="2" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Pressure (original) [decibar]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="9.425" y_coordinate="7.83891" font_size="7.94615" text_alignment="1" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Dissolved Oxygen (adjusted) [~$m~#mol kg~^-~^1]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="F" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="7.3" y_coordinate="13.25" font_size="8" text_alignment="6" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="var=8" frame_width="0"/>
+</GObject>
+</GraphicsObjects>
+</Window>
+</DataWindow>
+<DataWindow>
+<AxisVariables>
+<!--Pressure displacement Temperature [decibar]-->
+<xAxis var_id="8" is_reversed="F" var_list="1"/>
+<!--Pressure (original) [decibar]-->
+<yAxis var_id="0" is_reversed="T" var_list="1"/>
+</AxisVariables>
+<Modes window_mode="1" plot_mode="9" window_type="0"/>
+<Symbol type="0" color="0" small_size="1" size="0.8"/>
+<DataMark color="17" size="0.2"/>
+<Window>
+<Geometry y_length_bb="5" y_offset_bb="8.25" y_bottom="2250" y_top="0" x_length_bb="4.25" x_offset_bb="13.1" x_left="-1.5" x_right="1.5"/>
+<GraphicsObjects>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="17.35" y_coordinate="13.45" font_size="8.60833" text_alignment="4" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Quality - X Variable" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="90" x_coordinate="12.279" y_coordinate="10.75" font_size="7.94615" text_alignment="2" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Pressure (original) [decibar]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="15.225" y_coordinate="7.83891" font_size="7.94615" text_alignment="1" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Pressure displacement Temperature [decibar]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="F" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="13.1" y_coordinate="13.25" font_size="8" text_alignment="6" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="var=9" frame_width="0"/>
+</GObject>
+</GraphicsObjects>
+</Window>
+</DataWindow>
+<DataWindow>
+<AxisVariables>
+<!--Pressure displacement Practical Salinity [decibar]-->
+<xAxis var_id="9" is_reversed="F" var_list="1"/>
+<!--Pressure (original) [decibar]-->
+<yAxis var_id="0" is_reversed="T" var_list="1"/>
+</AxisVariables>
+<Modes window_mode="1" plot_mode="9" window_type="0"/>
+<Symbol type="0" color="0" small_size="1" size="0.8"/>
+<DataMark color="17" size="0.2"/>
+<Window>
+<Geometry y_length_bb="5" y_offset_bb="8.25" y_bottom="2250" y_top="0" x_length_bb="4.25" x_offset_bb="18.9" x_left="-1.5" x_right="1.5"/>
+<GraphicsObjects>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="23.15" y_coordinate="13.45" font_size="8.60833" text_alignment="4" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Quality - X Variable" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="90" x_coordinate="18.076" y_coordinate="10.75" font_size="7.94615" text_alignment="2" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Pressure (original) [decibar]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="21.025" y_coordinate="7.83891" font_size="7.94615" text_alignment="1" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Pressure displacement Practical Salinity [decibar]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="F" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="18.9" y_coordinate="13.25" font_size="8" text_alignment="6" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="var=10" frame_width="0"/>
+</GObject>
+</GraphicsObjects>
+</Window>
+</DataWindow>
+<DataWindow>
+<AxisVariables>
+<!--Pressure displacement Dissolved Oxygen [decibar]-->
+<xAxis var_id="10" is_reversed="F" var_list="1"/>
+<!--Pressure (original) [decibar]-->
+<yAxis var_id="0" is_reversed="T" var_list="1"/>
+</AxisVariables>
+<Modes window_mode="1" plot_mode="9" window_type="0"/>
+<Symbol type="0" color="0" small_size="1" size="0.8"/>
+<DataMark color="17" size="0.2"/>
+<Window>
+<Geometry y_length_bb="5" y_offset_bb="8.25" y_bottom="2250" y_top="0" x_length_bb="4.25" x_offset_bb="24.7" x_left="-0.001" x_right="0.001"/>
+<GraphicsObjects>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="28.95" y_coordinate="13.45" font_size="8.60833" text_alignment="4" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Quality - X Variable" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="90" x_coordinate="23.876" y_coordinate="10.75" font_size="7.94615" text_alignment="2" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Pressure (original) [decibar]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="T" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="26.825" y_coordinate="7.83891" font_size="7.94615" text_alignment="1" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="Pressure displacement Dissolved Oxygen [decibar]" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="F" dragging="F" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="24.7" y_coordinate="13.25" font_size="8" text_alignment="6" frame_color="-1" text_color="0" background_color="-1" frame_type="0" text="var=11" frame_width="0"/>
+</GObject>
+</GraphicsObjects>
+</Window>
+</DataWindow>
+<Canvas>
+<GraphicsObjects>
+<GObject type="1" clipping="F" is_automatic="F" dragging="T" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="0.25" y_coordinate="0.02" font_size="7" text_alignment="6" frame_color="-1" text_color="8" background_color="-1" frame_type="0" text="=collection()   -   =viewName()" frame_width="-1"/>
+</GObject>
+<GObject type="1" clipping="F" is_automatic="F" dragging="T" post_data="T" own_coordinates="F">
+<Annotation angle="0" x_coordinate="29.5" y_coordinate="0.02" font_size="7" text_alignment="4" frame_color="-1" text_color="8" background_color="-1" frame_type="0" text="=date()T=time()" frame_width="-1"/>
+</GObject>
+</GraphicsObjects>
+</Canvas>
+<BasicVariables>
+<!--Pressure (original) [decibar]-->
+<Variable var_id="0" max_value="2250.00" min_value="0.00"/>
+<!--Pressure (adjusted) [decibar]-->
+<Variable var_id="1" max_value="2250.00" min_value="0.00"/>
+<!--Temperature (original) [degrees_Celsius]-->
+<Variable var_id="2" max_value="35.0000" min_value="0.0000"/>
+<!--Temperature (adjusted) [degrees_Celsius]-->
+<Variable var_id="3" max_value="35.0000" min_value="0.0000"/>
+<!--Practical Salinity (original) [psu]-->
+<Variable var_id="4" max_value="45.0000" min_value="33.0000"/>
+<!--Practical Salinity (adjusted) [psu]-->
+<Variable var_id="5" max_value="35.0000" min_value="33.2500"/>
+<!--Dissolved Oxygen (original) [μmol kg-1]-->
+<Variable var_id="6" max_value="200.0" min_value="-25.0"/>
+<!--Dissolved Oxygen (adjusted) [μmol kg-1]-->
+<Variable var_id="7" max_value="225.0" min_value="-25.0"/>
+<!--Pressure displacement Temperature [decibar]-->
+<Variable var_id="8" max_value="1.500" min_value="-1.500"/>
+<!--Pressure displacement Practical Salinity [decibar]-->
+<Variable var_id="9" max_value="1.500" min_value="-1.500"/>
+<!--Pressure displacement Dissolved Oxygen [decibar]-->
+<Variable var_id="10" max_value="0.001" min_value="-0.001"/>
+</BasicVariables>
+</View>
