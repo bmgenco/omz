@@ -3,9 +3,11 @@ wd/r_wd/r_scripts/Enceladus_directories.R
 .Rproj.user
 *.html
 data/gis_data/my_gis_creations/
-data/ocean_color_bud/true_color/
 data/ocean_color_bud/clouds/
 data/WOA/woa18_all_o00_01.Data/
 data/gis_data/files/
 data/2017_data/
+wd/r_wd/Index/argo_synthetic-profile_index.txt
+wd/r_wd/Index/argo_synthetic-profile_index.txt.gz
+wd/r_wd/r_objects/.Rhistory
 *.Rhistory
