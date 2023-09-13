@@ -186,8 +186,7 @@ rm(x,z,cl.buf)
   return(y)
 }
 
-## match up functions
-
+#### match up functions from older scripts ####
 
 f.argo_by_database_w_selection_options<-function(database, year_begin, function_variables, spatial_box){
 
@@ -366,6 +365,141 @@ f.argo_by_database_w_selection_options<-function(database, year_begin, function_
   return(cell_list)
   
 }
+f.argo_by_hurdat_w_selection_options<-function(h.buf, year_begin, function_variables, spatial_box){
+  
+  #                USER defined variables and defaults:                                   #
+  # year begin = year begin form hurricanes, profies will be function_variables$hprior b4 #                                                                               #
+  # spatial_box = c(xmin,ymin, xmax, ymax). vector of 4 integers. nothing else            #
+  # if function_variables$argo_sensor==NA THEN no sensor limits on profile return         #
+  
+  #### default values if not defined: #### In FUTURE make spatial_box and year begin function variables
+  
+  if(missing(year_begin)){
+    year_begin<-year(min(h.buf$DateTime)) %>% as.integer(.)
+    
+  }
+  if(missing(spatial_box)) {
+    y<-h.buf
+    spatial_box<-c(unname(st_bbox(h.buf)$xmin), unname(st_bbox(h.buf)$ymin), unname(st_bbox(h.buf)$xmax), unname(st_bbox(h.buf)$ymax))
+  } else {y<-st_crop(h.buf,  xmin=spatial_box[1], ymin=spatial_box[2], xmax=spatial_box[3], ymax=spatial_box[4])}
+  
+  if(is.na(function_variables$h.prior)==TRUE){function_variables$h.prior<-90}
+  if(is.na(function_variables$h.post)==TRUE){function_variables$h.post<-90}
+  if(is.na(function_variables$argo.length)==TRUE){function_variables$argo.length<-(450*1000)}
+  
+  names(spatial_box)<-c("xmin", "ymin", "xmax", "ymax")
+  
+  #### Function part 1 : ####
+  st_geometry(y)<-'points'
+  y<-select(y, -buffer)
+  y<-filter(y, year(DateTime) >= year_begin)
+  shift<-(function_variables$argo.length/2) # find 
+  
+  f.box<-function(x){
+    # z<-st_geometry(y)
+    # lat0<-z[[1]][2]
+    # lon0<-z[[1]][1]
+    z<-st_geometry(x)
+    lat0<-z[[1]][2]
+    lon0<-z[[1]][1]
+    center.reproj<-paste0("+proj=aeqd +lat_0=", lat0, " ", "+lon_0=", lon0)
+    # center.reproj<-"+proj=aeqd +lat_0=0 +lon_0=0"
+    flat<-sf::st_transform(z, center.reproj )
+    ymin<-flat[[1]][[2]]-shift
+    ymax<-flat[[1]][[2]]+shift
+    xmax<-flat[[1]][[2]]+shift
+    xmin<-flat[[1]][[2]]-shift
+    # center.reproj<-st_crs("+proj=aeqd +lat_0=0 +lon_0=0")
+  z<-st_polygon(list(cbind(c(xmin,xmax,xmax,xmin,xmin), c(ymax,ymax,ymin,ymin,ymax)))) %>% st_sfc(crs= center.reproj)
+  z<-sf::st_transform(z, "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+  z<-st_bbox(z)  
+  box<-c(z$xmin, z$ymin, z$xmax, z$ymax)
+  return(box)}
+ 
+#   stupid for lopp improve here... 
+
+  boxes<-vector(mode="list", length=dim(y)[1])
+  for(i in 1:dim(y)[1]){
+  boxes[[i]]<-f.box(y[i,])
+}
+  boxes<-data.frame(matrix(unlist(boxes), nrow=dim(y)[1], byrow=TRUE))
+  names(boxes)<-c("xmin", "ymin", "xmax", "ymax")
+  z<-cbind(y, boxes)
+  rm(y, boxes)
+  y<-split(z, 1:nrow(z))
+  #### Function part 2 : ####
+
+  f.indvidual_track_match<-function(y){
+  lat_lim=c(y$ymin, y$ymax)
+  lon_lim=c(y$xmin, y$xmax)
+  # fix here for dates.....
+  start_date=date(min(y$DateTime)) - function_variables$h.prior
+  end_date=date(max(y$DateTime)) + function_variables$h.post
+    
+    #cell_floats from bioargo submodule:
+    if(is.na(function_variables$argo_sensor)==TRUE) {floats<-select_profiles(lon_lim,lat_lim,start_date, end_date, outside="both",
+                                                                                  sensor=NULL)} else {floats<-select_profiles(lon_lim,lat_lim,
+                                                                                                                                   start_date, end_date, sensor=function_variables$argo_sensor, outside="both")}  
+    
+    # 'outside', 'none' 'time' 'space' 'both': By default, only float profiles
+    #           that are within both the temporal and spatial constraints are
+    #           returned ('none'); specify to also maintain profiles outside
+    #           the temporal constraints ('time'), spatial constraints
+    #           ('space'), or both constraints ('both')
+    # 
+    # 'sensor', 'SENSOR_TYPE': By default, all floats within the lon/lat/time
+    #           limits are considered. This option allows the selection by 
+    #           sensor type. Available are: DOXY, CHLA, BBP700, 
+    #           PH_IN_SITU_TOTAL, NITRATE, DOWN_IRRADIANCE380,
+    #           DOWN_IRRADIANCE412, DOWN_IRRADIANCE490, DOWNWELLING_PAR
+    #           (Currently, only one sensor type can be selected.)
+   
+  return(floats)}
+
+    match<-lapply(y, f.indvidual_track_match)
+
+#   stupid for lopp improve here... (not to bad perfomance)
+  matched<-vector(mode="list", length(y))
+  for(i in 1:length(y)[1]){
+  x<-list(y[[i]], match[[i]]$profiles, match[[i]]$floats)
+  names(x)<-c("tracks", "profiles", "floats")
+  matched[[i]]<-x}
+  rm(y, match)
+  f.rm<-function(x){if(length(x$profiles)==0){x<-NULL}
+    return(x)}
+  matched<-lapply(matched, f.rm)
+matched<-matched[!sapply(matched,is.null)] 
+   
+
+# saveRDS(matched, "20220310_matched.R")
+# matched<-readRDS("20220310_matched.R")
+
+f.profiles_prior_and_post<-function(x){
+
+x$profile_dates<-Sprof$date[x$profiles]
+
+x$prior_dates<-x$profile_dates[x$profile_dates<x$tracks$DateTime]
+x$post_dates<-x$profile_dates[x$profile_dates>x$tracks$DateTime]
+
+x$prior_profiles<-x$profiles[x$profile_dates < x$tracks$DateTime]
+x$post_profiles<-x$profiles[x$profile_dates > x$tracks$DateTime]
+return(x)
+}
+
+matched<-lapply(matched, f.profiles_prior_and_post)
+
+return(matched)}
+
+#### Match up for staiscs
+
+f.floats_within_EP<-function(function_variables){
+
+end.date<-(function_variables$h_end_date+function_variables$h.post) %>% as.character(.)
+total_floats<-select_profiles(lon_lim=c(function_variables$h.lon_min,function_variables$h.lon_max),lat_lim=c(function_variables$h.lat_min, function_variables$h.lat_max), end_date = end.date, start_date="1990-01-01", outside="none", sensor=NULL)
+
+return(total_floats) 
+}
+
 
 
 ```
@@ -412,21 +546,108 @@ load("init_argo.RData")
 ```
 
 # defining spatial bounds and fucntion variables
-## Hurdat spatial bounds
+## Hurdat spatial/temporal bounds
 - Hurricane zone defien as max, min of eastern basin Hurdat dtatset
 -7 degrere bufer chosen becau of chen et al
 ```{r}
 buffer=7
-west<-min(na.omit(h$Lon))-buffer
-east<-max(na.omit(h$Lon))+buffer
+
+#west<-min(na.omit(h$Lon))-buffer
+west=180
+#east<-min(na.omit(h$Lon))+buffer
+east<-max(na.omit(h$Lon[h$Lon < 0]))-buffer
 north<-max(na.omit(h$Lat))+buffer
 south<-min(na.omit(h$Lat))-buffer
+print(min(na.omit(h$DateTime)))
+print(max(na.omit(h$DateTime)))
+print(c(north, south, west, east))
+
 
 ```
 
-Add varibles here
+Add variables here
 
 100km
 200 km
 500 km 
+
+## function_variables (INCLUDES DYNAMIC VARIABLES based on Hurdat (h)):
+Appending 'function_variables' with dynamic variables from hurdat 'h' data set
+* originally from script "
+* define here as opposed to within function or sub blocks
++ add hurdat coordinates as bbox feature
+
+Note importance of "function_variables<-vector(mode="list")"
+
+```{r}
+function_variables<-vector(mode="list") # for storing all function variables that may be dynamic or other wise
+
+### user defined: ####
+# prior and post for time frame for argo profiles that fall within spatial selection widnow
+
+#### spatial temporal secltion #####
+# time
+function_variables$h.prior<-30
+function_variables$h.post<-45
+## end date of hurricane database 
+function_variables$h_end_date<- max(na.omit(h$DateTime)) %>% as.Date(.)
+
+# space
+function_variables$h.lon_max<-west # need to improve here
+function_variables$h.lat_max<-north
+function_variables$h.lat_min<-south
+function_variables$h.lon_min<-east
+
+
+
+# radius around TS in m
+function_variables$h.radi_1<-100000
+function_variables$h.radi_2<-200000
+function_variables$h.radi_3<-500000
+function_variables$land_buffer<- 20000
+
+#### bgc-argo selection parameters ####
+function_variables$year_begin<-1990
+
+#function_variables$argo_sensor<-NA 
+#c("DOXY") #pick a single argo sensor, "TEMP", etc.)
+
+#### odz statistics - ignore for now ####
+#fraction maxFODZ
+#function_variables$fraction_fodz<-NA
+
+#### function to create ? ####
+# f.function_vars_fill<-function(function_variables, h){
+#   if(missing(h)) {function_variables$h.lat_min<<-0} else{function_variables$h.lat_min<<-min(h$Lat)}
+#   }
+# 
+# f.function_vars_fill(function_variables)
+
+function_variables$selection<-paste0("Lat (", function_variables$h.lat_min, ", ", function_variables$h.lat_max, ") Lon 
+(", function_variables$h.lon_min, ", ", function_variables$h.lon_max,  ")")
+#(f.function_vars_fill)
+```
+
+
+# Float slection satistics
+## step one square slection
+```{r}
+#slects profiles and floats within the  TC slection plus buffer does not remove coast
+ep_total_floats<-f.floats_within_EP(function_variables)
+
+```
+##
+
+
+
+## rmeove coastal floats
+# Float TC match up
+```{r}
+
+
+```
+
+```{r}
+
+```
 
