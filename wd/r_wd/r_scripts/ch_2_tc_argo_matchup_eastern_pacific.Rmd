@@ -549,6 +549,8 @@ load("init_argo.RData")
 ## Hurdat spatial/temporal bounds
 - Hurricane zone defien as max, min of eastern basin Hurdat dtatset
 -7 degrere bufer chosen becau of chen et al
+
+ADD 95% Lat confidence interval here
 ```{r}
 buffer=7
 
@@ -636,11 +638,20 @@ function_variables$selection<-paste0("Lat (", function_variables$h.lat_min, ", "
 ep_total_floats<-f.floats_within_EP(function_variables)
 
 ```
-##
+### summarry statitics
+```{r}
+print(length(na.omit(ep_total_floats$floats)))
+print(length(na.omit(ep_total_floats$profiles)))
 
+```
 
+# coastal float subsetting
 
-## rmeove coastal floats
+```{r}
+cl<-st_crop(coastline, xmin=function_variables$h.lon_min, ymin=function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax=function_variables$h.lat_max)
+rm(coastline)
+```
+
 # Float TC match up
 ```{r}
 
