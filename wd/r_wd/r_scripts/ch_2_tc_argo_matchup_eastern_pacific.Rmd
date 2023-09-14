@@ -495,7 +495,11 @@ return(matched)}
 f.floats_within_EP<-function(function_variables){
 
 end.date<-(function_variables$h_end_date+function_variables$h.post) %>% as.character(.)
-total_floats<-select_profiles(lon_lim=c(function_variables$h.lon_min,function_variables$h.lon_max),lat_lim=c(function_variables$h.lat_min, function_variables$h.lat_max), end_date = end.date, start_date="1990-01-01", outside="none", sensor=NULL)
+
+if(is.na(function_variables$argo_sensor)==TRUE) {sensor_selection=NULL }
+else {sensor_selection=function_variables$argo_sensor}
+
+total_floats<-select_profiles(lon_lim=c(function_variables$bgc.lon_min,function_variables$bgc.lon_max),lat_lim=c(function_variables$bgc.lat_min, function_variables$bgc.lat_max), end_date = end.date, start_date="1990-01-01", outside="none", sensor=sensor_selection)
 
 return(total_floats) 
 }
@@ -549,20 +553,35 @@ load("init_argo.RData")
 ## Hurdat spatial/temporal bounds
 - Hurricane zone defien as max, min of eastern basin Hurdat dtatset
 -7 degrere bufer chosen becau of chen et al
-
-ADD 95% Lat confidence interval here
+-slecested 99% confidnec interval for altiduanl range to excluse northern outliers
 ```{r}
 buffer=7
 
 #west<-min(na.omit(h$Lon))-buffer
-west=180
-#east<-min(na.omit(h$Lon))+buffer
-east<-max(na.omit(h$Lon[h$Lon < 0]))-buffer
-north<-max(na.omit(h$Lat))+buffer
-south<-min(na.omit(h$Lat))-buffer
+
+
+Lat.99<-quantile((na.omit(h$Lat)),probs=c(0.001,0.99)) # remove anmoulsou outliers other wise hurricane zone is 70 N
+
+west_argo=180
+north_tc<-(round_any(Lat.99[[2]], 0.5, f= round))
+south_tc<-(round_any(Lat.99[[1]], 0.5, f= round))
+east_tc<-round_any(max(na.omit(h$Lon[h$Lon < 0])), 0.5, f = round)
+west_tc<-west_argo-buffer
+
+north_argo<-north_tc+buffer 
+south_argo<-south_tc-buffer
+east_argo<-east_tc-buffer
+
+# north<-max(na.omit(h$Lat))+buffer
+# south<-min(na.omit(h$Lat))-buffer
+
+
+
+
+
 print(min(na.omit(h$DateTime)))
 print(max(na.omit(h$DateTime)))
-print(c(north, south, west, east))
+print(c(north_argo, south_argo, west_argo, east_argo))
 
 
 ```
@@ -585,7 +604,7 @@ Note importance of "function_variables<-vector(mode="list")"
 function_variables<-vector(mode="list") # for storing all function variables that may be dynamic or other wise
 
 ### user defined: ####
-# prior and post for time frame for argo profiles that fall within spatial selection widnow
+# prior and post for time frame for argo profiles that fall within spatial selection window
 
 #### spatial temporal secltion #####
 # time
@@ -595,23 +614,27 @@ function_variables$h.post<-45
 function_variables$h_end_date<- max(na.omit(h$DateTime)) %>% as.Date(.)
 
 # space
-function_variables$h.lon_max<-west # need to improve here
-function_variables$h.lat_max<-north
-function_variables$h.lat_min<-south
-function_variables$h.lon_min<-east
+function_variables$bgc.lon_max<-west_argo # need to improve here
+function_variables$bgc.lat_max<-north_argo
+function_variables$bgc.lat_min<-south_argo
+function_variables$bgc.lon_min<-east_argo
 
+function_variables$tc.lon_max<-west_tc # need to improve here
+function_variables$tc.lat_max<-north_tc
+function_variables$tc.lat_min<-south_tc
+function_variables$tc.lon_min<-east_tc
 
 
 # radius around TS in m
-function_variables$h.radi_1<-100000
-function_variables$h.radi_2<-200000
-function_variables$h.radi_3<-500000
+function_variables$tc.radi_1<-100000
+function_variables$tc.radi_2<-200000
+function_variables$tc.radi_3<-500000
 function_variables$land_buffer<- 20000
 
 #### bgc-argo selection parameters ####
 function_variables$year_begin<-1990
 
-#function_variables$argo_sensor<-NA 
+function_variables$argo_sensor<-NA 
 #c("DOXY") #pick a single argo sensor, "TEMP", etc.)
 
 #### odz statistics - ignore for now ####
@@ -625,8 +648,8 @@ function_variables$year_begin<-1990
 # 
 # f.function_vars_fill(function_variables)
 
-function_variables$selection<-paste0("Lat (", function_variables$h.lat_min, ", ", function_variables$h.lat_max, ") Lon 
-(", function_variables$h.lon_min, ", ", function_variables$h.lon_max,  ")")
+function_variables$selection<-paste0("Lat (", function_variables$bgc.lat_min, ", ", function_variables$bgc.lat_max, ") Lon 
+(", function_variables$bgc.lon_min, ", ", function_variables$bgc.lon_max,  ")")
 #(f.function_vars_fill)
 ```
 
@@ -635,22 +658,33 @@ function_variables$selection<-paste0("Lat (", function_variables$h.lat_min, ", "
 ## step one square slection
 ```{r}
 #slects profiles and floats within the  TC slection plus buffer does not remove coast
+
+function_variables$argo_sensor<-NA 
 ep_total_floats<-f.floats_within_EP(function_variables)
+function_variables$argo_sensor<-"DOXY"
+ep_doxy_floats<-f.floats_within_EP(function_variables)
 
 ```
 ### summarry statitics
 ```{r}
 print(length(na.omit(ep_total_floats$floats)))
 print(length(na.omit(ep_total_floats$profiles)))
-
 ```
+
+
 
 # coastal float subsetting
-
+## land buffer
 ```{r}
-cl<-st_crop(coastline, xmin=function_variables$h.lon_min, ymin=function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax=function_variables$h.lat_max)
+cl<-st_crop(coastline, xmin=function_variables$bgc.lon_min, ymin=function_variables$bgc.lat_min, xmax=function_variables$bgc.lon_max, ymax=function_variables$bgc.lat_max)
 rm(coastline)
+
+buffered_land<-f.cl_buffer(function_variables, cl)
+rm(cl)
 ```
+## 
+
+
 
 # Float TC match up
 ```{r}
