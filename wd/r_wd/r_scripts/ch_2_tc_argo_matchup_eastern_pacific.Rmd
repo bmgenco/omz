@@ -32,7 +32,6 @@ r_scriptwd<-getwd()
 wd<-substring(r_scriptwd,1,nchar(r_scriptwd) -10) # hardcoding replace here
 knitr::opts_knit$set(root.dir = wd)
 
-
 # relative directories
 robj<-"r_objects"
 fig<-"../../figures"
@@ -41,7 +40,6 @@ output<-"../../output"
 data_d<-"../../data"
 # ocean_color<-"../../data/ocean_color_bud"
 # bathy_d<-"../../data/bathy" # edit this
-
 
 knitr::opts_chunk$set(echo =FALSE)
 #knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
@@ -66,20 +64,13 @@ f.ipak <- function(pkg){
   sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
 }
 
-# packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "RColorBrewer", "marmap", "extrafont", "oce", "MODIS", "measurements")  # set packages here
-
-# tidyverse: is all of the following packages: ggplot2, dplyr, tidyr, readr, purr, tibble, sringr, & forcats.
-
-packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT")
-
+packages<-c("plyr","sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT" )
 # "HURDAT",
 
 f.ipak(packages)
 # lapply(packages, require, character.only = TRUE)
 # rm(f.ipak, packages)
 print(paste0("Current Working Directory is ", getwd()))
-
-
 ```
 ## Load submodule for bio-argo floats
 
@@ -116,23 +107,12 @@ rm(f.ipak, packages, path_code)
 
 
 # functions
+adapted, and thinned from ... script
 ```{r}
 
+#
 
-### function to select an individual storm by name OR  key from hurdat, "h" datsetset  ####
-# f.select_ts<-function(key_id){
-# # can use or operator io incle storm name
-# x<-filter(h, Key == key_id)
-# # assign(key_id, x)
-# # rm(x, key_id)
-# # x<-ls()
-# # return(x[1])
-# }
-
-### function to convert depth when reading in nc files ####
-
-#### function to create buffer around hurricane points ####
-
+#function to create buffer around coastline
 f.cl_buffer<-function(function_variables, cl){
   if(is.na(function_variables$land_buffer)==TRUE){
                       function_variables$land_buffer<-100000}
@@ -147,364 +127,38 @@ f.cl_buffer<-function(function_variables, cl){
   flat<-sf::st_transform(y, center.reproj )
   buffered_land<-sf::st_buffer(flat, dist=land_buffer)%>%sf::st_transform(., "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") 
   return(buffered_land)
-  }
-f.buffer_select<-function(h.pts, function_variables ,cl){
-if(is.na(function_variables$h.radi)==TRUE){
-                      function_variables$h.radi<-100000}
-if(is.na(function_variables$land_buffer)==TRUE){
-                      function_variables$land_buffer<-100000}
-
-radi.m<-function_variables$h.radi
-Land_buffer<-function_variables$land_buffer
-x<-h.pts  
-#CL buffer:
-  cl.buf<-f.cl_buffer(function_variables, cl)
-  
-  #polygon buffer:  
-  f.circle<-function(x, radi.m){
-  y<-st_geometry(x)
-  lat0<-y[[1]][2]
-  lon0<-y[[1]][1]
-  center.reproj<-paste0("+proj=aeqd +lat_0=", lat0, " ", "+lon_0=", lon0)
-  flat<-sf::st_transform(y, center.reproj )
-  circle<-sf::st_buffer(flat, dist=radi.m)%>%sf::st_transform(., "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") 
-  return(circle)
-  }
-  
-  circle<-sf::st_as_sf(f.circle(x, radi.m))
-  names(circle)<-"buffer"
-  st_geometry(circle)<-"buffer"
-  z<-cbind(x, circle)
-  names(z)[names(z) == "geometry"] <- "points"
-  st_geometry(z)<-"buffer"
-
-  y<-st_difference(z, cl.buf)
-
-rm(x,z,cl.buf)
-
-  
-  return(y)
 }
 
-#### match up functions from older scripts ####
+# turn bgc-arg
+f.profiles_to_points<-function(x){
 
-f.argo_by_database_w_selection_options<-function(database, year_begin, function_variables, spatial_box){
+y<-x$profiles
+# z<-x$floats
 
-  #                USER defined variables and defaults:                                   #
-  # year begin = year begin form hurricanes, profies will be function_variables$hprior b4 #                                                                               #
-  # spatial_box = c(xmin,ymin, xmax, ymax). vector of 4 integers. nothing else            #
-  # if function_variables$argo_sensor==NA THEN no sensor limits on profile return         #
-  # profiles may only be index value will need to update mathc fo each use of Sprof
-
-  #### default values if not defined: #### In FUTURE make spatial_box and year begin function variables
-  
-  if(missing(year_begin)){
-    year_begin<-year(min(database$DateTime)) %>% as.integer(.)
-    
-  }
-  if(missing(spatial_box)) {
-    y<-database
-    spatial_box<-c(unname(st_bbox(database)$xmin), unname(st_bbox(database)$ymin), unname(st_bbox(database)$xmax), unname(st_bbox(database)$ymax))
-  } else {y<-st_crop(database,  xmin=spatial_box[1], ymin=spatial_box[2], xmax=spatial_box[3], ymax=spatial_box[4])}
-  
-  if(is.na(function_variables$fraction_fodz)==TRUE){function_variables$fraction_fodz<-0}
-  if(is.na(function_variables$h.prior)==TRUE){function_variables$h.prior<-90}
-  if(is.na(function_variables$h.post)==TRUE){function_variables$h.post<-90}
-  
-  names(spatial_box)<-c("xmin", "ymin", "xmax", "ymax")
-  
-  #### Function : ####
-  y<-filter(y, year(DateTime) >= year_begin, maxFODZ >= function_variables$fraction_fodz)
-  y<-y[order(y$grid_id, decreasing = F),]
-  id<-unique(y$grid_id)
-  function_list<-as.list(id)
-  names(function_list)<-id
-  
-      f.get<-function(x, y){
-        y.id<-x
-        data<-filter(y, grid_id == y.id)
-        z<-st_bbox(unique(data))
-        lat_lim=c(z$ymin[[1]], z$ymax[[1]])
-        lon_lim=c(z$xmin[[1]], z$xmax[[1]])
-        start_date=date(min(y$DateTime)) - function_variables$h.prior
-        end_date=date(max(y$DateTime)) + function_variables$h.post
-    
-        #cell_floats from bioargo submodule:
-        if(is.na(function_variables$argo_sensor)==TRUE) {cell_floats<-select_profiles(lon_lim,lat_lim,start_date, end_date, outside="both",
-          sensor=NULL)} else {cell_floats<-select_profiles(lon_lim,lat_lim,
-          start_date, end_date, sensor=function_variables$argo_sensor, outside="both")}  
-        
-        # 'outside', 'none' 'time' 'space' 'both': By default, only float profiles
-        #           that are within both the temporal and spatial constraints are
-        #           returned ('none'); specify to also maintain profiles outside
-        #           the temporal constraints ('time'), spatial constraints
-        #           ('space'), or both constraints ('both')
-        # 
-        # 'sensor', 'SENSOR_TYPE': By default, all floats within the lon/lat/time
-        #           limits are considered. This option allows the selection by 
-        #           sensor type. Available are: DOXY, CHLA, BBP700, 
-        #           PH_IN_SITU_TOTAL, NITRATE, DOWN_IRRADIANCE380,
-        #           DOWN_IRRADIANCE412, DOWN_IRRADIANCE490, DOWNWELLING_PAR
-        #           (Currently, only one sensor type can be selected.)
-    
-        p<-vector(mode="list")
-        p$data<-data
-        
-        data.select<-p$data %>% filter(., year(DateTime)>=year_begin) %>%
-          select(., Key, Name, DateTime, lon, lat, Wind) %>% st_drop_geometry(.)%>%
-          remove_rownames(.)
-      
-        
-        p$events<-vector(mode="list", length=nrow(data.select))
-        for(i in 1:length(p$events)){
-          p$events[[i]]$data<-data.select[i,]}
-        names(p$events)<-data.select$Key
-        rm(data.select)
-        
-        p$profiles<-cell_floats$profiles
-        p$floats<-cell_floats$floats
-        p$profile_dates<-Sprof$date[cell_floats$profiles]
-        
-        p$profiles_postions ### need to do this for adjusting events data
-        p$floats_slection ## tmeproary thing for matching floats to profiles??
-        
-        # f.window<-function(p){p}
-        # p$individual_tracks<-vector()
-        # p$match<-f.wind(p)
-        
-        
-        f.closest<-function(x){
-            f.distance<-function(y){
-              pts<-SpatialPoints(coords=cbind(y$lon, y$lat), proj4string=CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"), bbox = NULL)
-              hpt<- SpatialPoints(coords=cbind(x$data$lon, x$data$lat), proj4string=CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"), bbox = NULL)
-              y$distance_km<-round(spDistsN1(pts, hpt, longlat = TRUE), 0)
-              return(y)
-              }
-          
-          before<-p$profile_dates[p$profile_dates<=x$data$DateTime]
-          after<-p$profile_dates[p$profile_dates>=x$data$DateTime]
-          
-          if(length(before)==0){x$prior<-NA} else {
-            
-            before_window<-before[which(date(before) >= date(x$data$DateTime)-function_variables$h.prior)]
-            
-              if(length(before_window)==0){x$prior<-NA} else {
-            
-              x$prior<-data.frame(matrix(ncol=7, nrow=length(before_window))) # profiles withins user define function_
-              names(x$prior)<-c("wmo", "profile_index",  "DateTime", "lat", "lon", "distance_km", "days_prior")
-              x$prior$DateTime<-before_window
-              before_p<-p$profiles[p$profile_dates<=x$data$DateTime]
-              x$prior$profile_index<-before_p[which(date(before) >= date(x$data$DateTime)-function_variables$h.prior)]
-              x$prior$wmo<-Sprof$wmo[c(x$prior$profile_index[1]:x$prior$profile_index[length(x$prior$profile_index)])]
-              # change here for date/lubridate object if need be
-              x$prior$days_prior<-as.integer((date(x$prior$DateTime) - date(x$data$DateTime)) *-1)
-              x$prior$lat<-Sprof$lat[c(x$prior$profile_index[1]:x$prior$profile_index[length(x$prior$profile_index)])]
-              x$prior$lon<-Sprof$lon[c(x$prior$profile_index[1]:x$prior$profile_index[length(x$prior$profile_index)])]
-              rm(before,  before_p, before_window)
-              x$prior<-f.distance(y=x$prior)
-              }
-          }
-          
-          if(length(after)==0){x$post<-NA} else {
-            
-            after_window<-after[which(date(after) <= date(x$data$DateTime)+function_variables$h.post)]
-            
-              if(length(after_window)==0){x$post<-NA} else{
-            
-              x$post<-data.frame(matrix(ncol=7, nrow=length(after_window)))
-              names(x$post)<-c("wmo", "profile_index","DateTime", "lat", "lon", "distance_km", "days_after")
-              x$post$DateTime<-after_window
-              after_p<-p$profiles[p$profile_dates>=x$data$DateTime]
-              x$post$profile_index<-after_p[which(date(after) <= date(x$data$DateTime)+function_variables$h.post)] 
-              x$post$wmo<-Sprof$wmo[c(x$post$profile_index[1]:x$post$profile_index[length(x$post$profile_index)])]
-              # change here for date/lubridate object if need be
-              x$post$days_after<-as.integer(date(x$post$DateTime)-date(x$data$DateTime))
-              x$post$lat<-Sprof$lat[c(x$post$profile_index[1]:x$post$profile_index[length(x$post$profile_index)])]
-              x$post$lon<-Sprof$lon[c(x$post$profile_index[1]:x$post$profile_index[length(x$post$profile_index)])]
-              rm(after, after_p, after_window)
-              x$post<-f.distance(y=x$post)
-              }
-          }
-          
-          return(x)}
-        
-        p$events<-lapply(p$events, f.closest)
-        p$events<-p$events[!sapply(p$events,is.null)]
-        
-        return(p)
- 
-        }
-  
-    cell_list<-lapply(function_list, y=y, f.get)
-    rm(function_list)
-    names(cell_list)<-id
-      f.rm<-function(x){if(length(p$profiles)==0){x<-NULL} 
-        return(x)}
-  
-  cell_list<-lapply(cell_list, f.rm)
-  cell_list<-cell_list[!sapply(cell_list,is.null)]
-  rm(f.get, f.rm)
-
-      f.order<-function(cell_list){
-      x<-cell_list %>% lapply(.,'[[',1 ) %>% lapply(., dim) %>% lapply(., function(x){return(x[1])})
-      y<-x[order(as.vector(unlist(x)), decreasing=TRUE)]
-      cell_list<-cell_list[names(y)]
-      return(cell_list)}
-  
-  cell_list<-f.order(cell_list)
-
-  # names(year_begin)<-"year_begin"
-  input_variables<-function_variables %>% purrr::keep(names(.) %in% c("argo_sensor","fraction_fodz","h.prior","h.post"))
-  input_variables$spatial_box<-spatial_box
-  input_variables<-append(input_variables, year_begin, after=0) 
-  names(input_variables)[1]<-"year_begin"
-  cell_list<-append(cell_list, list(input_variables), after=0)
-  names(cell_list)[1]<-"input_variables"
-
-  # function_variables<<-function_variables # would update function variables
-  return(cell_list)
-  
+f.select<-function(x){
+  x<-x[y]
+  return(x)
 }
-f.argo_by_hurdat_w_selection_options<-function(h.buf, year_begin, function_variables, spatial_box){
-  
-  #                USER defined variables and defaults:                                   #
-  # year begin = year begin form hurricanes, profies will be function_variables$hprior b4 #                                                                               #
-  # spatial_box = c(xmin,ymin, xmax, ymax). vector of 4 integers. nothing else            #
-  # if function_variables$argo_sensor==NA THEN no sensor limits on profile return         #
-  
-  #### default values if not defined: #### In FUTURE make spatial_box and year begin function variables
-  
-  if(missing(year_begin)){
-    year_begin<-year(min(h.buf$DateTime)) %>% as.integer(.)
-    
-  }
-  if(missing(spatial_box)) {
-    y<-h.buf
-    spatial_box<-c(unname(st_bbox(h.buf)$xmin), unname(st_bbox(h.buf)$ymin), unname(st_bbox(h.buf)$xmax), unname(st_bbox(h.buf)$ymax))
-  } else {y<-st_crop(h.buf,  xmin=spatial_box[1], ymin=spatial_box[2], xmax=spatial_box[3], ymax=spatial_box[4])}
-  
-  if(is.na(function_variables$h.prior)==TRUE){function_variables$h.prior<-90}
-  if(is.na(function_variables$h.post)==TRUE){function_variables$h.post<-90}
-  if(is.na(function_variables$argo.length)==TRUE){function_variables$argo.length<-(450*1000)}
-  
-  names(spatial_box)<-c("xmin", "ymin", "xmax", "ymax")
-  
-  #### Function part 1 : ####
-  st_geometry(y)<-'points'
-  y<-select(y, -buffer)
-  y<-filter(y, year(DateTime) >= year_begin)
-  shift<-(function_variables$argo.length/2) # find 
-  
-  f.box<-function(x){
-    # z<-st_geometry(y)
-    # lat0<-z[[1]][2]
-    # lon0<-z[[1]][1]
-    z<-st_geometry(x)
-    lat0<-z[[1]][2]
-    lon0<-z[[1]][1]
-    center.reproj<-paste0("+proj=aeqd +lat_0=", lat0, " ", "+lon_0=", lon0)
-    # center.reproj<-"+proj=aeqd +lat_0=0 +lon_0=0"
-    flat<-sf::st_transform(z, center.reproj )
-    ymin<-flat[[1]][[2]]-shift
-    ymax<-flat[[1]][[2]]+shift
-    xmax<-flat[[1]][[2]]+shift
-    xmin<-flat[[1]][[2]]-shift
-    # center.reproj<-st_crs("+proj=aeqd +lat_0=0 +lon_0=0")
-  z<-st_polygon(list(cbind(c(xmin,xmax,xmax,xmin,xmin), c(ymax,ymax,ymin,ymin,ymax)))) %>% st_sfc(crs= center.reproj)
-  z<-sf::st_transform(z, "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
-  z<-st_bbox(z)  
-  box<-c(z$xmin, z$ymin, z$xmax, z$ymax)
-  return(box)}
- 
-#   stupid for lopp improve here... 
-
-  boxes<-vector(mode="list", length=dim(y)[1])
-  for(i in 1:dim(y)[1]){
-  boxes[[i]]<-f.box(y[i,])
-}
-  boxes<-data.frame(matrix(unlist(boxes), nrow=dim(y)[1], byrow=TRUE))
-  names(boxes)<-c("xmin", "ymin", "xmax", "ymax")
-  z<-cbind(y, boxes)
-  rm(y, boxes)
-  y<-split(z, 1:nrow(z))
-  #### Function part 2 : ####
-
-  f.indvidual_track_match<-function(y){
-  lat_lim=c(y$ymin, y$ymax)
-  lon_lim=c(y$xmin, y$xmax)
-  # fix here for dates.....
-  start_date=date(min(y$DateTime)) - function_variables$h.prior
-  end_date=date(max(y$DateTime)) + function_variables$h.post
-    
-    #cell_floats from bioargo submodule:
-    if(is.na(function_variables$argo_sensor)==TRUE) {floats<-select_profiles(lon_lim,lat_lim,start_date, end_date, outside="both",
-                                                                                  sensor=NULL)} else {floats<-select_profiles(lon_lim,lat_lim,
-                                                                                                                                   start_date, end_date, sensor=function_variables$argo_sensor, outside="both")}  
-    
-    # 'outside', 'none' 'time' 'space' 'both': By default, only float profiles
-    #           that are within both the temporal and spatial constraints are
-    #           returned ('none'); specify to also maintain profiles outside
-    #           the temporal constraints ('time'), spatial constraints
-    #           ('space'), or both constraints ('both')
-    # 
-    # 'sensor', 'SENSOR_TYPE': By default, all floats within the lon/lat/time
-    #           limits are considered. This option allows the selection by 
-    #           sensor type. Available are: DOXY, CHLA, BBP700, 
-    #           PH_IN_SITU_TOTAL, NITRATE, DOWN_IRRADIANCE380,
-    #           DOWN_IRRADIANCE412, DOWN_IRRADIANCE490, DOWNWELLING_PAR
-    #           (Currently, only one sensor type can be selected.)
-   
-  return(floats)}
-
-    match<-lapply(y, f.indvidual_track_match)
-
-#   stupid for lopp improve here... (not to bad perfomance)
-  matched<-vector(mode="list", length(y))
-  for(i in 1:length(y)[1]){
-  x<-list(y[[i]], match[[i]]$profiles, match[[i]]$floats)
-  names(x)<-c("tracks", "profiles", "floats")
-  matched[[i]]<-x}
-  rm(y, match)
-  f.rm<-function(x){if(length(x$profiles)==0){x<-NULL}
-    return(x)}
-  matched<-lapply(matched, f.rm)
-matched<-matched[!sapply(matched,is.null)] 
-   
-
-# saveRDS(matched, "20220310_matched.R")
-# matched<-readRDS("20220310_matched.R")
-
-f.profiles_prior_and_post<-function(x){
-
-x$profile_dates<-Sprof$date[x$profiles]
-
-x$prior_dates<-x$profile_dates[x$profile_dates<x$tracks$DateTime]
-x$post_dates<-x$profile_dates[x$profile_dates>x$tracks$DateTime]
-
-x$prior_profiles<-x$profiles[x$profile_dates < x$tracks$DateTime]
-x$post_profiles<-x$profiles[x$profile_dates > x$tracks$DateTime]
-return(x)
+w<-lapply(Sprof, f.select) 
+w<-as.data.frame(w)
+w<-sf::st_as_sf(w, coords = c("lon","lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+return(bgc_profiles.pts)
 }
 
-matched<-lapply(matched, f.profiles_prior_and_post)
 
-return(matched)}
-
-#### Match up for staiscs
+#### Match up for fro profile and float  inside EP TC zone
 
 f.floats_within_EP<-function(function_variables){
-
 end.date<-(function_variables$h_end_date+function_variables$h.post) %>% as.character(.)
 
 if(is.na(function_variables$argo_sensor)==TRUE) {sensor_selection=NULL }
 else {sensor_selection=function_variables$argo_sensor}
 
-total_floats<-select_profiles(lon_lim=c(function_variables$bgc.lon_min,function_variables$bgc.lon_max),lat_lim=c(function_variables$bgc.lat_min, function_variables$bgc.lat_max), end_date = end.date, start_date="1990-01-01", outside="none", sensor=sensor_selection)
+# only works for west (-) longitudes *improve here
 
+total_floats<-select_profiles(lon_lim=c(function_variables$bgc.lon_max, function_variables$bgc.lon_min),lat_lim=c(function_variables$bgc.lat_min, function_variables$bgc.lat_max), end_date = end.date, start_date="1990-01-01", outside="none", sensor=sensor_selection)
 return(total_floats) 
 }
-
-
 
 ```
 
@@ -524,9 +178,6 @@ Using/used 'hurdat package'
 
 h<-readRDS("r_objects/hurdat.R")
 h$DateTime<-with_tz(h$DateTime, tz="UTC")
-
-
-
 ```
 
 ## natural earth coastlines
@@ -541,6 +192,8 @@ coastline<-st_read("./ne_50m_land/ne_50m_land.shp")
 
 ## Import BioArgo metadata (requires submodule install):
 
+*** IMPORNAT ***
+Hack to slect only 
 ```{r}
 #initialize_argo() # downloads meta data for argo
 #setwd(robj)
@@ -558,16 +211,15 @@ load("init_argo.RData")
 buffer=7
 
 #west<-min(na.omit(h$Lon))-buffer
+Lat.99<-quantile((na.omit(h$Lat)),probs=c(0.001,0.99)) # remove anonymous outliers otherwise hurricane zone is 70 N
 
-
-Lat.99<-quantile((na.omit(h$Lat)),probs=c(0.001,0.99)) # remove anmoulsou outliers other wise hurricane zone is 70 N
-
-west_argo=180
+west_argo=-180
 north_tc<-(round_any(Lat.99[[2]], 0.5, f= round))
 south_tc<-(round_any(Lat.99[[1]], 0.5, f= round))
 east_tc<-round_any(max(na.omit(h$Lon[h$Lon < 0])), 0.5, f = round)
-west_tc<-west_argo-buffer
 
+
+west_tc<-west_argo+buffer
 north_argo<-north_tc+buffer 
 south_argo<-south_tc-buffer
 east_argo<-east_tc-buffer
@@ -575,14 +227,9 @@ east_argo<-east_tc-buffer
 # north<-max(na.omit(h$Lat))+buffer
 # south<-min(na.omit(h$Lat))-buffer
 
-
-
-
-
 print(min(na.omit(h$DateTime)))
 print(max(na.omit(h$DateTime)))
 print(c(north_argo, south_argo, west_argo, east_argo))
-
 
 ```
 
@@ -614,12 +261,12 @@ function_variables$h.post<-45
 function_variables$h_end_date<- max(na.omit(h$DateTime)) %>% as.Date(.)
 
 # space
-function_variables$bgc.lon_max<-west_argo # need to improve here
+function_variables$bgc.lon_max<-west_argo 
 function_variables$bgc.lat_max<-north_argo
 function_variables$bgc.lat_min<-south_argo
 function_variables$bgc.lon_min<-east_argo
 
-function_variables$tc.lon_max<-west_tc # need to improve here
+function_variables$tc.lon_max<-west_tc 
 function_variables$tc.lat_max<-north_tc
 function_variables$tc.lat_min<-south_tc
 function_variables$tc.lon_min<-east_tc
@@ -629,7 +276,7 @@ function_variables$tc.lon_min<-east_tc
 function_variables$tc.radi_1<-100000
 function_variables$tc.radi_2<-200000
 function_variables$tc.radi_3<-500000
-function_variables$land_buffer<- 20000
+function_variables$land_buffer<-200000
 
 #### bgc-argo selection parameters ####
 function_variables$year_begin<-1990
@@ -637,20 +284,9 @@ function_variables$year_begin<-1990
 function_variables$argo_sensor<-NA 
 #c("DOXY") #pick a single argo sensor, "TEMP", etc.)
 
-#### odz statistics - ignore for now ####
-#fraction maxFODZ
-#function_variables$fraction_fodz<-NA
-
-#### function to create ? ####
-# f.function_vars_fill<-function(function_variables, h){
-#   if(missing(h)) {function_variables$h.lat_min<<-0} else{function_variables$h.lat_min<<-min(h$Lat)}
-#   }
-# 
-# f.function_vars_fill(function_variables)
-
 function_variables$selection<-paste0("Lat (", function_variables$bgc.lat_min, ", ", function_variables$bgc.lat_max, ") Lon 
 (", function_variables$bgc.lon_min, ", ", function_variables$bgc.lon_max,  ")")
-#(f.function_vars_fill)
+
 ```
 
 
@@ -659,16 +295,34 @@ function_variables$selection<-paste0("Lat (", function_variables$bgc.lat_min, ",
 ```{r}
 #slects profiles and floats within the  TC slection plus buffer does not remove coast
 
+# Alter Sprof file
+
+save_sprof<-Sprof
+p<-which(Sprof$ocean =='P')
+
+f.select<-function(x){
+  x<-x[p]
+  return(x)
+}
+Sprof<-lapply(Sprof, f.select)
+
 function_variables$argo_sensor<-NA 
 ep_total_floats<-f.floats_within_EP(function_variables)
 function_variables$argo_sensor<-"DOXY"
 ep_doxy_floats<-f.floats_within_EP(function_variables)
+
+Sprof<-save_sprof
+rm(save_sprof)
 
 ```
 ### summarry statitics
 ```{r}
 print(length(na.omit(ep_total_floats$floats)))
 print(length(na.omit(ep_total_floats$profiles)))
+
+
+print(length(na.omit(ep_doxy_floats$floats)))
+print(length(na.omit(ep_doxy_floats$profiles)))
 ```
 
 
@@ -682,8 +336,14 @@ rm(coastline)
 buffered_land<-f.cl_buffer(function_variables, cl)
 rm(cl)
 ```
-## 
+## profiles to sp object
 
+```{r}
+
+```
+
+
+## remove profiles 
 
 
 # Float TC match up
