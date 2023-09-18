@@ -38,6 +38,9 @@ fig<-"../../figures"
 gis_data<-"../../data/gis_data"
 output<-"../../output"
 data_d<-"../../data"
+#
+
+
 # ocean_color<-"../../data/ocean_color_bud"
 # bathy_d<-"../../data/bathy" # edit this
 
@@ -73,35 +76,47 @@ f.ipak(packages)
 print(paste0("Current Working Directory is ", getwd()))
 ```
 ## Load submodule for bio-argo floats
+* using newer OneArgo-R
+* https://github.com/NOAA-PMEL/OneArgo-R
 
-```{r argo submodule}
+```{r}
 setwd(wd)
-path_code = "r_scripts/submodules/BGC-ARGO_R_WORKSHOP/"
 
-source(paste0(path_code, "initialize_argo.R"))
-source(paste0(path_code, "try_download.R"))
-source(paste0(path_code, "do_download.R"))
-source(paste0(path_code, "download_float.R"))
-source(paste0(path_code, "download_multi_floats.R"))
-source(paste0(path_code, "check_dir.R"))
-source(paste0(path_code, "get_var_name_units.R"))
-source(paste0(path_code, "select_profiles.R"))
-source(paste0(path_code, "load_float_data.R"))
-source(paste0(path_code, "plot_trajectories.R"))
-source(paste0(path_code, "get_lon_lat_lims.R"))
-source(paste0(path_code, "show_trajectories.R"))
-source(paste0(path_code, "do_pause.R"))
-source(paste0(path_code, "depth_interp.R"))
-source(paste0(path_code, "calc_auxil.R"))
-source(paste0(path_code, "get_multi_profile_mean.R"))
-source(paste0(path_code, "show_profiles.R"))
-source(paste0(path_code, "plot_profiles.R"))
-source(paste0(path_code, "show_sections.R"))
-source(paste0(path_code, "plot_sections.R"))
+# main functions
+path<-"r_scripts/submodules/OneArgo-R/"
 
-packages<-c("gsw", "R.utils","Matrix")
+source(paste0(path, "get_lon_lat_time.R"))
+source(paste0(path, "initialize_argo.R"))
+source(paste0(path, "load_float_data.R"))
+source(paste0(path, "select_profiles.R"))
+source(paste0(path, "show_profiles.R"))
+source(paste0(path, "show_sections.R"))
+source(paste0(path, "show_time_series.R"))
+source(paste0(path, "show_trajectories.R"))
+
+
+# auxilary functions
+path = "r_scripts/submodules/OneArgo-R/auxil/"
+file_path<-paste0(wd,"/",path)
+files<-list.files(file_path, pattern ="\\.R$")
+
+for(i in 1:length(files)){
+  source(paste0(path, files[i]))
+}
+ packages<-c("gsw", "R.utils","Matrix")
 f.ipak(packages)
-rm(f.ipak, packages, path_code)
+
+rm(path, file_path, packages, f.ipak, files)
+
+####   #this doesnt work... ####
+# perhaps not functions R files breaks it
+#file_path<-paste0(wd, "/", path)
+
+#files<-list.files(file_path, pattern ="\\.R")
+# for(i in 1:length(files)){
+#   source(paste0(path, files[i]), local=F)
+# }
+
 ```
 
 
@@ -110,9 +125,9 @@ rm(f.ipak, packages, path_code)
 adapted, and thinned from ... script
 ```{r}
 
-#
 
-#function to create buffer around coastline
+### function to create buffer around coastline
+
 f.cl_buffer<-function(function_variables, cl){
   if(is.na(function_variables$land_buffer)==TRUE){
                       function_variables$land_buffer<-100000}
@@ -129,23 +144,6 @@ f.cl_buffer<-function(function_variables, cl){
   return(buffered_land)
 }
 
-# turn bgc-arg
-f.profiles_to_points<-function(x){
-
-y<-x$profiles
-# z<-x$floats
-
-f.select<-function(x){
-  x<-x[y]
-  return(x)
-}
-w<-lapply(Sprof, f.select) 
-w<-as.data.frame(w)
-w<-sf::st_as_sf(w, coords = c("lon","lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
-return(bgc_profiles.pts)
-}
-
-
 #### Match up for fro profile and float  inside EP TC zone
 
 f.floats_within_EP<-function(function_variables){
@@ -154,11 +152,48 @@ end.date<-(function_variables$h_end_date+function_variables$h.post) %>% as.chara
 if(is.na(function_variables$argo_sensor)==TRUE) {sensor_selection=NULL }
 else {sensor_selection=function_variables$argo_sensor}
 
+if(is.na(function_variables$ocean)==TRUE) {ob=NULL }
+else {ob=function_variables$ob}
+
+
 # only works for west (-) longitudes *improve here
 
-total_floats<-select_profiles(lon_lim=c(function_variables$bgc.lon_max, function_variables$bgc.lon_min),lat_lim=c(function_variables$bgc.lat_min, function_variables$bgc.lat_max), end_date = end.date, start_date="1990-01-01", outside="none", sensor=sensor_selection)
+total_floats<-select_profiles(lon_lim=c(function_variables$bgc.lon_max, function_variables$bgc.lon_min),lat_lim=c(function_variables$bgc.lat_min, function_variables$bgc.lat_max), end_date = end.date, start_date="1990-01-01", outside="none", sensor=sensor_selection, ocean=ob, type='bgc')
 return(total_floats) 
 }
+
+### bgc-argo - to spatial dataframe ###
+
+f.profiles_to_pts<-function(selected_profiles){
+
+profile_points<-vector(mode="list", length(selected_profiles$float_ids))
+
+names(profile_points)<-selected_profiles$float_ids
+for(i in 1:length(profile_points)){  
+x<-lapply(selected_profiles, function(x) x[i])
+y<-get_lon_lat_time((x))
+z<-as.data.frame(y)
+names(z)<-names(y)
+z$profile<-seq(1, length(z[,1]), 1)
+selection<-unlist(x$float_profs)
+z<-dplyr::filter(z, profile %in% selection )
+z$float<-x$float_ids
+rm(x,y)
+z<-select(z, float, time, profile, lon, lat)
+
+z.pts<-sf::st_as_sf(z, coords = c("lon","lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+ profile_points[[i]]<-z.pts
+}
+
+
+return(profile_points)
+}
+
+
+### helper functions
+
+
+
 
 ```
 
@@ -191,9 +226,7 @@ coastline<-st_read("./ne_50m_land/ne_50m_land.shp")
 
 
 ## Import BioArgo metadata (requires submodule install):
-
-*** IMPORNAT ***
-Hack to slect only 
+ - uncommnet to get newewts floats
 ```{r}
 #initialize_argo() # downloads meta data for argo
 #setwd(robj)
@@ -207,6 +240,7 @@ load("init_argo.RData")
 - Hurricane zone defien as max, min of eastern basin Hurdat dtatset
 -7 degrere bufer chosen becau of chen et al
 -slecested 99% confidnec interval for altiduanl range to excluse northern outliers
+-used 1/2 degre resoultion
 ```{r}
 buffer=7
 
@@ -261,6 +295,9 @@ function_variables$h.post<-45
 function_variables$h_end_date<- max(na.omit(h$DateTime)) %>% as.Date(.)
 
 # space
+function_variables$ocean="P"
+#ocean is Pacific
+
 function_variables$bgc.lon_max<-west_argo 
 function_variables$bgc.lat_max<-north_argo
 function_variables$bgc.lat_min<-south_argo
@@ -290,39 +327,61 @@ function_variables$selection<-paste0("Lat (", function_variables$bgc.lat_min, ",
 ```
 
 
-# Float slection satistics
+# Float slection  and satistics
 ## step one square slection
+This will now download all the NC Files!
+
+### run selection
 ```{r}
 #slects profiles and floats within the  TC slection plus buffer does not remove coast
 
-# Alter Sprof file
 
-save_sprof<-Sprof
-p<-which(Sprof$ocean =='P')
-
-f.select<-function(x){
-  x<-x[p]
-  return(x)
-}
-Sprof<-lapply(Sprof, f.select)
-
-function_variables$argo_sensor<-NA 
-ep_total_floats<-f.floats_within_EP(function_variables)
+# function_variables$argo_sensor<-NA 
+# ep_total_floats<-f.floats_within_EP(function_variables)
 function_variables$argo_sensor<-"DOXY"
 ep_doxy_floats<-f.floats_within_EP(function_variables)
 
-Sprof<-save_sprof
-rm(save_sprof)
 
 ```
-### summarry statitics
+### save/load ep_doxy floats
 ```{r}
-print(length(na.omit(ep_total_floats$floats)))
-print(length(na.omit(ep_total_floats$profiles)))
+setwd(robj)
+# saveRDS(ep_doxy_floats, "ep_doxy_floats.rds")
+ep_doxy_floats<-readRDS("ep_doxy_floats.rds")
+```
 
 
-print(length(na.omit(ep_doxy_floats$floats)))
-print(length(na.omit(ep_doxy_floats$profiles)))
+#### summarry statitics
+```{r}
+# print(length(unique((na.omit(ep_total_floats$float_ids)))))
+# print(sum(lengths(ep_total_floats$float_profs)))
+
+print(length(unique((na.omit(ep_doxy_floats$float_ids)))))
+print(sum(lengths(ep_doxy_floats$float_profs)))
+
+```
+
+
+## profiles to points
+
+```{r}
+print("this takes a long time")
+profile_points<-f.profiles_to_pts(selected_profiles = ep_doxy_floats)
+```
+
+### save/load profile_points
+```{r}
+setwd(robj)
+# saveRDS(profile_points, "profile_points.rds")
+profile_points<-readRDS("profile_points.rds")
+```
+
+### create data frame from list
+-
+```{r}
+
+df.profile_points <- ldply(profile_points, data.frame)
+
 ```
 
 
@@ -336,9 +395,14 @@ rm(coastline)
 buffered_land<-f.cl_buffer(function_variables, cl)
 rm(cl)
 ```
-## profiles to sp object
+## profiles to sf object
 
+- doesnt work here...
 ```{r}
+setwd(wd)
+print(getwd())
+get_lon_lat_time(float_ids=ep_doxy_floats$float_ids, float_profs = ep_doxy_floats$float_ids)
+
 
 ```
 

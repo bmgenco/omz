@@ -1,3 +1,6 @@
 [submodule "wd/r_wd/r_scripts/bio_argo_r_repo/BGC-ARGO_R_WORKSHOP"]
 	path = wd/r_wd/r_scripts/submodules/BGC-ARGO_R_WORKSHOP
 	url = https://github.com/euroargodev/BGC-ARGO_R_WORKSHOP
+[submodule "wd/r_wd/r_scripts/submodules/OneArgo-R"]
+	path = wd/r_wd/r_scripts/submodules/OneArgo-R
+	url = https://github.com/NOAA-PMEL/OneArgo-R
