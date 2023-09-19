@@ -38,8 +38,6 @@ fig<-"../../figures"
 gis_data<-"../../data/gis_data"
 output<-"../../output"
 data_d<-"../../data"
-#
-
 
 # ocean_color<-"../../data/ocean_color_bud"
 # bathy_d<-"../../data/bathy" # edit this
@@ -67,7 +65,7 @@ f.ipak <- function(pkg){
   sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
 }
 
-packages<-c("plyr","sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT" )
+packages<-c("plyr","sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT" , "gsw", "R.utils","Matrix")
 # "HURDAT",
 
 f.ipak(packages)
@@ -103,12 +101,13 @@ files<-list.files(file_path, pattern ="\\.R$")
 for(i in 1:length(files)){
   source(paste0(path, files[i]))
 }
- packages<-c("gsw", "R.utils","Matrix")
-f.ipak(packages)
 
-rm(path, file_path, packages, f.ipak, files)
+# packages<-c("gsw", "R.utils","Matrix")
+# f.ipak(packages)
+# 
+rm(path, file_path, files)
 
-####   #this doesnt work... ####
+####   this doesn't work... ####
 # perhaps not functions R files breaks it
 #file_path<-paste0(wd, "/", path)
 
@@ -124,8 +123,6 @@ rm(path, file_path, packages, f.ipak, files)
 # functions
 adapted, and thinned from ... script
 ```{r}
-
-
 ### function to create buffer around coastline
 
 f.cl_buffer<-function(function_variables, cl){
@@ -193,9 +190,6 @@ return(profile_points)
 
 ### helper functions
 
-
-
-
 ```
 
 
@@ -223,7 +217,47 @@ version: 4.1.0
 setwd(gis_data)
 # save shape files in named directory
 coastline<-st_read("./ne_50m_land/ne_50m_land.shp") 
+oceans<-st_read("./ne_50m_geography_marine_polys/ne_50m_geography_marine_polys.shp") 
+
 ```
+
+
+# subset h by ocena basins
+ * this a brute force method to rmeove a few tracks form a strom(s) that passed from Altantic over central ameriaca in to the pacific
+- removes tc points wioth not lat lon corodantes
+- removes and point inthe atlaitc and carribean and gulf etc
+- returns filtered non spatial datframe
+
+```{r}
+h.pts<-h%>%drop_na(Lon, Lat)%>% sf::st_as_sf(., coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+
+north_atl_basins<-subset(oceans, name %in% c("North Atlantic Ocean", "Caribbean Sea", "Gulf of Mexico", "Sargasso Sea"))
+north_atl<-st_union(north_atl_basins)
+
+h.pts<-st_difference(h.pts, st_combine(st_geometry(coastline))) %>% st_difference(., st_combine(st_geometry(north_atl))) 
+
+lon_lat<-do.call(rbind, st_geometry(h.pts))%>%as.data.frame(.) %>% setNames(c("Lon","Lat"))
+h<-cbind((st_drop_geometry(h.pts)), lon_lat)
+rm(h.pts, north_atl, north_atl_basins, oceans, lon_lat)
+
+```
+
+
+testing with plots
+```{r}
+
+# m.coast <- ggplot()+ geom_sf(data =coastline, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+
+#   theme_bw()+ theme(text = element_text(size =12)) 
+# 
+# map1<-m.coast +geom_sf(data=h.pts)
+# # map2<-m.coast +geom_sf(data=h.pts)
+# 
+# map1
+# # map2
+```
+
+
+## coastal float subsetting
 
 
 ## Import BioArgo metadata (requires submodule install):
@@ -254,7 +288,7 @@ south_tc<-(round_any(Lat.99[[1]], 0.5, f= round))
 
 # TC that crossed over from atlatinc inflates eatssern boundary
 east_tc<-round_any(max(na.omit(h$Lon[h$Lon < 0])), 0.5, f = round)
-east_tc<--80
+# east_tc<--80
 
 #dont need TC Buffers
 # west_tc<-west_argo+buffer
@@ -263,7 +297,7 @@ west_tc<-west_argo
 
 north_argo<-north_tc+buffer 
 south_argo<-south_tc-buffer
-east_argo<-east_tc-buffer
+east_argo<-east_tc+buffer
 
 # north<-max(na.omit(h$Lat))+buffer
 # south<-min(na.omit(h$Lat))-buffer
@@ -346,16 +380,20 @@ This will now download all the NC Files!
 ```{r}
 #slects profiles and floats within the  TC slection plus buffer does not remove coast
 
-
-function_variables$argo_sensor<-NA 
+# 
+function_variables$argo_sensor<-NA
 ep_total_floats<-f.floats_within_EP(function_variables)
+
+function_variables$argo_sensor<-"DOXY"
+ep_doxy_floats<-f.floats_within_EP(function_variables)
+
 
 print(length(unique((na.omit(ep_total_floats$float_ids)))))
 print(sum(lengths(ep_total_floats$float_profs)))
 
 
-# function_variables$argo_sensor<-"DOXY"
-# ep_doxy_floats<-f.floats_within_EP(function_variables)
+print(length(unique((na.omit(ep_doxy_floats$float_ids)))))
+print(sum(lengths(ep_doxy_floats$float_profs)))
 
 
 ```
@@ -369,8 +407,8 @@ saveRDS(ep_doxy_floats, "ep_doxy_floats.rds")
 
 #### summarry statitics
 ```{r}
-print(length(unique((na.omit(ep_total_floats$float_ids)))))
-print(sum(lengths(ep_total_floats$float_profs)))
+# print(length(unique((na.omit(ep_total_floats$float_ids)))))
+# print(sum(lengths(ep_total_floats$float_profs)))
 
 print(length(unique((na.omit(ep_doxy_floats$float_ids)))))
 print(sum(lengths(ep_doxy_floats$float_profs)))
@@ -394,7 +432,7 @@ profile_points<-readRDS("profile_points.rds")
 ```
 
 ### create data frame from list
--
+
 ```{r}
 df.profile_points <- ldply(profile_points, data.frame)
 sf.profile_points<-st_as_sf(df.profile_points)
@@ -402,25 +440,26 @@ sf.profile_points<-st_as_sf(df.profile_points)
 
 ```
 
-# coastal float subsetting
-## land buffer
+
+# buffered land & cl
+
 ```{r}
+
+## land buffer
 cl<-st_crop(coastline, xmin=function_variables$bgc.lon_min, ymin=function_variables$bgc.lat_min, xmax=function_variables$bgc.lon_max, ymax=function_variables$bgc.lat_max)
 #rm(coastline)
+
 
 buffered_land<-f.cl_buffer(function_variables, cl)
 #rm(cl)
 ```
 
 
-# subsetting using cl
 
-```{r}
-
-```
 
 
 ## some plots
+
 ```{r}
 m.coast <- ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+
   theme_bw()+ theme(text = element_text(size =12)) 
@@ -432,7 +471,6 @@ m.coast <- ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_bla
 m.map<-m.coast+geom_sf(data=sf.profile_points)
 m.map
 #ggplot(data = test) +geom_sf()
-
 
 ```
 
