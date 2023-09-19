@@ -152,13 +152,14 @@ end.date<-(function_variables$h_end_date+function_variables$h.post) %>% as.chara
 if(is.na(function_variables$argo_sensor)==TRUE) {sensor_selection=NULL }
 else {sensor_selection=function_variables$argo_sensor}
 
-if(is.na(function_variables$ocean)==TRUE) {ob=NULL }
-else {ob=function_variables$ob}
+# if(is.na(function_variables$ocean)==TRUE) {ob=NULL }
+# else {ob=function_variables$ob}
 
+# total_floats<-select_profiles(lon_lim=c(function_variables$bgc.lon_max, function_variables$bgc.lon_min),lat_lim=c(function_variables$bgc.lat_min, function_variables$bgc.lat_max), end_date = end.date, start_date="1990-01-01", outside="none", sensor=sensor_selection, ocean=ob, type='bgc')
 
 # only works for west (-) longitudes *improve here
 
-total_floats<-select_profiles(lon_lim=c(function_variables$bgc.lon_max, function_variables$bgc.lon_min),lat_lim=c(function_variables$bgc.lat_min, function_variables$bgc.lat_max), end_date = end.date, start_date="1990-01-01", outside="none", sensor=sensor_selection, ocean=ob, type='bgc')
+total_floats<-select_profiles(lon_lim=c(function_variables$bgc.lon_max, function_variables$bgc.lon_min),lat_lim=c(function_variables$bgc.lat_min, function_variables$bgc.lat_max), end_date = end.date, start_date="1990-01-01", outside="none", sensor=sensor_selection, ocean="P", type='bgc')
 return(total_floats) 
 }
 
@@ -250,10 +251,16 @@ Lat.99<-quantile((na.omit(h$Lat)),probs=c(0.001,0.99)) # remove anonymous outlie
 west_argo=-180
 north_tc<-(round_any(Lat.99[[2]], 0.5, f= round))
 south_tc<-(round_any(Lat.99[[1]], 0.5, f= round))
+
+# TC that crossed over from atlatinc inflates eatssern boundary
 east_tc<-round_any(max(na.omit(h$Lon[h$Lon < 0])), 0.5, f = round)
+east_tc<--80
+
+#dont need TC Buffers
+# west_tc<-west_argo+buffer
+west_tc<-west_argo
 
 
-west_tc<-west_argo+buffer
 north_argo<-north_tc+buffer 
 south_argo<-south_tc-buffer
 east_argo<-east_tc-buffer
@@ -303,6 +310,10 @@ function_variables$bgc.lat_max<-north_argo
 function_variables$bgc.lat_min<-south_argo
 function_variables$bgc.lon_min<-east_argo
 
+# need to set this below for stititcs
+# function_variables$bgc.lon_min <--80
+
+
 function_variables$tc.lon_max<-west_tc 
 function_variables$tc.lat_max<-north_tc
 function_variables$tc.lat_min<-south_tc
@@ -336,25 +347,30 @@ This will now download all the NC Files!
 #slects profiles and floats within the  TC slection plus buffer does not remove coast
 
 
-# function_variables$argo_sensor<-NA 
-# ep_total_floats<-f.floats_within_EP(function_variables)
-function_variables$argo_sensor<-"DOXY"
-ep_doxy_floats<-f.floats_within_EP(function_variables)
+function_variables$argo_sensor<-NA 
+ep_total_floats<-f.floats_within_EP(function_variables)
+
+print(length(unique((na.omit(ep_total_floats$float_ids)))))
+print(sum(lengths(ep_total_floats$float_profs)))
+
+
+# function_variables$argo_sensor<-"DOXY"
+# ep_doxy_floats<-f.floats_within_EP(function_variables)
 
 
 ```
 ### save/load ep_doxy floats
 ```{r}
 setwd(robj)
-# saveRDS(ep_doxy_floats, "ep_doxy_floats.rds")
-ep_doxy_floats<-readRDS("ep_doxy_floats.rds")
+saveRDS(ep_doxy_floats, "ep_doxy_floats.rds")
+# ep_doxy_floats<-readRDS("ep_doxy_floats.rds")
 ```
 
 
 #### summarry statitics
 ```{r}
-# print(length(unique((na.omit(ep_total_floats$float_ids)))))
-# print(sum(lengths(ep_total_floats$float_profs)))
+print(length(unique((na.omit(ep_total_floats$float_ids)))))
+print(sum(lengths(ep_total_floats$float_profs)))
 
 print(length(unique((na.omit(ep_doxy_floats$float_ids)))))
 print(sum(lengths(ep_doxy_floats$float_profs)))
@@ -367,6 +383,7 @@ print(sum(lengths(ep_doxy_floats$float_profs)))
 ```{r}
 print("this takes a long time")
 profile_points<-f.profiles_to_pts(selected_profiles = ep_doxy_floats)
+
 ```
 
 ### save/load profile_points
@@ -379,35 +396,66 @@ profile_points<-readRDS("profile_points.rds")
 ### create data frame from list
 -
 ```{r}
-
 df.profile_points <- ldply(profile_points, data.frame)
+sf.profile_points<-st_as_sf(df.profile_points)
+
 
 ```
-
-
 
 # coastal float subsetting
 ## land buffer
 ```{r}
 cl<-st_crop(coastline, xmin=function_variables$bgc.lon_min, ymin=function_variables$bgc.lat_min, xmax=function_variables$bgc.lon_max, ymax=function_variables$bgc.lat_max)
-rm(coastline)
+#rm(coastline)
 
 buffered_land<-f.cl_buffer(function_variables, cl)
-rm(cl)
+#rm(cl)
 ```
-## profiles to sf object
 
-- doesnt work here...
+
+# subsetting using cl
+
 ```{r}
-setwd(wd)
-print(getwd())
-get_lon_lat_time(float_ids=ep_doxy_floats$float_ids, float_profs = ep_doxy_floats$float_ids)
-
 
 ```
 
 
-## remove profiles 
+## some plots
+```{r}
+m.coast <- ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+
+  theme_bw()+ theme(text = element_text(size =12)) 
+
+# m.buffered_coast<-ggplot()+ geom_sf(data =buffered_land, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+
+#   theme_bw()+ theme(text = element_text(size =12))
+
+#m.buffered_coast
+m.map<-m.coast+geom_sf(data=sf.profile_points)
+m.map
+#ggplot(data = test) +geom_sf()
+
+
+```
+
+# TC point to lines
+
+ - create  sf point first or can I skip/
+ - crop using ocena hspae file form natural earth
+ 
+```{r}
+
+h.pts<-select(h, Key, Name, DateTime, Status, Lat, Lon, Wind, Pressure)%>% na.omit(.) %>% sf::st_as_sf(., coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+
+#remove points over land
+h.pts<-st_difference(h.pts, st_combine(st_geometry(cl))) %>% sf::st_crop(., c(xmin=function_variables$tc.lon_min, ymin=function_variables$tc.lat_min, xmax=function_variables$tc.lon_max, ymax=function_variables$tc.lat_max)) #subset by user defined 
+
+# need to remove point in oceans
+
+
+m.map<-m.coast+geom_sf(data=h.pts)+geom_sf(data= sf.profile_points, col="blue")
+m.map
+
+```
+
 
 
 # Float TC match up
