@@ -427,7 +427,7 @@ profile_points<-readRDS("profile_points.rds")
 ### create data frame from list
 
 ```{r}
-df.profile_points <- ldply(profile_points, data.frame)
+df.profile_points <- ldply(profile_points, data.frame)%>% select(., -.id)
 sf.profile_points<-st_as_sf(df.profile_points)
 
 
@@ -487,50 +487,69 @@ h.pts<-sf::st_crop(h.pts, c(xmin=function_variables$tc.lon_min, ymin=function_va
 # m.map
 # 
 # 
-# st_bbox(h.pts)
+# 
+#st_bbox(h.pts)
 
 ```
 
-## lines
+##   multi points and tracks
+
+(1) creates a multipoint  per TC key, with start end tiem bounds per each TC line string
+(2) "" but crea a multiline
 
 ```{r}
+x<-h.pts%>% st_drop_geometry(.) %>% select(., Key, DateTime) %>% group_by(Key) %>% summarize(start_dt= min(DateTime), end_dt = max(DateTime))
 
-# lon_lat<-do.call(rbind, st_geometry(h.pts))%>%as.data.frame(.) %>% setNames(c("Lon","Lat"))
-# h_n<-cbind((st_drop_geometry(h.pts)), lon_lat)
+h.multipoints<-as_data_frame(unique(h.pts$Key))
+names(h.multipoints)<-("Key")
+st_geometry(h.multipoints)<-(split(h.pts, h.pts$Key) %>% Map(st_combine,. )%>%do.call(c,.))
 
+h.multipoints<-left_join(x, h.multipoints) %>%st_as_sf(.)
+h.tracks<-h.multipoints
 
-x<-h.pts%>% st_drop_geometry(.) %>% select(., Key, DateTime) %>% group_by(Key) %>% summarize(min_dt= min(DateTime),max_dt = max(DateTime))
+#theres probally a better way...thena for loop
+for(i in 1:length(h.tracks$Key)){
+h.tracks$geometry[i]<-st_cast(h.tracks$geometry[i], to= "LINESTRING")
+}
+h.tracks<-st_as_sf(h.tracks)
 
-h.tracks<-h.pts %>% select(Key, geometry) %>% group_by(Key) %>% st_cast("LINESTRING")
-h.tracks<-left_join(x, h.tracks)
 rm(x)
 
 ```
 
 ## match flots to tracks temporally
  This benefit from beinag a function
- varaible on buffer
+ variable on buffer
 ```{r}
+f.in_between_time<-function(h.tracks, function_variables, df.profile_points){
 
 x<-select(h.tracks, -geometry) %>% as.data.frame(.)
-
+y<-df.profile_points
+y$time<-date(y$time)
 pre<-function_variables$h.prior
 post<-function_variables$h.post
 
-x$min_dt<-x$min_dt-(pre)
+x$start_dt <-x$start_dt %>% as_datetime(.) %>%round_date(., "day") %>%as_date(.) -pre
+x$end_dt<-x$end_dt %>% as_datetime(.) %>%round_date(., "day") %>%as_date(.) + pre  
 
-f.in_between<-function(h.tracks){
- y<-(x[1,2]) %>% as.Date(.)
-  
-  
-  x$min_dt<-x$min_dt-days(pre)
-  
- 
- 
+z<-vector(mode="list", length(x$Key))
+names(z)<-x$Key
+
+
+
+for(i in 1:length(z)){
+
+z[[i]]<-filter(y, time >= x[i,]$start_dt & time <=x[i,]$end_dt)
 }
-dates<-
 
-# make a list
+
+z<-z[unlist(lapply(z, nrow) != 0)]
+
+
+return(z)
+}
+
+ 
 
 
 
