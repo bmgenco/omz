@@ -48,31 +48,6 @@ knitr::opts_chunk$set(echo =FALSE)
 
 ## Packages
 
-Installed custom hurdat package using r markdown menu
-* download  tar from archive as no longer maintained on cran repository
-* https://cran.r-project.org/src/contrib/Archive/HURDAT/
-+ include as git submodule instead
-
-```{r}
-wd<-getwd()
-
-f.ipak <- function(pkg){
-  # loads packages, quietly, given by a vector of package names e.g., pkg<-c("ggplot", "tidyverse")
-  # will install  packages listed , and their dependencies, if needed.
-  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
-  if (length(new.pkg))
-    install.packages(new.pkg, dependencies = TRUE, quiet=T, verbose = F)
-  sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
-}
-
-packages<-c("plyr","sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT" , "gsw", "R.utils","Matrix")
-# "HURDAT",
-
-f.ipak(packages)
-# lapply(packages, require, character.only = TRUE)
-# rm(f.ipak, packages)
-print(paste0("Current Working Directory is ", getwd()))
-```
 ## Load submodule for bio-argo floats
 * using newer OneArgo-R
 * https://github.com/NOAA-PMEL/OneArgo-R
@@ -121,7 +96,7 @@ rm(path, file_path, files)
 
 
 # functions
-adapted, and thinned from ... script
+adapted, and thinned from ... script "Hurricane_insitu_matchup_v2.Rmd"
 ```{r}
 ### function to create buffer around coastline
 
@@ -141,7 +116,7 @@ f.cl_buffer<-function(function_variables, cl){
   return(buffered_land)
 }
 
-#### Match up for fro profile and float  inside EP TC zone
+#### Match up for for profile and float  inside EP TC zone
 
 f.floats_within_EP<-function(function_variables){
 end.date<-(function_variables$h_end_date+function_variables$h.post) %>% as.character(.)
@@ -161,7 +136,6 @@ return(total_floats)
 }
 
 ### bgc-argo - to spatial dataframe ###
-
 f.profiles_to_pts<-function(selected_profiles){
 
 profile_points<-vector(mode="list", length(selected_profiles$float_ids))
@@ -187,8 +161,38 @@ z.pts<-sf::st_as_sf(z, coords = c("lon","lat"), crs = "+proj=longlat +datum=WGS8
 return(profile_points)
 }
 
+### select floast by time and TC ###
+f.in_between_time<-function(h.tracks, function_variables, df.profile_points){
+x<-select(h.tracks, -geometry) %>% as.data.frame(.)
+y<-df.profile_points
+y$time<-date(y$time)
+pre<-function_variables$h.prior
+post<-function_variables$h.post
+
+x$start_dt <-x$start_dt %>% as_datetime(.) %>%round_date(., "day") %>%as_date(.) -pre
+x$end_dt<-x$end_dt %>% as_datetime(.) %>%round_date(., "day") %>%as_date(.) + pre  
+
+z<-vector(mode="list", length(x$Key))
+names(z)<-x$Key
+
+for(i in 1:length(z)){
+z[[i]]<-filter(y, time >= x[i,]$start_dt & time <=x[i,]$end_dt)
+}
+z<-z[unlist(lapply(z, nrow) != 0)]
+return(z)
+}
+
+### slect floats witthin desired radi
+f.radi_select<-function(x, tc_radi){
+x<-filter(x, distance_m <= tc_radi)
+return(x)
+}
 
 ### helper functions
+
+# remove empty list items
+f.rm_empty<-function(x){x<-x[unlist(lapply(x, nrow) != 0)]
+return(x)}
 
 ```
 
@@ -229,6 +233,8 @@ oceans<-st_read("./ne_50m_geography_marine_polys/ne_50m_geography_marine_polys.s
 - returns filtered non spatial datframe
 
 ```{r}
+
+
 h.pts<-h%>%drop_na(Lon, Lat)%>% sf::st_as_sf(., coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
 
 north_atl_basins<-subset(oceans, name %in% c("North Atlantic Ocean", "Caribbean Sea", "Gulf of Mexico", "Sargasso Sea"))
@@ -266,8 +272,8 @@ testing with plots
 #initialize_argo() # downloads meta data for argo
 #setwd(robj)
 #save(Float, Setting, Sprof, sprof_update, file="init_argo.RData")
-setwd(robj)
-load("init_argo.RData")
+
+load("r_objects/init_argo.RData")
 ```
 
 # defining spatial bounds and fucntion variables
@@ -314,7 +320,7 @@ Add variables here
 200 km
 500 km 
 
-## function_variables (INCLUDES DYNAMIC VARIABLES based on Hurdat (h)):
+# function_variables (INCLUDES DYNAMIC VARIABLES based on Hurdat (h)):
 Appending 'function_variables' with dynamic variables from hurdat 'h' data set
 * originally from script "
 * define here as opposed to within function or sub blocks
@@ -347,12 +353,10 @@ function_variables$bgc.lon_min<-east_argo
 # need to set this below for stititcs
 # function_variables$bgc.lon_min <--80
 
-
 function_variables$tc.lon_max<-west_tc 
 function_variables$tc.lat_max<-north_tc
 function_variables$tc.lat_min<-south_tc
 function_variables$tc.lon_min<-east_tc
-
 
 # radius around TS in m
 function_variables$tc.radi_1<-100000
@@ -372,7 +376,9 @@ function_variables$selection<-paste0("Lat (", function_variables$bgc.lat_min, ",
 ```
 
 
-# Float slection  and satistics
+
+
+# Float selection and satistics
 ## step one square slection
 This will now download all the NC Files!
 
@@ -388,6 +394,7 @@ function_variables$argo_sensor<-"DOXY"
 ep_doxy_floats<-f.floats_within_EP(function_variables)
 
 ```
+
 ### save/load ep_doxy floats
 ```{r}
 setwd(wd)
@@ -397,7 +404,7 @@ ep_doxy_floats<-readRDS("ep_doxy_floats.rds")
 ```
 
 
-#### summarry statitics
+## summarry statitics
 ```{r}
 print(length(unique((na.omit(ep_total_floats$float_ids)))))
 print(sum(lengths(ep_total_floats$float_profs)))
@@ -408,48 +415,38 @@ print(sum(lengths(ep_doxy_floats$float_profs)))
 ```
 
 
-## profiles to points
+# profiles to points
 
 ```{r}
 print("this takes a long time")
 profile_points<-f.profiles_to_pts(selected_profiles = ep_doxy_floats)
-
 ```
 
-### save/load profile_points
+## save/load profile_points
 ```{r}
-setwd(wd)
-setwd(robj)
-# saveRDS(profile_points, "profile_points.rds")
-profile_points<-readRDS("profile_points.rds")
+# setwd(wd)
+# setwd(robj)
+# saveRDS(profile_points, ""r_objects/profile_points.rds")
+profile_points<-readRDS("r_objects/profile_points.rds")
 ```
-
 ### create data frame from list
 
 ```{r}
 df.profile_points <- ldply(profile_points, data.frame)%>% select(., -.id)
 sf.profile_points<-st_as_sf(df.profile_points)
-
-
 ```
 
 
 # buffered land & cl
 
 ```{r}
-
 ## land buffer
 cl<-st_crop(coastline, xmin=function_variables$bgc.lon_min, ymin=function_variables$bgc.lat_min, xmax=function_variables$bgc.lon_max, ymax=function_variables$bgc.lat_max)
 #rm(coastline)
 
-
 buffered_land<-f.cl_buffer(function_variables, cl)
 #rm(cl)
 ```
-
-
-
-
 
 ## some plots
 
@@ -467,6 +464,7 @@ m.map
 
 ```
 
+
 # TC point to lines
 
  - create  sf point first or can I skip/
@@ -477,7 +475,7 @@ m.map
 ```{r}
 h.pts<-select(h, Key, Name, DateTime, Status, Lat, Lon, Wind, Pressure)%>% na.omit(.) %>% sf::st_as_sf(., coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
 
-#remove TXS outside area of interest
+#remove TCs outside area of interest
 h.pts<-sf::st_crop(h.pts, c(xmin=function_variables$tc.lon_min, ymin=function_variables$tc.lat_min, xmax=function_variables$tc.lon_max, ymax=function_variables$tc.lat_max)) #subset by user defined 
 
 # m.map<-m.coast+geom_sf(data=h.pts)+geom_sf(data= sf.profile_points, col="blue")
@@ -485,7 +483,6 @@ h.pts<-sf::st_crop(h.pts, c(xmin=function_variables$tc.lon_min, ymin=function_va
 #st_bbox(h.pts)
 
 ```
-
 ##   multi points and tracks
 
 (1) creates a multipoint  per TC key, with start end tiem bounds per each TC line string
@@ -511,47 +508,25 @@ rm(x)
 
 ```
 
-## match flots to tracks temporally
- This benefit from beinag a function
- variable on buffer
+
+
+
 ```{r}
-f.in_between_time<-function(h.tracks, function_variables, df.profile_points){
-
-x<-select(h.tracks, -geometry) %>% as.data.frame(.)
-y<-df.profile_points
-y$time<-date(y$time)
-pre<-function_variables$h.prior
-post<-function_variables$h.post
-
-x$start_dt <-x$start_dt %>% as_datetime(.) %>%round_date(., "day") %>%as_date(.) -pre
-x$end_dt<-x$end_dt %>% as_datetime(.) %>%round_date(., "day") %>%as_date(.) + pre  
-
-z<-vector(mode="list", length(x$Key))
-names(z)<-x$Key
-
-
-
-for(i in 1:length(z)){
-
-z[[i]]<-filter(y, time >= x[i,]$start_dt & time <=x[i,]$end_dt)
-}
-
-
-z<-z[unlist(lapply(z, nrow) != 0)]
-
-
-return(z)
-}
-
-z<-f.in_between_time(h.tracks, function_variables, df.profile_points)
 
 ```
 
 
 
-## Float TC  line distance - will need to double check this correct
-```{r}
+# matching floats
 
+
+## match flots to tracks temporally and add distance
+
+ variable on buffer
+```{r}
+z<-f.in_between_time(h.tracks, function_variables, df.profile_points)
+
+## Float TC  line distance - will need to double check this correct
 for(i in 1:length(z)){
 x<-z[[i]]
 x.key<-names(z)[i]
@@ -561,11 +536,115 @@ z[[i]]<-x}
 
 ```
 
-##
+
+
+## select floats by buffer
+this does not exclude by strom strength
+
+Rerun here
 ```{r}
 
-f.distance_select<-function  
+all_storms_500km<-lapply(z, f.radi_select, tc_radi=function_variables$tc.radi_3)
+all_storms_500km<-f.rm_empty(km_500)
+
+km_100<-lapply(z, f.radi_select, tc_radi=function_variables$tc.radi_1)
+km_100<-f.rm_empty(km_100)
+km_200<-lapply(z, f.radi_select, tc_radi=function_variables$tc.radi_2)
+km_200<-f.rm_empty(km_200)
+km_500<-lapply(z, f.radi_select, tc_radi=function_variables$tc.radi_3)
+km_500<-f.rm_empty(km_500)
+
+all_storms_500km
+
+# create list of above lists fo future selection 
 
 
 ```
 
+
+
+# filtering by storm streng
+
+
+
+```{r}
+storm_list<-names(all_storms_500km)
+h.storm_list<-filter(h, Key %in% storm_list) %>% select(., Key, Status)%>% split(., .$Key) 
+# f.unique<-function(x){x<-unique(x$Status)}
+# test<-lapply(h.storm_list, f.unique)
+
+  
+}
+
+
+%>% select(., Status)
+
+f.strom_strength_filter<-function(h, b, storm_level)
+
+  
+  
+all<-c("TS", "HU", "TD", "LO", "ET", "EX", "DB","SD", "SS", "PT", "ST", "TY", "WV", NA)
+tcs<-c("TS", "HU", "TD") 
+
+ 
+h<-h.storm_list
+b<-km_100
+
+```
+
+```{r}
+
+```
+
+
+
+## statitics
+```{r}
+
+#  floats, profiles, & tcs per buffer selection
+f.summary<-function(x){
+stats<-vector(mode="list")  
+stats$tcs<-length(x)
+
+f.length<-function(x){x<-length(x$profile)}
+stats$total_profiles<-(lapply(x, f.length)) %>% unname(.) %>% unlist(.) %>% sum(.)
+f.floats<-function(x){x<-unique(x$float)}
+stats$floats<-lapply(x, f.floats)%>% unname(.) %>% unlist(.) %>% unique(.) %>% length(.)
+
+print(stats)
+}
+print("100 km stats:")
+f.summary(km_100)
+print("200 km stats:")
+f.summary(km_200)
+print("500 km stats:")
+f.summary(km_500)
+
+# # TC strength stats
+# f.tc_stats<-function(x, h.tracks)
+# x.key<-names(x)
+# tcs<-filter(h, Key %in% x.key )%>% select(., Key, Status)
+
+
+
+
+
+```
+
+
+
+
+
+
+
+# match hurrcane datbase with argo
+
+(1) <-500 km list
+ - lsit items per Key
+ -- sub lists:
+  --- profiles/distancr
+  --- hurrican datbase
+  --- h.pts
+  ---h.multiple point
+  --h.tracks
+  
