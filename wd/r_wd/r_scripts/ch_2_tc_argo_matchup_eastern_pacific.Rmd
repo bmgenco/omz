@@ -222,8 +222,8 @@ oceans<-st_read("./ne_50m_geography_marine_polys/ne_50m_geography_marine_polys.s
 ```
 
 
-# subset h by ocena basins
- * this a brute force method to rmeove a few tracks form a strom(s) that passed from Altantic over central ameriaca in to the pacific
+# subset h by ocean basins
+ * this a brute force method to rmeove a few tracks form a strom(s) that passed from Atlantic over central ameriaca in to the pacific
 - removes tc points wioth not lat lon corodantes
 - removes and point inthe atlaitc and carribean and gulf etc
 - returns filtered non spatial datframe
@@ -278,7 +278,7 @@ load("init_argo.RData")
 -used 1/2 degre resoultion
 ```{r}
 buffer=7
-
+#buffer is in degrees
 #west<-min(na.omit(h$Lon))-buffer
 Lat.99<-quantile((na.omit(h$Lat)),probs=c(0.001,0.99)) # remove anonymous outliers otherwise hurricane zone is 70 N
 
@@ -475,19 +475,13 @@ m.map
 
 ## points 
 ```{r}
-
 h.pts<-select(h, Key, Name, DateTime, Status, Lat, Lon, Wind, Pressure)%>% na.omit(.) %>% sf::st_as_sf(., coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
 
 #remove TXS outside area of interest
 h.pts<-sf::st_crop(h.pts, c(xmin=function_variables$tc.lon_min, ymin=function_variables$tc.lat_min, xmax=function_variables$tc.lon_max, ymax=function_variables$tc.lat_max)) #subset by user defined 
 
-
-
 # m.map<-m.coast+geom_sf(data=h.pts)+geom_sf(data= sf.profile_points, col="blue")
 # m.map
-# 
-# 
-# 
 #st_bbox(h.pts)
 
 ```
@@ -549,21 +543,29 @@ z<-z[unlist(lapply(z, nrow) != 0)]
 return(z)
 }
 
- 
-
-
+z<-f.in_between_time(h.tracks, function_variables, df.profile_points)
 
 ```
 
 
 
-# Float TC match up
+## Float TC  line distance - will need to double check this correct
 ```{r}
 
+for(i in 1:length(z)){
+x<-z[[i]]
+x.key<-names(z)[i]
+y<-filter(h.tracks, Key == x.key)
+x$distance_m<-st_distance(y$geometry,x$geometry) %>% as.vector(.)
+z[[i]]<-x}
 
 ```
 
+##
 ```{r}
+
+f.distance_select<-function  
+
 
 ```
 
