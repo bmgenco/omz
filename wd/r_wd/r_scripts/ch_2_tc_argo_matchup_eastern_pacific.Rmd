@@ -24,7 +24,6 @@ Directory structure  used in this analysis:
 -- /r_objects
 -- /r_scripts
 
-
 ```{r setup}
 rm(list=ls())
 
@@ -116,7 +115,6 @@ rm(path, file_path, files)
 ```
 
 
-
 # functions
 adapted, and thinned from ... script "Hurricane_insitu_matchup_v2.Rmd"
 ```{r}
@@ -204,9 +202,44 @@ z<-z[unlist(lapply(z, nrow) != 0)]
 return(z)
 }
 
-### slect floats witthin desired radi
+### select floats within desired radi
 f.radi_select<-function(x, tc_radi){
 x<-filter(x, distance_m <= tc_radi)
+return(x)
+}
+
+### select Storm matched floats radi object wit storms of desries desired strength
+
+f.storm_strength_filter<-function(x, h.storm_list, storm_level=NULL){
+  
+  all<-c("TS", "HU", "TD", "LO", "ET", "EX", "DB","SD", "SS", "PT", "ST", "TY", "WV", NA)
+  tc<-c("TS", "HU", "TD") 
+  hu<-("HU")
+
+if(is.null(storm_level)) {
+    tc_selection<-all
+  }  else if (storm_level == "all") {
+  tc_selection<-all
+}  else if (storm_level == "tc") {
+  tc_selection<-tc
+} else if  (storm_level == "hu") {
+  tc_selection<-hu
+}    
+    
+f.selection<-function(y, tc_selection){y<-filter(y, Status %in% tc_selection)
+  return(y)}
+f.intersect<-function(x, selection){
+  x<-x[intersect(names(x), selection)]
+    return(x)
+  }
+
+
+  
+  h.storm_list<-lapply(h.storm_list, f.selection, tc_selection=tc_selection)
+  h.storm_list<-f.rm_empty(h.storm_list) %>%names(.)
+
+  
+    x<-f.intersect(x, selection=h.storm_list)
 return(x)
 }
 
@@ -215,7 +248,6 @@ return(x)
 # remove empty list items
 f.rm_empty<-function(x){x<-x[unlist(lapply(x, nrow) != 0)]
 return(x)}
-
 ```
 
 
@@ -244,7 +276,6 @@ setwd(gis_data)
 # save shape files in named directory
 coastline<-st_read("./ne_50m_land/ne_50m_land.shp") 
 oceans<-st_read("./ne_50m_geography_marine_polys/ne_50m_geography_marine_polys.shp") 
-
 ```
 
 
@@ -255,8 +286,6 @@ oceans<-st_read("./ne_50m_geography_marine_polys/ne_50m_geography_marine_polys.s
 - returns filtered non spatial datframe
 
 ```{r}
-
-
 h.pts<-h%>%drop_na(Lon, Lat)%>% sf::st_as_sf(., coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
 
 north_atl_basins<-subset(oceans, name %in% c("North Atlantic Ocean", "Caribbean Sea", "Gulf of Mexico", "Sargasso Sea"))
@@ -266,8 +295,8 @@ h.pts<-st_difference(h.pts, st_combine(st_geometry(coastline))) %>% st_differenc
 
 lon_lat<-do.call(rbind, st_geometry(h.pts))%>%as.data.frame(.) %>% setNames(c("Lon","Lat"))
 h<-cbind((st_drop_geometry(h.pts)), lon_lat)
-rm(h.pts, north_atl, north_atl_basins, oceans, lon_lat)
 
+rm(h.pts, north_atl, north_atl_basins, oceans, lon_lat)
 ```
 
 
@@ -276,10 +305,10 @@ testing with plots
 
 # m.coast <- ggplot()+ geom_sf(data =coastline, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+
 #   theme_bw()+ theme(text = element_text(size =12)) 
-# 
+
 # map1<-m.coast +geom_sf(data=h.pts)
 # # map2<-m.coast +geom_sf(data=h.pts)
-# 
+#
 # map1
 # # map2
 ```
@@ -289,7 +318,7 @@ testing with plots
 
 
 ## Import BioArgo metadata (requires submodule install):
- - uncommnet to get newewts floats
+ - uncomment to get newest floats
 ```{r}
 #initialize_argo() # downloads meta data for argo
 #setwd(robj)
@@ -300,10 +329,10 @@ testing with plots
 
 # defining spatial bounds and fucntion variables
 ## Hurdat spatial/temporal bounds
-- Hurricane zone defien as max, min of eastern basin Hurdat dtatset
--7 degrere bufer chosen becau of chen et al
--slecested 99% confidnec interval for altiduanl range to excluse northern outliers
--used 1/2 degre resoultion
+- Hurricane zone define as max, min of eastern basin Hurdat datset
+-7 degree buffer chosen because of chen et al. 
+-selected 99% confidence interval for latitudinal range to exclude northern outliers
+-used 1/2 degree resolution
 ```{r}
 buffer=7
 #buffer is in degrees
@@ -321,7 +350,6 @@ east_tc<-round_any(max(na.omit(h$Lon[h$Lon < 0])), 0.5, f = round)
 #dont need TC Buffers
 # west_tc<-west_argo+buffer
 west_tc<-west_argo
-
 
 north_argo<-north_tc+buffer 
 south_argo<-south_tc-buffer
@@ -344,7 +372,7 @@ Add variables here
 
 # function_variables (INCLUDES DYNAMIC VARIABLES based on Hurdat (h)):
 Appending 'function_variables' with dynamic variables from hurdat 'h' data set
-* originally from script "
+* originally from script "Hurricane_insitu_matchup_v2.Rmd"
 * define here as opposed to within function or sub blocks
 + add hurdat coordinates as bbox feature
 
@@ -395,6 +423,7 @@ function_variables$argo_sensor<-NA
 function_variables$selection<-paste0("Lat (", function_variables$bgc.lat_min, ", ", function_variables$bgc.lat_max, ") Lon 
 (", function_variables$bgc.lon_min, ", ", function_variables$bgc.lon_max,  ")")
 
+rm(buffer,east_argo, east_tc, west_argo, west_tc, north_argo, north_tc, south_argo, south_tc, Lat.99)
 ```
 
 
@@ -406,9 +435,8 @@ This will now download all the NC Files!
 
 ### run selection
 ```{r}
-#slects profiles and floats within the  TC slection plus buffer does not remove coast
+#select profiles and floats within the  TC selection plus buffer does not remove coast
 
-# 
 # function_variables$argo_sensor<-NA
 # ep_total_floats<-f.floats_within_EP(function_variables)
 # 
@@ -436,9 +464,8 @@ ep_doxy_floats<-readRDS("ep_doxy_floats.rds")
 # #
 ```
 
-
 # profiles to points
-
+This will now re-download all the NC Files! plus time it takes to search through nc files 
 ```{r}
 # print("this takes a long time")
 # profile_points<-f.profiles_to_pts(selected_profiles = ep_doxy_floats)
@@ -455,9 +482,8 @@ profile_points<-readRDS("r_objects/profile_points.rds")
 
 ```{r}
 df.profile_points <- ldply(profile_points, data.frame)%>% dplyr::select(., -.id)
-sf.profile_points<-st_as_sf(df.profile_points)
+# sf.profile_points<-st_as_sf(df.profile_points) # only needed for plotting
 ```
-
 
 # buffered land & cl
 
@@ -488,10 +514,9 @@ sf.profile_points<-st_as_sf(df.profile_points)
 
 
 # TC point to lines
-
- - create  sf point first or can I skip/
- - crop using ocena hspae file form natural earth
- -Turn bleow into a function (don't prmeaturaly optimize...)
+ - create  sf point first or can I skip..
+ - crop using ocean shape file from natural earth
+ -Turn beloww into a function (don't prematurely optimize...)
 
 ## points 
 ```{r}
@@ -503,15 +528,12 @@ h.pts<-sf::st_crop(h.pts, c(xmin=function_variables$tc.lon_min, ymin=function_va
 # m.map<-m.coast+geom_sf(data=h.pts)+geom_sf(data= sf.profile_points, col="blue")
 # m.map
 #st_bbox(h.pts)
-
 ```
 ##   multi points and tracks
 
-(1) creates a multipoint  per TC key, with start end tiem bounds per each TC line string
-(2) "" but crea a multiline
-
+(1) creates a multipoint  per TC key, with start end time bounds per each TC line string
+(2) "" but create a track - line geomtery 
 ```{r}
-
 x<-h.pts%>% st_drop_geometry(.) %>% dplyr::select(., Key, DateTime)%>% group_by(Key) %>% dplyr::summarize(start_dt= min(DateTime), end_dt = max(DateTime))
 
 # h.multipoints<-as_data_frame(unique(h.pts$Key)) #depreciated
@@ -530,19 +552,13 @@ h.tracks$geometry[i]<-st_cast(h.tracks$geometry[i], to= "LINESTRING")
 h.tracks<-st_as_sf(h.tracks)
 
 rm(x)
-
 ```
 
 
-
-
-
 # matching floats
+## match floats to tracks temporally and add distance
 
-
-## match flots to tracks temporally and add distance
-
- variable on buffer
+ variable on time window 
 ```{r}
 z<-f.in_between_time(h.tracks, function_variables, df.profile_points)
 
@@ -552,16 +568,16 @@ x<-z[[i]]
 x.key<-names(z)[i]
 y<-filter(h.tracks, Key == x.key)
 x$distance_m<-st_distance(y$geometry,x$geometry) %>% as.vector(.)
-z[[i]]<-x}
+z[[i]]<-x
+rm(x,x.key,y)
+}
 
 ```
 
-
-
 ## select floats by buffer
-this does not exclude by strom strength
 
-Rerun here
+ variable on time window
+ -if change in set of radi, then will need to write function to make variable names dynamic
 ```{r}
 
 all_storms_500km<-lapply(z, f.radi_select, tc_radi=function_variables$tc.radi_3)
@@ -581,21 +597,19 @@ km_500<-f.rm_empty(km_500)
 rm(z)
 ```
 
+# filtering by storm strength
 
+###v1 -old 
 
-# filtering by storm streng
-
-
-## v1 - doesn't work...
 
 ```{r}
 # storm_list<-names(all_storms_500km)
 # h.storm_list<-filter(h, Key %in% storm_list) %>% dplyr::select(., Key, Status)%>% split(., .$Key) 
-# 
-# 
-# f.storm_strength_filter<-function(b, h.storm_list, storm_level=NULL){
-# # strom_level argument should  be one of ("all", "tc", "hu")
-#     
+
+
+### v2a ####
+# f.storm_strength_filter<-function(h.storm_list, storm_level=NULL){
+#   
 # all<-c("TS", "HU", "TD", "LO", "ET", "EX", "DB","SD", "SS", "PT", "ST", "TY", "WV", NA)
 # tc<-c("TS", "HU", "TD") 
 # hu<-("HU")
@@ -608,129 +622,71 @@ rm(z)
 #   tc_selection<-tc
 #   } else if  (storm_level == "hu") {
 #     tc_selection<-hu
-#     }
+#     }  
+#   
+#   
+# 
 # 
 # f.selection<-function(x, tc_selection){x<-filter(x, Status %in% tc_selection)
 # return(x)}
 # h.storm_list<-lapply(h.storm_list, f.selection, tc_selection=tc_selection)
 # h.storm_list<-f.rm_empty(h.storm_list) %>%names(.)
-# 
-# 
-# b<-b[intersect(names(b), h.storm_list)]
-# return(b)
+# return(h.storm_list)
 # }
 # 
-# # need to make a list and function
+# h.hu<-f.storm_strength_filter(h.storm_list, storm_level = 'hu')
+# h.tcs<-f.storm_strength_filter(h.storm_list, storm_level = 'tc')
+# h.all<-f.storm_strength_filter(h.storm_list, storm_level = 'all')
 # 
-# tc_100<-lapply(km_100, f.storm_strength_filter, h.storm_list, storm_level="tc")
-# hu_100<-lapply(km_100, f.storm_strength_filter, h.storm_list, storm_level="hu")
-# 
-# tc_200<-lapply(km_200, f.storm_strength_filter, h.storm_list, storm_level="tc")
-# hu_200<-lapply(km_200, f.storm_strength_filter, h.storm_list, storm_level="hu")
-# 
-# tc_500<-lapply(km_500, f.storm_strength_filter, h.storm_list, storm_level="tc")
-# hu_500<-lapply(km_500, f.storm_strength_filter, h.storm_list, storm_level="hu")
-# 
-# 
+# f.intersect<-function(x, selection) {
+#   x<-x[intersect(names(x), selection)]
+#   return(x)
+# }
+# tc_100<-f.intersect(km_100, selection=h.tcs)
+# hu_100<-f.intersect(km_100, selection=h.hu)
+
+
+```
+ 
+## v2
+```{r}
+storm_list<-names(all_storms_500km)
+rm(all_storms_500km)
+h.storm_list<-filter(h, Key %in% storm_list) %>% dplyr::select(., Key, Status)%>% split(., .$Key) 
+
+# all_100<-f.storm_strength_filter(km_100,  h.storm_list, storm_level = 'all')
+hu_100<-f.storm_strength_filter(km_100,  h.storm_list, storm_level = 'hu')
+tc_100<-f.storm_strength_filter(km_100,  h.storm_list, storm_level = 'tc')
+
+# all_200<-f.storm_strength_filter(km_200,  h.storm_list, storm_level = 'all')
+hu_200<-f.storm_strength_filter(km_200,  h.storm_list, storm_level = 'hu')
+tc_200<-f.storm_strength_filter(km_200,  h.storm_list, storm_level = 'tc')
+
+# all_500<-f.storm_strength_filter(km_500,  h.storm_list, storm_level = 'all')
+hu_500<-f.storm_strength_filter(km_500,  h.storm_list, storm_level = 'hu')
+tc_500<-f.storm_strength_filter(km_500,  h.storm_list, storm_level = 'tc')
+
+# print('100km :')
+# length(all_100)
 # length(tc_100)
 # length(hu_100)
 # 
+# print('200km :')
+# length(all_200)
 # length(tc_200)
 # length(hu_200)
 # 
+# print('500km :')
+# length(all_500)
 # length(tc_500)
 # length(hu_500)
 
+rm(km_100, km_200, km_500, h.storm_list)
 ```
- 
 
 
-##v2 
-
-
+## statitics hurricanes
 ```{r}
-storm_list<-names(all_storms_500km)
-h.storm_list<-filter(h, Key %in% storm_list) %>% dplyr::select(., Key, Status)%>% split(., .$Key) 
-# f.unique<-function(x){x<-unique(x$Status)}
-# test<-lapply(h.storm_list, f.unique)
-
-
-#v2a
-f.storm_strength_filter<-function(h.storm_list, storm_level=NULL){
-  
-all<-c("TS", "HU", "TD", "LO", "ET", "EX", "DB","SD", "SS", "PT", "ST", "TY", "WV", NA)
-tc<-c("TS", "HU", "TD") 
-hu<-("HU")
-
-if(is.null(storm_level)) {
-  tc_selection<-all
-  }  else if (storm_level == "all") {
-  tc_selection<-all
-  }  else if (storm_level == "tc") {
-  tc_selection<-tc
-  } else if  (storm_level == "hu") {
-    tc_selection<-hu
-    }  
-  
-  
-
-
-f.selection<-function(x, tc_selection){x<-filter(x, Status %in% tc_selection)
-return(x)}
-h.storm_list<-lapply(h.storm_list, f.selection, tc_selection=tc_selection)
-h.storm_list<-f.rm_empty(h.storm_list) %>%names(.)
-return(h.storm_list)
-}
-
-h.hu<-f.storm_strength_filter(h.storm_list, storm_level = 'hu')
-h.tcs<-f.storm_strength_filter(h.storm_list, storm_level = 'tc')
-h.all<-f.storm_strength_filter(h.storm_list, storm_level = 'all')
-
-f.intersect<-function(x, selection) {
-  x<-x[intersect(names(x), selection)]
-  return(x)
-}
-tc_100<-f.intersect(km_100, selection=h.tcs)
-hu_100<-f.intersect(km_100, selection=h.hu)
-
-
-
-#v2 
-
-
-b<-b[intersect(names(b), h.storm_list)]
-return(b)
-}
-
-# need to make a list and function
-
-tc_100<-lapply(km_100, f.storm_strength_filter, h.storm_list, storm_level="tc")
-hu_100<-lapply(km_100, f.storm_strength_filter, h.storm_list, storm_level="hu")
-
-tc_200<-lapply(km_200, f.storm_strength_filter, h.storm_list, storm_level="tc")
-hu_200<-lapply(km_200, f.storm_strength_filter, h.storm_list, storm_level="hu")
-
-tc_500<-lapply(km_500, f.storm_strength_filter, h.storm_list, storm_level="tc")
-hu_500<-lapply(km_500, f.storm_strength_filter, h.storm_list, storm_level="hu")
-
-
-length(tc_100)
-length(hu_100)
-
-length(tc_200)
-length(hu_200)
-
-length(tc_500)
-length(hu_500)
-
-```
- 
-
-
-
-## statitics
-```{r}
-
 #  floats, profiles, & tcs per buffer selection
 f.summary<-function(x){
 stats<-vector(mode="list")  
@@ -743,24 +699,83 @@ stats$floats<-lapply(x, f.floats)%>% unname(.) %>% unlist(.) %>% unique(.) %>% l
 
 print(stats)
 }
-print("100 km stats:")
-f.summary(km_100)
-print("200 km stats:")
-f.summary(km_200)
-print("500 km stats:")
-f.summary(km_500)
+print("100 km hu stats:")
+f.summary(hu_100)
+print("200 km hu stats:")
+f.summary(hu_200)
+print("500 km hu stats:")
+f.summary(hu_500)
 
-# # TC strength stats
-# f.tc_stats<-function(x, h.tracks)
-# x.key<-names(x)
-# tcs<-filter(h, Key %in% x.key )%>% select(., Key, Status)
+```
+
+## cat 4/5 hurricnes
+
+```{r}
+storm_list<-names(hu_500)
+h.storm_list<-filter(h, Key %in% storm_list)%>% split(., .$Key)
+rm(storm_list)
+
+f.strong_storms<-function(x){x<-filter(x, Wind >=113)%>%dplyr::select(., Key, Status)
+return(x)}
+h.storm_list<-lapply(h.storm_list, f.strong_storms)
+h.storm_list<-f.rm_empty(h.storm_list)
+
+strong_100<-f.storm_strength_filter(tc_100,  h.storm_list, storm_level = 'all')
+strong_200<-f.storm_strength_filter(tc_200,  h.storm_list, storm_level = 'all')
+strong_500<-f.storm_strength_filter(tc_500,  h.storm_list, storm_level = 'all')
+rm(h.storm_list)
+
+print("strong 100 km hu stats:")
+f.summary(strong_100)
+print("strong 200 km hu stats:")
+f.summary(strong_200)
+print("strong 500 km hu stats:")
+f.summary(strong_500)
+```
+
+# save list of objects for next script in seq of analysis
+```{r}
+y<-vector(mode='list')
+y$read_me<-(" this is a list created from first script in ch2 seq , 'ch_2_tc_argo_matchup_eastern_pacific.Rmd'created 2023-09-22. $function_variablebles give parameters for selected objects")
+y$function_variables<-function_variables
+
+x<-vector(mode='list')
+x$km_100<-list(tc_100, hu_100, strong_100)
+names(x$km_100)<-c('tc', 'hu', 'strong_hu')
+
+x$km_200<-list(tc_200, hu_200, strong_200)
+names(x$km_200)<-c('tc', 'hu', 'strong_hu')
+
+x$km_500<-list(tc_500, hu_500, strong_500)
+names(x$km_500)<-c('tc', 'hu', 'strong_hu')
+y$tc_search_radi_profiles<-x
+rm(x)
+
+z<-vector(mode='list')
+z$h<-h
+z$h.pts<-h.pts
+z$h.multipoints<-h.multipoints
+z$h.tracks<-h.tracks
+y$selected_zone_hurdat<-z
+rm(z)
+
+w<-vector(mode='list')
+w$df.profile_points<-df.profile_points
+w$ep_doxy_floats<-ep_doxy_floats
+y$selected_zone_float_metadata<-w
+
+rm(w)
 
 
+saveRDS(y, "r_objects/ch2_seq_1_data.R")
 
 
 
 ```
 
+
+
+## some simple plots
 
 
 
