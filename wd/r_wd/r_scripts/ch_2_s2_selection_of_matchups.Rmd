@@ -1,0 +1,296 @@
+---
+title: "ch2__s2_selection_of_matchups"
+output: html_document
+date: '2023-09-25'
+---
+ 
+# Setup
+## Directories and defaults
+
+Ideally uses proj file for relative directories
+see: https://yihui.org/knitr/options/
+
+Directory structure  used in this analysis:
+
+~/omz/wd
+-- /output
+-- /data
+-- /figures
+-- /r_wd
+
+~/omz/wd/r_wd
+-- /Index
+-- /Profiles
+-- /r_objects
+-- /r_scripts
+
+```{r setup}
+rm(list=ls())
+
+r_scriptwd<-getwd()
+wd<-substring(r_scriptwd,1,nchar(r_scriptwd) -10) # hardcoding replace here
+knitr::opts_knit$set(root.dir = wd)
+
+# relative directories
+robj<-"r_objects"
+fig<-"../../figures"
+gis_data<-"../../data/gis_data"
+output<-"../../output"
+data_d<-"../../data"
+
+# ocean_color<-"../../data/ocean_color_bud"
+# bathy_d<-"../../data/bathy" # edit this
+
+knitr::opts_chunk$set(echo =FALSE)
+#knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+## Packages
+Installed custom hurdat package using r markdown menu
+* download  tar from archive as no longer maintained on cran repository
+* https://cran.r-project.org/src/contrib/Archive/HURDAT/
++ include as git submodule instead
+
+```{r}
+wd<-getwd()
+f.ipak <- function(pkg){
+  # loads packages, quietly, given by a vector of package names e.g., pkg<-c("ggplot", "tidyverse")
+  # will install  packages listed , and their dependencies, if needed.
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg))
+    install.packages(new.pkg, dependencies = TRUE, quiet=T, verbose = F)
+  sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
+}
+packages<-c("plyr","sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT" , "gsw", "R.utils","Matrix")
+# "HURDAT",
+f.ipak(packages)
+# lapply(packages, require, character.only = TRUE)
+# rm(f.ipak, packages)
+print(paste0("Current Working Directory is ", getwd()))
+```
+
+## Load submodule for bio-argo floats
+* using newer OneArgo-R
+* https://github.com/NOAA-PMEL/OneArgo-R
+
+```{r}
+setwd(wd)
+
+# main functions
+path<-"r_scripts/submodules/OneArgo-R/"
+
+source(paste0(path, "get_lon_lat_time.R"))
+source(paste0(path, "initialize_argo.R"))
+source(paste0(path, "load_float_data.R"))
+source(paste0(path, "select_profiles.R"))
+source(paste0(path, "show_profiles.R"))
+source(paste0(path, "show_sections.R"))
+source(paste0(path, "show_time_series.R"))
+source(paste0(path, "show_trajectories.R"))
+
+# auxilary functions
+path = "r_scripts/submodules/OneArgo-R/auxil/"
+file_path<-paste0(wd,"/",path)
+files<-list.files(file_path, pattern ="\\.R$")
+
+for(i in 1:length(files)){
+  source(paste0(path, files[i]))
+}
+
+# packages<-c("gsw", "R.utils","Matrix")
+# f.ipak(packages)
+# 
+rm(path, file_path, files)
+
+####   this doesn't work... ####
+# perhaps not functions R files breaks it
+#file_path<-paste0(wd, "/", path)
+
+#files<-list.files(file_path, pattern ="\\.R")
+# for(i in 1:length(files)){
+#   source(paste0(path, files[i]), local=F)
+# }
+
+```
+
+
+
+# functions
+-create functions script
+
+```{r}
+# source()
+```
+
+temp for now
+```{r}
+# find most profiles
+f.select_most_profiles<-function(x){
+f.max_profiles<-function(x){
+ x$profile_number<-dim(x)[1]
+
+}
+y<-lapply(x, f.max_profiles) %>% .[order(sapply(., max))] %>% .[rev(1:length(.))] %>% names(.)
+y<-y[1]
+x<-x[which(names(x) ==y)]
+rm(y)
+return(x)
+}
+
+# select storm by key from hurdat objects
+
+f.select_tc<-function(key_id, h){
+x<-filter(h, Key == key_id)
+assign(key_id, x)
+rm(x, key_id)
+x<-ls()
+return(x[1])
+}
+```
+
+
+# Data 1
+-- Hurdat2
+-- Hurricane tracks and wind speeds
+---Bioargo r 
+--Coastline data
+
+## previous script
+
+```{r}
+data<-readRDS("r_objects/ch2_seq_1_data_test.R")
+```
+
+## natural earth coastlines
+source : https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-coastline/
+version: 4.1.0
+```{r}
+setwd(gis_data)
+# save shape files in named directory
+coastline<-st_read("./ne_50m_land/ne_50m_land.shp") 
+
+```
+
+
+## Import BioArgo metadata (requires submodule install):
+ - uncomment to get newest floats
+```{r}
+# initialize_argo() # downloads meta data for argo
+#setwd(robj)
+# save(Float, Setting, Sprof, sprof_update, file="r_objects/init_argo.RData")
+# save(Float, Setting, Sprof, file="r_objects/init_argo.RData")
+
+ load("r_objects/init_argo.RData")
+```
+
+
+# select items from data
+#
+```{r}
+
+function_variables<-data$function_variables
+# hurdat objects
+h<-data$selected_zone_hurdat$h
+h.pts<-data$selected_zone_hurdat$h.pts
+h.tracks<-data$selected_zone_hurdat$h.tracks
+
+# match_up
+
+list.100<-data$tc_search_radi_profiles$km_100
+list.200<-data$tc_search_radi_profiles$km_200
+list.500<-data$tc_search_radi_profiles$km_500
+
+# temp for memory space
+rm(data)
+
+```
+
+
+# create hurricanes but not stong storms
+
+
+# sort and pick
+
+
+## most profiles
+```{r}
+
+# will need to rewrite function to get names of tc in a better way
+most_p.100<-lapply(list.100, f.select_most_profiles)
+print(" 100 km")
+lapply(most_p.100, names)
+
+
+most_p.200<-lapply(list.200, f.select_most_profiles)
+print("200 km")
+lapply(most_p.200, names)
+
+most_p.500<-lapply(list.500, f.select_most_profiles)
+print("500 km")
+lapply(most_p.500, names)
+
+
+```
+
+
+# exploratory analysis EPO72014 - GENEVIEVE
+```{r}
+
+key_id<-"EP072012"
+g<-filter(h, Key == key_id)
+
+f.select_name<-function(x, key_id){
+x<-x$tc
+x<-x[which(names(x) == key_id)]
+return(x)
+}
+
+
+y<-f.select_name(x= list.500, key_id)
+
+g_100<-most_p.100$strong_hu
+g_200<-most_p.200$strong_hu
+g_500<-most_p.200$strong_hu
+
+g.track<-filter(h.tracks, Key == key_id)
+g.pts<-filter(h.pts, Key == key_id)
+
+
+rm(most_p.100, most_p.200, most_p.500)
+
+```
+
+
+## basic plots
+
+```{r}
+cl<-st_crop(coastline, xmin=function_variables$bgc.lon_min, ymin=function_variables$bgc.lat_min, xmax=function_variables$bgc.lon_max, ymax=function_variables$bgc.lat_max)
+
+m.coast <- ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+
+  theme_bw()+ theme(text = element_text(size =12))
+
+
+m.1<-m.coast+geom_sf(data=g.track)
+m2<-m.1+geom_sf(data=g.pts, col="red")
+
+# m2
+
+y<-y[[1]] %>% st_as_sf(.)
+m3<-m2+geom_sf(data=y, col="blue")
+m3
+
+```
+
+
+# tropuble shooting plots
+
+
+# kml
+
+```{r}
+
+```
+
+
+
+

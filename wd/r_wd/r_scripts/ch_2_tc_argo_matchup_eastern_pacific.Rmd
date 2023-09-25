@@ -3,26 +3,18 @@ title: "ch2_TC_argo_match up"
 output: html_document
 date: '2023-09-12'
 ---
- 
+
 # Setup
+
 ## Directories and defaults
 
-Ideally yous proj file for relative directories
-see: https://yihui.org/knitr/options/
+Ideally uses proj file for relative directories see: <https://yihui.org/knitr/options/>
 
-Directory structure  used in this analysis:
+Directory structure used in this analysis:
 
-~/omz/wd
--- /output
--- /data
--- /figures
--- /r_wd
+~/omz/wd -- /output -- /data -- /figures -- /r_wd
 
-~/omz/wd/r_wd
--- /Index
--- /Profiles
--- /r_objects
--- /r_scripts
+~/omz/wd/r_wd -- /Index -- /Profiles -- /r_objects -- /r_scripts
 
 ```{r setup}
 rm(list=ls())
@@ -46,10 +38,8 @@ knitr::opts_chunk$set(echo =FALSE)
 ```
 
 ## Packages
-Installed custom hurdat package using r markdown menu
-* download  tar from archive as no longer maintained on cran repository
-* https://cran.r-project.org/src/contrib/Archive/HURDAT/
-+ include as git submodule instead
+
+Installed custom hurdat package using r markdown menu \* download tar from archive as no longer maintained on cran repository \* <https://cran.r-project.org/src/contrib/Archive/HURDAT/> + include as git submodule instead
 
 ```{r}
 wd<-getwd()
@@ -70,8 +60,9 @@ print(paste0("Current Working Directory is ", getwd()))
 ```
 
 ## Load submodule for bio-argo floats
-* using newer OneArgo-R
-* https://github.com/NOAA-PMEL/OneArgo-R
+
+-   using newer OneArgo-R
+-   <https://github.com/NOAA-PMEL/OneArgo-R>
 
 ```{r}
 setwd(wd)
@@ -114,9 +105,10 @@ rm(path, file_path, files)
 
 ```
 
-
 # functions
+
 adapted, and thinned from ... script "Hurricane_insitu_matchup_v2.Rmd"
+
 ```{r}
 ### function to create buffer around coastline
 
@@ -250,14 +242,9 @@ f.rm_empty<-function(x){x<-x[unlist(lapply(x, nrow) != 0)]
 return(x)}
 ```
 
-
 # Data 1
--Hurdat2
--- Hurricane tracks and wind speeds
----Bioargo r 
---Coastline data
-## Read in "Best Track Data (HURDAT2)" hurricane data
-Using/used 'hurdat package'
+
+-Hurdat2 -- Hurricane tracks and wind speeds ---Bioargo r --Coastline data \## Read in "Best Track Data (HURDAT2)" hurricane data Using/used 'hurdat package'
 
 ```{r}
 #download from online. Basin is eastern pacific
@@ -269,8 +256,9 @@ h$DateTime<-with_tz(h$DateTime, tz="UTC")
 ```
 
 ## natural earth coastlines
-source : https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-coastline/
-version: 4.1.0
+
+source : <https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-coastline/> version: 4.1.0
+
 ```{r}
 setwd(gis_data)
 # save shape files in named directory
@@ -278,12 +266,12 @@ coastline<-st_read("./ne_50m_land/ne_50m_land.shp")
 oceans<-st_read("./ne_50m_geography_marine_polys/ne_50m_geography_marine_polys.shp") 
 ```
 
-
 # subset h by ocean basins
- * this a brute force method to rmeove a few tracks form a strom(s) that passed from Atlantic over central ameriaca in to the pacific
-- removes tc points wioth not lat lon corodantes
-- removes and point inthe atlaitc and carribean and gulf etc
-- returns filtered non spatial datframe
+
+-   this a brute force method to rmeove a few tracks form a strom(s) that passed from Atlantic over central ameriaca in to the pacific
+-   removes tc points wioth not lat lon corodantes
+-   removes and point inthe atlaitc and carribean and gulf etc
+-   returns filtered non spatial datframe
 
 ```{r}
 h.pts<-h%>%drop_na(Lon, Lat)%>% sf::st_as_sf(., coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
@@ -299,8 +287,8 @@ h<-cbind((st_drop_geometry(h.pts)), lon_lat)
 rm(h.pts, north_atl, north_atl_basins, oceans, lon_lat)
 ```
 
-
 testing with plots
+
 ```{r}
 
 # m.coast <- ggplot()+ geom_sf(data =coastline, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+
@@ -313,27 +301,27 @@ testing with plots
 # # map2
 ```
 
-
 ## coastal float subsetting
 
-
 ## Import BioArgo metadata (requires submodule install):
- - uncomment to get newest floats
+
+-   uncomment to get newest floats
+
 ```{r}
-initialize_argo() # downloads meta data for argo
-#setwd(robj)
-# save(Float, Setting, Sprof, sprof_update, file="r_objects/init_argo.RData")
-save(Float, Setting, Sprof, file="r_objects/init_argo.RData")
+# initialize_argo() # downloads meta data for argo
+# #setwd(robj)
+# # save(Float, Setting, Sprof, sprof_update, file="r_objects/init_argo.RData")
+# save(Float, Setting, Sprof, file="r_objects/init_argo.RData")
 
 # load("r_objects/init_argo.RData")
 ```
 
 # defining spatial bounds and fucntion variables
+
 ## Hurdat spatial/temporal bounds
-- Hurricane zone define as max, min of eastern basin Hurdat datset
--7 degree buffer chosen because of chen et al. 
--selected 99% confidence interval for latitudinal range to exclude northern outliers
--used 1/2 degree resolution
+
+-   Hurricane zone define as max, min of eastern basin Hurdat datset -7 degree buffer chosen because of chen et al. -selected 99% confidence interval for latitudinal range to exclude northern outliers -used 1/2 degree resolution
+
 ```{r}
 buffer=7
 #buffer is in degrees
@@ -367,17 +355,13 @@ print(c(north_argo, south_argo, west_argo, east_argo))
 
 Add variables here
 
-100km
-200 km
-500 km 
+100km 200 km 500 km
 
 # function_variables (INCLUDES DYNAMIC VARIABLES based on Hurdat (h)):
-Appending 'function_variables' with dynamic variables from hurdat 'h' data set
-* originally from script "Hurricane_insitu_matchup_v2.Rmd"
-* define here as opposed to within function or sub blocks
-+ add hurdat coordinates as bbox feature
 
-Note importance of "function_variables<-vector(mode="list")"
+Appending 'function_variables' with dynamic variables from hurdat 'h' data set \* originally from script "Hurricane_insitu_matchup_v2.Rmd" \* define here as opposed to within function or sub blocks + add hurdat coordinates as bbox feature
+
+Note importance of "function_variables\<-vector(mode="list")"
 
 ```{r}
 function_variables<-vector(mode="list") # for storing all function variables that may be dynamic or other wise
@@ -429,14 +413,14 @@ function_variables$selection<-paste0("Lat (", function_variables$bgc.lat_min, ",
 rm(buffer,east_argo, east_tc, west_argo, west_tc, north_argo, north_tc, south_argo, south_tc, Lat.99)
 ```
 
-
-
-
 # Float selection and satistics
+
 ## step one square slection
+
 This will now download all the NC Files!
 
 ### run selection
+
 ```{r}
 #select profiles and floats within the  TC selection plus buffer does not remove coast
 
@@ -449,6 +433,7 @@ ep_doxy_floats<-f.floats_within_EP(function_variables)
 ```
 
 ### save/load ep_doxy floats
+
 ```{r}
 # setwd(wd)
 # setwd(robj)
@@ -456,8 +441,8 @@ saveRDS(ep_doxy_floats, "r_objects/ep_doxy_floats.rds")
 # ep_doxy_floats<-readRDS("r_objects/ep_doxy_floats.rds")
 ```
 
-
 ## summarry statitics
+
 ```{r}
 print(length(unique((na.omit(ep_total_floats$float_ids)))))
 print(sum(lengths(ep_total_floats$float_profs)))
@@ -468,19 +453,23 @@ print(sum(lengths(ep_doxy_floats$float_profs)))
 ```
 
 # profiles to points
-This will now re-download all the NC Files! plus time it takes to search through nc files 
+
+This will now re-download all the NC Files! plus time it takes to search through nc files
+
 ```{r}
 print("this takes a long time")
 profile_points<-f.profiles_to_pts(selected_profiles = ep_doxy_floats)
 ```
 
 ## save/load profile_points
+
 ```{r}
 # setwd(wd)
 # setwd(robj)
- saveRDS(profile_points, "r_objects/profile_points.rds")
-# profile_points<-readRDS("r_objects/profile_points.rds")
+# saveRDS(profile_points, "r_objects/profile_points.rds")
+profile_points<-readRDS("r_objects/profile_points.rds")
 ```
+
 ### create data frame from list
 
 ```{r}
@@ -515,13 +504,13 @@ m.map
 
 ```
 
-
 # TC point to lines
- - create  sf point first or can I skip..
- - crop using ocean shape file from natural earth
- -Turn beloww into a function (don't prematurely optimize...)
 
-## points 
+-   create sf point first or can I skip..
+-   crop using ocean shape file from natural earth -Turn beloww into a function (don't prematurely optimize...)
+
+## points
+
 ```{r}
 h.pts<-dplyr::select(h, Key, Name, DateTime, Status, Lat, Lon, Wind, Pressure)%>% na.omit(.) %>% sf::st_as_sf(., coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
 
@@ -532,10 +521,39 @@ h.pts<-sf::st_crop(h.pts, c(xmin=function_variables$tc.lon_min, ymin=function_va
 # m.map
 #st_bbox(h.pts)
 ```
-##   multi points and tracks
 
-(1) creates a multipoint  per TC key, with start end time bounds per each TC line string
-(2) "" but create a track - line geomtery 
+## multi points and tracks
+
+(1) creates a multipoint per TC key, with start end time bounds per each TC line string
+(2) "" but create a track - line geomtery
+
+### v1 errors
+tracks are incorrect
+
+```{r}
+# x<-h.pts%>% st_drop_geometry(.) %>% dplyr::select(., Key, DateTime)%>% group_by(Key) %>% dplyr::summarize(start_dt= min(DateTime), end_dt = max(DateTime))
+# 
+# # h.multipoints<-as_data_frame(unique(h.pts$Key)) #depreciated
+# h.multipoints<-as.data.frame(unique(h.pts$Key))
+# 
+# names(h.multipoints)<-("Key")
+# st_geometry(h.multipoints)<-(split(h.pts, h.pts$Key) %>% Map(st_combine,. )%>%do.call(c,.))
+# 
+# h.multipoints<-dplyr::left_join(x, h.multipoints) %>%st_as_sf(.)
+# h.tracks<-h.multipoints
+# 
+# #theres probally a better way...thena for loop
+# for(i in 1:length(h.tracks$Key)){
+# h.tracks$geometry[i]<-st_cast(h.tracks$geometry[i], to= "LINESTRING")
+# }
+# h.tracks<-st_as_sf(h.tracks)
+# 
+# rm(x)
+```
+
+### v2 errors 
+tracks are incorrect .. still
+
 ```{r}
 x<-h.pts%>% st_drop_geometry(.) %>% dplyr::select(., Key, DateTime)%>% group_by(Key) %>% dplyr::summarize(start_dt= min(DateTime), end_dt = max(DateTime))
 
@@ -548,20 +566,96 @@ st_geometry(h.multipoints)<-(split(h.pts, h.pts$Key) %>% Map(st_combine,. )%>%do
 h.multipoints<-dplyr::left_join(x, h.multipoints) %>%st_as_sf(.)
 h.tracks<-h.multipoints
 
-#theres probally a better way...thena for loop
-for(i in 1:length(h.tracks$Key)){
-h.tracks$geometry[i]<-st_cast(h.tracks$geometry[i], to= "LINESTRING")
-}
-h.tracks<-st_as_sf(h.tracks)
+
+h.tracks$tracks<-st_cast(h.tracks$geometry, "LINESTRING")
+
+# needed to match function
+h.tracks<-st_drop_geometry(h.tracks)
+names(h.tracks)[which(names(h.tracks)=="tracks")]<-'geometry'
+h.tracks<-h.tracks%>%st_set_geometry(., .$geometry)
+
+
 
 rm(x)
 ```
 
 
+
+### v3 works!!!
+
+```{r}
+x<-h.pts%>% st_drop_geometry(.) %>% dplyr::select(., Key, DateTime)%>% group_by(Key) %>% dplyr::summarize(start_dt= min(DateTime), end_dt = max(DateTime))
+
+
+
+
+# h.multipoints<-as_data_frame(unique(h.pts$Key)) #depreciated
+
+# testing
+# h.multipoints<-as.data.frame(unique(h.pts$Key))
+
+# h.multipoints<-as.data.frame(unique(h.pts$Key))
+# names(h.multipoints)<-("Key")
+
+# testlin here:
+
+# "" above
+
+w<-(split(h.pts, h.pts$Key))
+f.make_multipoint<-function(x){
+  
+  x$multipoints<-st_combine(x$geometry)
+  st_geometry(x)<-NULL
+  
+  x<-select(x, Key, multipoints)
+  x$geometry<-multipoints
+  x<-select(x, Key, geometry)
+  x<-x[1,]
+  st_geometry(x)<-x$geometry
+  return(x)
+}
+w<-lapply(w, f.make_multipoint)
+w<-bind_rows(w, .id = "column_label")
+w<-select(w, -column_label)
+
+
+
+h.tracks<-dplyr::left_join(x, w) %>%st_as_sf(.)
+h.tracks$tracks<-st_cast(h.tracks$geometry, "LINESTRING")
+
+# needed to match function
+h.tracks<-st_drop_geometry(h.tracks)
+names(h.tracks)[which(names(h.tracks)=="tracks")]<-'geometry'
+h.tracks<-h.tracks%>%st_set_geometry(., .$geometry)
+
+
+```
+
+
+
+#### testing
+
+```{r}
+
+test<-filter(h, Name =="GILMA")
+x<-filter(h.tracks, Key=="EP072012")
+
+
+y<-filter(h.pts, Key=="EP072012")
+
+p<-ggplot()+geom_sf(data=x)+geom_sf(data=y)
+p
+```
+
+
+
+
 # matching floats
+
 ## match floats to tracks temporally and add distance
 
- variable on time window 
+variable on time window
+
 ```{r}
 z<-f.in_between_time(h.tracks, function_variables, df.profile_points)
 
@@ -579,8 +673,8 @@ rm(x,x.key,y)
 
 ## select floats by buffer
 
- variable on time window
- -if change in set of radi, then will need to write function to make variable names dynamic
+variable on time window -if change in set of radi, then will need to write function to make variable names dynamic
+
 ```{r}
 
 all_storms_500km<-lapply(z, f.radi_select, tc_radi=function_variables$tc.radi_3)
@@ -602,8 +696,7 @@ rm(z)
 
 # filtering by storm strength
 
-###v1 -old 
-
+###v1 -old
 
 ```{r}
 # storm_list<-names(all_storms_500km)
@@ -650,8 +743,9 @@ rm(z)
 
 
 ```
- 
+
 ## v2
+
 ```{r}
 storm_list<-names(all_storms_500km)
 rm(all_storms_500km)
@@ -669,28 +763,26 @@ tc_200<-f.storm_strength_filter(km_200,  h.storm_list, storm_level = 'tc')
 hu_500<-f.storm_strength_filter(km_500,  h.storm_list, storm_level = 'hu')
 tc_500<-f.storm_strength_filter(km_500,  h.storm_list, storm_level = 'tc')
 
-# print('100km :')
+print('100km :')
 # length(all_100)
-# length(tc_100)
-# length(hu_100)
-# 
-# print('200km :')
+length(tc_100)
+length(hu_100)
+
+print('200km :')
 # length(all_200)
-# length(tc_200)
-# length(hu_200)
-# 
-# print('500km :')
+length(tc_200)
+length(hu_200)
+
+print('500km :')
 # length(all_500)
-# length(tc_500)
-# length(hu_500)
+length(tc_500)
+length(hu_500)
 
 rm(km_100, km_200, km_500, h.storm_list)
 ```
 
-
-## statitics hurricanes
+## statistics TCs, float and profiles
 ```{r}
-#  floats, profiles, & tcs per buffer selection
 f.summary<-function(x){
 stats<-vector(mode="list")  
 stats$tcs<-length(x)
@@ -702,6 +794,21 @@ stats$floats<-lapply(x, f.floats)%>% unname(.) %>% unlist(.) %>% unique(.) %>% l
 
 print(stats)
 }
+
+print("100 km tc stats:")
+f.summary(tc_100)
+print("200 km tc stats:")
+f.summary(tc_200)
+print("500 km tc stats:")
+f.summary(tc_500)
+
+```
+
+## statitics hurricanes
+
+```{r}
+#  floats, profiles, & tcs per buffer selection
+
 print("100 km hu stats:")
 f.summary(hu_100)
 print("200 km hu stats:")
@@ -710,6 +817,10 @@ print("500 km hu stats:")
 f.summary(hu_500)
 
 ```
+
+
+
+
 
 ## cat 4/5 hurricnes
 
@@ -737,9 +848,10 @@ f.summary(strong_500)
 ```
 
 # save list of objects for next script in seq of analysis
+
 ```{r}
 y<-vector(mode='list')
-y$read_me<-(" this is a list created from first script in ch2 seq , 'ch_2_tc_argo_matchup_eastern_pacific.Rmd'created 2023-09-24. $function_variablebles give parameters for selected objects")
+y$read_me<-(" this is a list created from first script in ch2 seq , 'ch_2_tc_argo_matchup_eastern_pacific.Rmd'created 2023-09-25. $function_variablebles give parameters for selected objects. track issue should be fixed")
 y$function_variables<-function_variables
 
 x<-vector(mode='list')
@@ -764,7 +876,7 @@ rm(z)
 
 w<-vector(mode='list')
 w$df.profile_points<-df.profile_points
-w$ep_doxy_floats<-ep_doxy_floats
+# w$ep_doxy_floats<-ep_doxy_floats
 y$selected_zone_float_metadata<-w
 
 rm(w)
@@ -776,23 +888,10 @@ saveRDS(y, "r_objects/ch2_seq_1_data.R")
 
 ```
 
-
-
 ## some simple plots
-
-
-
-
-
 
 # match hurrcane datbase with argo
 
-(1) <-500 km list
- - lsit items per Key
- -- sub lists:
-  --- profiles/distancr
-  --- hurrican datbase
-  --- h.pts
-  ---h.multiple point
-  --h.tracks
-  
+(1) \<-500 km list
+
+-   lsit items per Key -- sub lists: --- profiles/distancr --- hurrican datbase --- h.pts ---h.multiple point --h.tracks
