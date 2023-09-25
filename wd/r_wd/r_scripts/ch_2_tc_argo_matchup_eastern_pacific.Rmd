@@ -320,9 +320,10 @@ testing with plots
 ## Import BioArgo metadata (requires submodule install):
  - uncomment to get newest floats
 ```{r}
-#initialize_argo() # downloads meta data for argo
+initialize_argo() # downloads meta data for argo
 #setwd(robj)
-#save(Float, Setting, Sprof, sprof_update, file="init_argo.RData")
+# save(Float, Setting, Sprof, sprof_update, file="r_objects/init_argo.RData")
+save(Float, Setting, Sprof, file="r_objects/init_argo.RData")
 
 # load("r_objects/init_argo.RData")
 ```
@@ -353,7 +354,7 @@ west_tc<-west_argo
 
 north_argo<-north_tc+buffer 
 south_argo<-south_tc-buffer
-east_argo<-east_tc+buffer
+east_argo<-east_tc+buffer #this will cpature profilesin atlantic, but argo slection parmater negates this issue
 
 # north<-max(na.omit(h$Lat))+buffer
 # south<-min(na.omit(h$Lat))-buffer
@@ -395,6 +396,8 @@ function_variables$h_end_date<- max(na.omit(h$DateTime)) %>% as.Date(.)
 function_variables$ocean="P"
 #ocean is Pacific
 
+
+# in futre change lon_min variable names
 function_variables$bgc.lon_max<-west_argo 
 function_variables$bgc.lat_max<-north_argo
 function_variables$bgc.lat_min<-south_argo
@@ -437,59 +440,59 @@ This will now download all the NC Files!
 ```{r}
 #select profiles and floats within the  TC selection plus buffer does not remove coast
 
-# function_variables$argo_sensor<-NA
-# ep_total_floats<-f.floats_within_EP(function_variables)
-# 
-# function_variables$argo_sensor<-"DOXY"
-# ep_doxy_floats<-f.floats_within_EP(function_variables)
+function_variables$argo_sensor<-NA
+ep_total_floats<-f.floats_within_EP(function_variables)
+
+function_variables$argo_sensor<-"DOXY"
+ep_doxy_floats<-f.floats_within_EP(function_variables)
 
 ```
 
 ### save/load ep_doxy floats
 ```{r}
-setwd(wd)
-setwd(robj)
-# saveRDS(ep_doxy_floats, "ep_doxy_floats.rds")
-ep_doxy_floats<-readRDS("ep_doxy_floats.rds")
+# setwd(wd)
+# setwd(robj)
+saveRDS(ep_doxy_floats, "r_objects/ep_doxy_floats.rds")
+# ep_doxy_floats<-readRDS("r_objects/ep_doxy_floats.rds")
 ```
 
 
 ## summarry statitics
 ```{r}
-# print(length(unique((na.omit(ep_total_floats$float_ids)))))
-# print(sum(lengths(ep_total_floats$float_profs)))
-# 
-# print(length(unique((na.omit(ep_doxy_floats$float_ids)))))
-# print(sum(lengths(ep_doxy_floats$float_profs)))
+print(length(unique((na.omit(ep_total_floats$float_ids)))))
+print(sum(lengths(ep_total_floats$float_profs)))
+
+print(length(unique((na.omit(ep_doxy_floats$float_ids)))))
+print(sum(lengths(ep_doxy_floats$float_profs)))
 # #
 ```
 
 # profiles to points
 This will now re-download all the NC Files! plus time it takes to search through nc files 
 ```{r}
-# print("this takes a long time")
-# profile_points<-f.profiles_to_pts(selected_profiles = ep_doxy_floats)
+print("this takes a long time")
+profile_points<-f.profiles_to_pts(selected_profiles = ep_doxy_floats)
 ```
 
 ## save/load profile_points
 ```{r}
 # setwd(wd)
 # setwd(robj)
-# saveRDS(profile_points, ""r_objects/profile_points.rds")
-profile_points<-readRDS("r_objects/profile_points.rds")
+ saveRDS(profile_points, "r_objects/profile_points.rds")
+# profile_points<-readRDS("r_objects/profile_points.rds")
 ```
 ### create data frame from list
 
 ```{r}
 df.profile_points <- ldply(profile_points, data.frame)%>% dplyr::select(., -.id)
-# sf.profile_points<-st_as_sf(df.profile_points) # only needed for plotting
+sf.profile_points<-st_as_sf(df.profile_points) # only needed for plotting
 ```
 
 # buffered land & cl
 
 ```{r}
-## land buffer
-# cl<-st_crop(coastline, xmin=function_variables$bgc.lon_min, ymin=function_variables$bgc.lat_min, xmax=function_variables$bgc.lon_max, ymax=function_variables$bgc.lat_max)
+# land buffer
+cl<-st_crop(coastline, xmin=function_variables$bgc.lon_min, ymin=function_variables$bgc.lat_min, xmax=function_variables$bgc.lon_max, ymax=function_variables$bgc.lat_max)
 # #rm(coastline)
 # #
 # buffered_land<-f.cl_buffer(function_variables, cl)
@@ -499,15 +502,15 @@ df.profile_points <- ldply(profile_points, data.frame)%>% dplyr::select(., -.id)
 ## some plots
 
 ```{r}
-# m.coast <- ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+
-#   theme_bw()+ theme(text = element_text(size =12)) 
+m.coast <- ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+
+  theme_bw()+ theme(text = element_text(size =12))
 # 
 # # m.buffered_coast<-ggplot()+ geom_sf(data =buffered_land, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+
 # #   theme_bw()+ theme(text = element_text(size =12))
 # 
 # #m.buffered_coast
-# m.map<-m.coast+geom_sf(data=sf.profile_points)
-# m.map
+m.map<-m.coast+geom_sf(data=sf.profile_points)
+m.map
 #ggplot(data = test) +geom_sf()
 
 ```
@@ -736,7 +739,7 @@ f.summary(strong_500)
 # save list of objects for next script in seq of analysis
 ```{r}
 y<-vector(mode='list')
-y$read_me<-(" this is a list created from first script in ch2 seq , 'ch_2_tc_argo_matchup_eastern_pacific.Rmd'created 2023-09-22. $function_variablebles give parameters for selected objects")
+y$read_me<-(" this is a list created from first script in ch2 seq , 'ch_2_tc_argo_matchup_eastern_pacific.Rmd'created 2023-09-24. $function_variablebles give parameters for selected objects")
 y$function_variables<-function_variables
 
 x<-vector(mode='list')
