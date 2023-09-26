@@ -604,6 +604,9 @@ rm(x,x.key,y)
 
 ```
 
+## add neasret point to z
+
+
 ## select floats by buffer
 
 variable on time window -if change in set of radi, then will need to write function to make variable names dynamic
@@ -784,18 +787,12 @@ f1<-ggplot()+geom_sf(data=l)+geom_sf(data=p)
 
 
 
-i<-st_nearest_points(p,l) %>% st_cast(., "POINT") %>% st_as_sf(.)
+i<-st_nearest_points(p,l)%>% st_cast(., "POINT") %>% st_sf(.)
 st_geometry(i) <- "geometry"
-b<-rbind(i,p)
-
-test<-b[!(duplicated(b$geometry) | duplicated(b$geometry, fromLast = TRUE)), ]
-
-
-np<-st_intersects(i,p)
-test<-st_join(i,p, left=T)
+i$dis<-st_distance(i,l)
+i<-i[order(i$dis),] %>% .[1,] %>% .$geometry
 
 
-%>%st_crop(.,p)
 
 f2<-f1+geom_sf(data=i, col ="blue")
 ```
