@@ -732,6 +732,77 @@ print("strong 500 km hu stats:")
 f.summary(strong_500)
 ```
 # New _ point of interection
+see: https://gis.stackexchange.com/questions/243994/how-to-calculate-distance-from-point-to-linestring-in-r-using-sf-library-and-g
+
+## load data
+```{r}
+data<-readRDS("r_objects/ch2_seq_1_data.R")
+
+function_variables<-data$function_variables
+# hurdat objects
+h<-data$selected_zone_hurdat$h
+h.pts<-data$selected_zone_hurdat$h.pts
+h.tracks<-data$selected_zone_hurdat$h.tracks
+
+# match_up
+
+list.100<-data$tc_search_radi_profiles$km_100
+list.200<-data$tc_search_radi_profiles$km_200
+list.500<-data$tc_search_radi_profiles$km_500
+
+# rm(data)
+```
+## point of it
+
+```{r}
+x<-list.500
+
+
+
+```
+
+## dumy
+```{r}
+
+
+lon<-c(0,10)
+lat<-c(0,0)
+l<-cbind(lon,lat) %>%as.data.frame(.)
+l <-st_as_sf(l, coords = c("lon","lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+
+
+l$geometry<-st_combine(l$geometry)
+l<-l[1,]
+l<-st_cast(l, "LINESTRING")
+
+lon<-5
+lat<-1
+p<-cbind(lon,lat) %>%as.data.frame(.)
+p<-st_as_sf(p, coords = c("lon","lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")%>%st_as_sf()
+
+f1<-ggplot()+geom_sf(data=l)+geom_sf(data=p)
+
+
+
+i<-st_nearest_points(p,l) %>% st_cast(., "POINT") %>% st_as_sf(.)
+st_geometry(i) <- "geometry"
+b<-rbind(i,p)
+
+test<-b[!(duplicated(b$geometry) | duplicated(b$geometry, fromLast = TRUE)), ]
+
+
+np<-st_intersects(i,p)
+test<-st_join(i,p, left=T)
+
+
+%>%st_crop(.,p)
+
+f2<-f1+geom_sf(data=i, col ="blue")
+```
+https://github.com/r-spatial/sf/issues/669
+
+
+
 
 
 
