@@ -74,7 +74,7 @@ print(paste0("Current Working Directory is ", getwd()))
 * https://github.com/NOAA-PMEL/OneArgo-R
 
 ```{r}
-setwd(wd)
+# setwd(wd)
 
 # main functions
 path<-"r_scripts/submodules/OneArgo-R/"
@@ -158,7 +158,7 @@ return(x[1])
 ## previous script
 
 ```{r}
-data<-readRDS("r_objects/ch2_seq_1_data_test.R")
+data<-readRDS("r_objects/ch2_seq_1_data.R")
 ```
 
 ## natural earth coastlines
@@ -232,11 +232,82 @@ lapply(most_p.500, names)
 
 ```
 
+# some slect storms
 
-# exploratory analysis EPO72014 - GENEVIEVE
+```{r}
+x<-filter(h, Name == "GENEVIEVE") 
+unique(x$Key)
+
+```
+
+## plotiing objects and function
+
+```{r}
+cl<-st_crop(coastline, xmin=function_variables$bgc.lon_min, ymin=function_variables$bgc.lat_min, xmax=function_variables$bgc.lon_max, ymax=function_variables$bgc.lat_max)
+
+m.coast <- ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+
+  theme_bw()+ theme(text = element_text(size =12))
+
+f.select_name<-function(x, key_id){
+x<-x$tc
+x<-x[which(names(x) == key_id)]
+return(x)
+}
+
+
+```
+```{r}
+key_id<-"EP072014"
+g<-filter(h, Key == key_id)
+y<-f.select_name(x= list.500, key_id)
+y<-f.select_name(x= list.500, key_id)
+g.track<-filter(h.tracks, Key == key_id)
+g.pts<-filter(h.pts, Key == key_id)
+
+m.1<-m.coast+geom_sf(data=g.track)
+m2<-m.1+geom_sf(data=g.pts, col="red")
+
+# m2
+
+y<-y[[1]] %>% st_as_sf(.)
+m3<-m2+geom_sf(data=y, col="blue")
+m3
+
+
+
+```
+
+
+## Willa "EP242018"
+```{r}
+key_id<-"EP242018"
+g<-filter(h, Key == key_id)
+y<-f.select_name(x= list.500, key_id)
+y<-f.select_name(x= list.500, key_id)
+g.track<-filter(h.tracks, Key == key_id)
+g.pts<-filter(h.pts, Key == key_id)
+
+m.1<-m.coast+geom_sf(data=g.track)
+m2<-m.1+geom_sf(data=g.pts, col="red")
+
+# m2
+
+y<-y[[1]] %>% st_as_sf(.)
+m3<-m2+geom_sf(data=y, col="blue")
+m3
+
+
+
+```
+
+
+## exploratory analysis EPO72014 - Jimena
+most profiles 200 and 500
 ```{r}
 
-key_id<-"EP072012"
+# strong hurricane with most profiels in 200 and 500 range
+
+key_id<-"EP132015"
 g<-filter(h, Key == key_id)
 
 f.select_name<-function(x, key_id){
@@ -248,22 +319,17 @@ return(x)
 
 y<-f.select_name(x= list.500, key_id)
 
-g_100<-most_p.100$strong_hu
-g_200<-most_p.200$strong_hu
-g_500<-most_p.200$strong_hu
+# g_100<-most_p.100$strong_hu
+# g_200<-most_p.200$strong_hu
+# g_500<-most_p.500$strong_hu
 
 g.track<-filter(h.tracks, Key == key_id)
 g.pts<-filter(h.pts, Key == key_id)
 
+# rm(most_p.100, most_p.200, most_p.500)
 
-rm(most_p.100, most_p.200, most_p.500)
+### ploting 
 
-```
-
-
-## basic plots
-
-```{r}
 cl<-st_crop(coastline, xmin=function_variables$bgc.lon_min, ymin=function_variables$bgc.lat_min, xmax=function_variables$bgc.lon_max, ymax=function_variables$bgc.lat_max)
 
 m.coast <- ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+
@@ -279,18 +345,97 @@ y<-y[[1]] %>% st_as_sf(.)
 m3<-m2+geom_sf(data=y, col="blue")
 m3
 
+
+
+```
+
+## most profiles "EP132017"
+100 km
+```{r}
+
+key_id<-"EP132017"
+g<-filter(h, Key == key_id)
+
+f.select_name<-function(x, key_id){
+x<-x$tc
+x<-x[which(names(x) == key_id)]
+return(x)
+}
+
+
+y<-f.select_name(x= list.500, key_id)
+
+# g_100<-most_p.100$strong_hu
+# g_200<-most_p.200$strong_hu
+# g_500<-most_p.500$strong_hu
+
+g.track<-filter(h.tracks, Key == key_id)
+g.pts<-filter(h.pts, Key == key_id)
+
+# rm(most_p.100, most_p.200, most_p.500)
+
+### ploting 
+
+
+
+
+m.1<-m.coast+geom_sf(data=g.track)
+m2<-m.1+geom_sf(data=g.pts, col="red")
+
+# m2
+
+y<-y[[1]] %>% st_as_sf(.)
+m3<-m2+geom_sf(data=y, col="blue")
+m3
+
+
+
 ```
 
 
-# tropuble shooting plots
+## Jova ? "EP122017"
 
-
-# kml
 
 ```{r}
 
-```
+key_id<-"EP122017"
+g<-filter(h, Key == key_id)
 
+f.select_name<-function(x, key_id){
+x<-x$tc
+x<-x[which(names(x) == key_id)]
+return(x)
+}
+
+
+y<-f.select_name(x= list.500, key_id)
+
+# g_100<-most_p.100$strong_hu
+# g_200<-most_p.200$strong_hu
+# g_500<-most_p.500$strong_hu
+
+g.track<-filter(h.tracks, Key == key_id)
+g.pts<-filter(h.pts, Key == key_id)
+
+# rm(most_p.100, most_p.200, most_p.500)
+
+### ploting 
+
+
+
+
+m.1<-m.coast+geom_sf(data=g.track)
+m2<-m.1+geom_sf(data=g.pts, col="red")
+
+# m2
+
+y<-y[[1]] %>% st_as_sf(.)
+m3<-m2+geom_sf(data=y, col="blue")
+m3
+
+
+
+```
 
 
 

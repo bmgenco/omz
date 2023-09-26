@@ -65,7 +65,7 @@ print(paste0("Current Working Directory is ", getwd()))
 -   <https://github.com/NOAA-PMEL/OneArgo-R>
 
 ```{r}
-setwd(wd)
+# setwd(wd)
 
 # main functions
 path<-"r_scripts/submodules/OneArgo-R/"
@@ -173,7 +173,7 @@ z.pts<-sf::st_as_sf(z, coords = c("lon","lat"), crs = "+proj=longlat +datum=WGS8
 return(profile_points)
 }
 
-### select floast by time and TC ###
+### select floats by time and TC ###
 f.in_between_time<-function(h.tracks, function_variables, df.profile_points){
 x<-dplyr::select(h.tracks, -geometry) %>% as.data.frame(.)
 y<-df.profile_points
@@ -527,88 +527,19 @@ h.pts<-sf::st_crop(h.pts, c(xmin=function_variables$tc.lon_min, ymin=function_va
 (1) creates a multipoint per TC key, with start end time bounds per each TC line string
 (2) "" but create a track - line geomtery
 
-### v1 errors
-tracks are incorrect
-
+TO do recreta multipoint object as well
 ```{r}
-# x<-h.pts%>% st_drop_geometry(.) %>% dplyr::select(., Key, DateTime)%>% group_by(Key) %>% dplyr::summarize(start_dt= min(DateTime), end_dt = max(DateTime))
-# 
-# # h.multipoints<-as_data_frame(unique(h.pts$Key)) #depreciated
-# h.multipoints<-as.data.frame(unique(h.pts$Key))
-# 
-# names(h.multipoints)<-("Key")
-# st_geometry(h.multipoints)<-(split(h.pts, h.pts$Key) %>% Map(st_combine,. )%>%do.call(c,.))
-# 
-# h.multipoints<-dplyr::left_join(x, h.multipoints) %>%st_as_sf(.)
-# h.tracks<-h.multipoints
-# 
-# #theres probally a better way...thena for loop
-# for(i in 1:length(h.tracks$Key)){
-# h.tracks$geometry[i]<-st_cast(h.tracks$geometry[i], to= "LINESTRING")
-# }
-# h.tracks<-st_as_sf(h.tracks)
-# 
-# rm(x)
-```
 
-### v2 errors 
-tracks are incorrect .. still
-
-```{r}
 x<-h.pts%>% st_drop_geometry(.) %>% dplyr::select(., Key, DateTime)%>% group_by(Key) %>% dplyr::summarize(start_dt= min(DateTime), end_dt = max(DateTime))
 
-# h.multipoints<-as_data_frame(unique(h.pts$Key)) #depreciated
-h.multipoints<-as.data.frame(unique(h.pts$Key))
-
-names(h.multipoints)<-("Key")
-st_geometry(h.multipoints)<-(split(h.pts, h.pts$Key) %>% Map(st_combine,. )%>%do.call(c,.))
-
-h.multipoints<-dplyr::left_join(x, h.multipoints) %>%st_as_sf(.)
-h.tracks<-h.multipoints
-
-
-h.tracks$tracks<-st_cast(h.tracks$geometry, "LINESTRING")
-
-# needed to match function
-h.tracks<-st_drop_geometry(h.tracks)
-names(h.tracks)[which(names(h.tracks)=="tracks")]<-'geometry'
-h.tracks<-h.tracks%>%st_set_geometry(., .$geometry)
-
-
-
-rm(x)
-```
-
-
-
-### v3 works!!!
-
-```{r}
-x<-h.pts%>% st_drop_geometry(.) %>% dplyr::select(., Key, DateTime)%>% group_by(Key) %>% dplyr::summarize(start_dt= min(DateTime), end_dt = max(DateTime))
-
-
-
-
-# h.multipoints<-as_data_frame(unique(h.pts$Key)) #depreciated
-
-# testing
-# h.multipoints<-as.data.frame(unique(h.pts$Key))
-
-# h.multipoints<-as.data.frame(unique(h.pts$Key))
-# names(h.multipoints)<-("Key")
-
-# testlin here:
-
-# "" above
 
 w<-(split(h.pts, h.pts$Key))
 f.make_multipoint<-function(x){
-  
   x$multipoints<-st_combine(x$geometry)
   st_geometry(x)<-NULL
   
   x<-select(x, Key, multipoints)
-  x$geometry<-multipoints
+  x$geometry<-x$multipoints
   x<-select(x, Key, geometry)
   x<-x[1,]
   st_geometry(x)<-x$geometry
@@ -629,22 +560,24 @@ names(h.tracks)[which(names(h.tracks)=="tracks")]<-'geometry'
 h.tracks<-h.tracks%>%st_set_geometry(., .$geometry)
 
 
-```
 
+```
 
 
 #### testing
 
 ```{r}
-
-test<-filter(h, Name =="GILMA")
-x<-filter(h.tracks, Key=="EP072012")
-
-
-y<-filter(h.pts, Key=="EP072012")
-
-p<-ggplot()+geom_sf(data=x)+geom_sf(data=y)
-p
+# 
+# # plot(x$geometry)
+# # 
+# # test<-filter(h, Name =="GILMA")
+# x<-filter(h.tracks, Key=="EP072012")
+# 
+# 
+# y<-filter(h.pts, Key=="EP072012")
+# 
+# p<-m.coast+geom_sf(data=x)+geom_sf(data=y)
+# p
 ```
 
 
@@ -696,55 +629,7 @@ rm(z)
 
 # filtering by storm strength
 
-###v1 -old
 
-```{r}
-# storm_list<-names(all_storms_500km)
-# h.storm_list<-filter(h, Key %in% storm_list) %>% dplyr::select(., Key, Status)%>% split(., .$Key) 
-
-
-### v2a ####
-# f.storm_strength_filter<-function(h.storm_list, storm_level=NULL){
-#   
-# all<-c("TS", "HU", "TD", "LO", "ET", "EX", "DB","SD", "SS", "PT", "ST", "TY", "WV", NA)
-# tc<-c("TS", "HU", "TD") 
-# hu<-("HU")
-# 
-# if(is.null(storm_level)) {
-#   tc_selection<-all
-#   }  else if (storm_level == "all") {
-#   tc_selection<-all
-#   }  else if (storm_level == "tc") {
-#   tc_selection<-tc
-#   } else if  (storm_level == "hu") {
-#     tc_selection<-hu
-#     }  
-#   
-#   
-# 
-# 
-# f.selection<-function(x, tc_selection){x<-filter(x, Status %in% tc_selection)
-# return(x)}
-# h.storm_list<-lapply(h.storm_list, f.selection, tc_selection=tc_selection)
-# h.storm_list<-f.rm_empty(h.storm_list) %>%names(.)
-# return(h.storm_list)
-# }
-# 
-# h.hu<-f.storm_strength_filter(h.storm_list, storm_level = 'hu')
-# h.tcs<-f.storm_strength_filter(h.storm_list, storm_level = 'tc')
-# h.all<-f.storm_strength_filter(h.storm_list, storm_level = 'all')
-# 
-# f.intersect<-function(x, selection) {
-#   x<-x[intersect(names(x), selection)]
-#   return(x)
-# }
-# tc_100<-f.intersect(km_100, selection=h.tcs)
-# hu_100<-f.intersect(km_100, selection=h.hu)
-
-
-```
-
-## v2
 
 ```{r}
 storm_list<-names(all_storms_500km)
@@ -846,12 +731,18 @@ f.summary(strong_200)
 print("strong 500 km hu stats:")
 f.summary(strong_500)
 ```
+# New _ point of interection
+
+
+
+# tiem of overpass
+
 
 # save list of objects for next script in seq of analysis
 
 ```{r}
 y<-vector(mode='list')
-y$read_me<-(" this is a list created from first script in ch2 seq , 'ch_2_tc_argo_matchup_eastern_pacific.Rmd'created 2023-09-25. $function_variablebles give parameters for selected objects. track issue should be fixed")
+y$read_me<-(" this is a list created from first script in ch2 seq , 'ch_2_tc_argo_matchup_eastern_pacific.Rmd'created 2023-09-25 -19:00. $function_variablebles give parameters for selected objects. debugging track issue ")
 y$function_variables<-function_variables
 
 x<-vector(mode='list')
@@ -869,7 +760,7 @@ rm(x)
 z<-vector(mode='list')
 z$h<-h
 z$h.pts<-h.pts
-z$h.multipoints<-h.multipoints
+# z$h.multipoints<-h.multipoints
 z$h.tracks<-h.tracks
 y$selected_zone_hurdat<-z
 rm(z)
