@@ -201,7 +201,6 @@ return(x)
 }
 
 ### select Storm matched floats radi object wit storms of desries desired strength
-
 f.storm_strength_filter<-function(x, h.storm_list, storm_level=NULL){
   
   all<-c("TS", "HU", "TD", "LO", "ET", "EX", "DB","SD", "SS", "PT", "ST", "TY", "WV", NA)
@@ -235,6 +234,39 @@ f.intersect<-function(x, selection){
 return(x)
 }
 
+
+## get point of intersection of profile to h.track line
+f.point_of_overpass<-function(z, h.tracks){
+# x is object created from lapply(z,  f.radi_select)
+y<-h.tracks
+z<-Map(cbind, z, Key= names(z))
+z<-lapply(z, st_as_sf)
+
+f.per_storm<-function(z,y){
+  z.key<-unique(z$Key)
+  y<-filter(y, Key ==z.key) %>%st_as_sf(.)
+
+  f.point<-function(y,p){
+    np<-st_nearest_points(p$geometry,y)%>% st_cast(., "POINT") %>% st_sf(.)
+    st_geometry(np) <- "geometry"
+    np$dis<-st_distance(np,y)
+    p$overpass_point<-np[order(np$dis),] %>% .[1,] %>% .$geometry %>% st_drop_geometry(.)
+    p<-dplyr::select(p, -Key)
+    return(p)  
+}
+w<-vector(mode='list', length = length(z))
+
+# for loop is slow change to apply
+for(i in 1:length(w)){
+p<-z[i,]
+p<-f.point(y,p)
+w[[i]]<-p
+}
+w<-as.data.frame(do.call(rbind, w))
+return(w)
+}
+z<-lapply(z, f.per_storm, y=y)
+return(z)}
 ### helper functions
 
 # remove empty list items
@@ -527,7 +559,7 @@ h.pts<-sf::st_crop(h.pts, c(xmin=function_variables$tc.lon_min, ymin=function_va
 (1) creates a multipoint per TC key, with start end time bounds per each TC line string
 (2) "" but create a track - line geomtery
 
-TO do recreta multipoint object as well
+
 ```{r}
 
 x<-h.pts%>% st_drop_geometry(.) %>% dplyr::select(., Key, DateTime)%>% group_by(Key) %>% dplyr::summarize(start_dt= min(DateTime), end_dt = max(DateTime))
@@ -558,8 +590,8 @@ h.tracks$tracks<-st_cast(h.tracks$geometry, "LINESTRING")
 h.tracks<-st_drop_geometry(h.tracks)
 names(h.tracks)[which(names(h.tracks)=="tracks")]<-'geometry'
 h.tracks<-h.tracks%>%st_set_geometry(., .$geometry)
-
-
+h.multipoints<-w
+rm(w)
 
 ```
 
@@ -604,17 +636,104 @@ rm(x,x.key,y)
 
 ```
 
-## add neasret point to z
-
-
 ## select floats by buffer
-
 variable on time window -if change in set of radi, then will need to write function to make variable names dynamic
+### pick by function variables
+timed an max buffer
+```{r}
+all_storms_500km<-lapply(z, f.radi_select, tc_radi=function_variables$tc.radi_3)
+all_storms_500km<-f.rm_empty(all_storms_500km)
+rm(z)
+```
+
+### add points and time of overlap
+points
+```{r}
+# points
+w<-f.point_of_overpass(z=all_storms_500km,h.tracks)
+# all_storms_500km<-f.point_of_overpass(z=all_storms_500km,h.tracks)
+# time relative
+
+
+```
+
+time
+```{r}
+
+
+f.time_relative_overpass<-function(z, h.pts){
+z<-w# testing
+z<-Map(cbind, z, Key= names(z))
+
+
+
+# lapply function: 
+  f.per_storm_t<-function(z, h.pts){}
+  z<-z[[1]] # testing
+  z.key<-unique(z$Key) 
+  y<-filter(h.pts, Key ==z.key) 
+
+  f.time_estimation<-function(y,pt){
+    i<-1 #testing
+    pt<-z[i,] #tesing
+    y$distance_m<-st_distance(y$geometry,pt$geometry) %>% as.vector(.)
+    np<-filter(y, distance_m == min(y$distance_m)) %>%dplyr::select(.,  DateTime, geometry, distance_m)
+   td<-
+    
+      
+    pt$overpass_time<-
+    pt$
+    pt<-dplyr::select(pt, -Key)
+    return(pt)
+  }
+  
+  q<-vector(mode='list', length(z))
+  for(i in 1:length(q)){
+   i<-1 #tesing 
+   pt<-z[i,]
+   pt<-f.time_estimation(y,pt)
+   
+   
+  q<-as.data.frame(do.call(rbind, q))
+  return(w) 
+  
+
+q<-lapply(q, f.per_storm_t, h.pts=h.pts)
+
+return(q)}
+
+
+
+```
+
+
+plotting tests
 
 ```{r}
 
-all_storms_500km<-lapply(z, f.radi_select, tc_radi=function_variables$tc.radi_3)
-all_storms_500km<-f.rm_empty(all_storms_500km)
+# ploting
+
+z<-w# testing
+z<-Map(cbind, z, Key= names(z))
+z<-z[[8]]
+t1<-ggplot()+geom_sf(data=st_as_sf(z))
+t2<-t1+geom_sf(data=st_as_sf(z$overpass_point), col= "blue")
+
+tmp.key<-unique(z$Key)
+track<-filter(h.tracks, Key==tmp.key)
+t3<-t2+geom_sf(data=track)
+t3
+
+```
+
+
+
+### split by buffere
+
+```{r}
+
+
+# add 
 
 km_100<-lapply(z, f.radi_select, tc_radi=function_variables$tc.radi_1)
 km_100<-f.rm_empty(km_100)
@@ -629,6 +748,12 @@ km_500<-f.rm_empty(km_500)
 
 rm(z)
 ```
+
+
+
+
+
+
 
 # filtering by storm strength
 
@@ -738,72 +863,6 @@ f.summary(strong_500)
 see: https://gis.stackexchange.com/questions/243994/how-to-calculate-distance-from-point-to-linestring-in-r-using-sf-library-and-g
 
 ## load data
-```{r}
-data<-readRDS("r_objects/ch2_seq_1_data.R")
-
-function_variables<-data$function_variables
-# hurdat objects
-h<-data$selected_zone_hurdat$h
-h.pts<-data$selected_zone_hurdat$h.pts
-h.tracks<-data$selected_zone_hurdat$h.tracks
-
-# match_up
-
-list.100<-data$tc_search_radi_profiles$km_100
-list.200<-data$tc_search_radi_profiles$km_200
-list.500<-data$tc_search_radi_profiles$km_500
-
-# rm(data)
-```
-## point of it
-
-```{r}
-x<-list.500
-
-
-
-```
-
-## dumy
-```{r}
-
-
-lon<-c(0,10)
-lat<-c(0,0)
-l<-cbind(lon,lat) %>%as.data.frame(.)
-l <-st_as_sf(l, coords = c("lon","lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
-
-
-l$geometry<-st_combine(l$geometry)
-l<-l[1,]
-l<-st_cast(l, "LINESTRING")
-
-lon<-5
-lat<-1
-p<-cbind(lon,lat) %>%as.data.frame(.)
-p<-st_as_sf(p, coords = c("lon","lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")%>%st_as_sf()
-
-f1<-ggplot()+geom_sf(data=l)+geom_sf(data=p)
-
-
-
-i<-st_nearest_points(p,l)%>% st_cast(., "POINT") %>% st_sf(.)
-st_geometry(i) <- "geometry"
-i$dis<-st_distance(i,l)
-i<-i[order(i$dis),] %>% .[1,] %>% .$geometry
-
-
-
-f2<-f1+geom_sf(data=i, col ="blue")
-```
-https://github.com/r-spatial/sf/issues/669
-
-
-
-
-
-
-# tiem of overpass
 
 
 # save list of objects for next script in seq of analysis
@@ -828,7 +887,7 @@ rm(x)
 z<-vector(mode='list')
 z$h<-h
 z$h.pts<-h.pts
-# z$h.multipoints<-h.multipoints
+z$h.multipoints<-h.multipoints
 z$h.tracks<-h.tracks
 y$selected_zone_hurdat<-z
 rm(z)
