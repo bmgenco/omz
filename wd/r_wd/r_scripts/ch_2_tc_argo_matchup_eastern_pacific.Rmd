@@ -129,7 +129,6 @@ f.cl_buffer<-function(function_variables, cl){
 }
 
 #### Match up for for profile and float  inside EP TC zone
-
 f.floats_within_EP<-function(function_variables){
 end.date<-(function_variables$h_end_date+function_variables$h.post) %>% as.character(.)
 
@@ -192,6 +191,20 @@ z[[i]]<-filter(y, time >= x[i,]$start_dt & time <=x[i,]$end_dt)
 }
 z<-z[unlist(lapply(z, nrow) != 0)]
 return(z)
+}
+
+
+## convert huricane poiutns to multi points
+f.make_multipoint<-function(x){
+  x$multipoints<-st_combine(x$geometry)
+  st_geometry(x)<-NULL
+  
+  x<-select(x, Key, multipoints)
+  x$geometry<-x$multipoints
+  x<-select(x, Key, geometry)
+  x<-x[1,]
+  st_geometry(x)<-x$geometry
+  return(x)
 }
 
 ### select floats within desired radi
@@ -566,22 +579,10 @@ x<-h.pts%>% st_drop_geometry(.) %>% dplyr::select(., Key, DateTime)%>% group_by(
 
 
 w<-(split(h.pts, h.pts$Key))
-f.make_multipoint<-function(x){
-  x$multipoints<-st_combine(x$geometry)
-  st_geometry(x)<-NULL
-  
-  x<-select(x, Key, multipoints)
-  x$geometry<-x$multipoints
-  x<-select(x, Key, geometry)
-  x<-x[1,]
-  st_geometry(x)<-x$geometry
-  return(x)
-}
+
 w<-lapply(w, f.make_multipoint)
 w<-bind_rows(w, .id = "column_label")
 w<-select(w, -column_label)
-
-
 
 h.tracks<-dplyr::left_join(x, w) %>%st_as_sf(.)
 h.tracks$tracks<-st_cast(h.tracks$geometry, "LINESTRING")
@@ -591,7 +592,7 @@ h.tracks<-st_drop_geometry(h.tracks)
 names(h.tracks)[which(names(h.tracks)=="tracks")]<-'geometry'
 h.tracks<-h.tracks%>%st_set_geometry(., .$geometry)
 h.multipoints<-w
-rm(w)
+rm(w,x)
 
 ```
 
@@ -650,8 +651,8 @@ rm(z)
 points
 ```{r}
 # points
-w<-f.point_of_overpass(z=all_storms_500km,h.tracks)
-# all_storms_500km<-f.point_of_overpass(z=all_storms_500km,h.tracks)
+# w<-f.point_of_overpass(z=all_storms_500km,h.tracks)
+all_storms_500km<-f.point_of_overpass(z=all_storms_500km,h.tracks)
 # time relative
 
 
@@ -662,7 +663,22 @@ time
 
 
 f.time_relative_overpass<-function(z, h.pts){
-z<-w# testing
+ f.line<-function(x, np) {
+    l<-st_as_sf(rbind(np,x))
+    l$multipoints<-st_combine(l$geometry)
+    st_geometry(l)<-NULL
+    l<-dplyr::select(l, DateTime,multipoints)
+    l$geometry<-l$multipoints
+    l<-select(l, -multipoints)
+    l<-l[1,]
+    st_geometry(l)<-l$geometry
+    l<-st_cast(l, "LINESTRING")
+    return(l)
+ }
+ 
+  
+  
+z<-all_storms_500km
 z<-Map(cbind, z, Key= names(z))
 
 
@@ -672,17 +688,41 @@ z<-Map(cbind, z, Key= names(z))
   z<-z[[1]] # testing
   z.key<-unique(z$Key) 
   y<-filter(h.pts, Key ==z.key) 
-
+  y$DateTime<-
   f.time_estimation<-function(y,pt){
     i<-1 #testing
     pt<-z[i,] #tesing
     y$distance_m<-st_distance(y$geometry,pt$geometry) %>% as.vector(.)
     np<-filter(y, distance_m == min(y$distance_m)) %>%dplyr::select(.,  DateTime, geometry, distance_m)
-   td<-
     
+    #ad if else staement here
+    if(np =end){pt$overpass_time =np$DateTime} else if (np = first) {pt$overpass_time =np$DateTime} else {
+   
+    pp<-y[(which(y$DateTime==np$DateTime) -1),] %>% dplyr::select(., DateTime, geometry, distance_m)
+    fp<-y[(which(y$DateTime==np$DateTime) +1),] %>% dplyr::select(., DateTime, geometry, distance_m)
+    #pp = past point
+    
+   
+    pl<-f.line(pp, np)
+    fl<-f.line(fp, np)
+    
+    
+    
+    
+    fld<-st_distance(pt$overpass_point, fl)
+    pld<-st_distance(pt$overpass_point, pl)  
+   
+    if(fld < pld){
+      direction <- "f"
+    } else if (pld < fld){
+      direction <-"p"}
+    f.overpass_time<-function(np,fp, pp, distance) {}
+    
+    pt$overpass_time<-f.overpas
+    }
       
-    pt$overpass_time<-
-    pt$
+      
+       pt$
     pt<-dplyr::select(pt, -Key)
     return(pt)
   }
