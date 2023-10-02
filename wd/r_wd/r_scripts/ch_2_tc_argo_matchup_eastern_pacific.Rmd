@@ -106,7 +106,6 @@ rm(path, file_path, files)
 ```
 
 # functions
-
 adapted, and thinned from ... script "Hurricane_insitu_matchup_v2.Rmd"
 
 ```{r}
@@ -280,6 +279,43 @@ return(w)
 }
 z<-lapply(z, f.per_storm, y=y)
 return(z)}
+
+## aproximate tiem of over pass, nearest  6 hour point is time.. sigh not goode enought for global analysis
+
+f.time_relative_overpass<-function(z, h.pts){
+### internal functions ####
+f.time_estimation<-function(y,z){
+w<-vector(mode = 'list', length=dim(z)[1])
+for(i in 1:length(w)) {
+
+    pt<-z[i,]
+    # pt$overpass_time<-NA
+    y2<-y
+    y2$distance_m<-st_distance(y2$geometry,pt$overpass_point) %>% as.vector(.)
+    np<-filter(y2, distance_m == min(y2$distance_m))
+    pt$overpass_time<-np$DateTime
+    pt$day_difference<-as.numeric(date(pt$time)-date(pt$overpass_time))    
+    w[[i]]<-pt
+
+}
+
+w<-as.data.frame(do.call(rbind, w))
+      return(w)} 
+f.per_storm_t<-function(z, h.pts){
+  z.key<-unique(z$Key) 
+  y<-filter(h.pts, Key ==z.key) 
+  z<-f.time_estimation(z=z,y=y)
+  return(z)
+  }  
+
+### master function ####
+z<-Map(cbind, z, Key= names(z))
+z<-lapply(z, st_as_sf)
+z<-lapply(z, f.per_storm_t, h.pts = h.pts)
+z<-lapply(z, na.omit)
+return(z)
+}
+
 ### helper functions
 
 # remove empty list items
@@ -506,10 +542,10 @@ print("this takes a long time")
 profile_points<-f.profiles_to_pts(selected_profiles = ep_doxy_floats)
 ```
 
-## save/load profile_points
+# save/load profile_points
 
 ```{r}
-# setwd(wd)
+setwd(wd)
 # setwd(robj)
 # saveRDS(profile_points, "r_objects/profile_points.rds")
 profile_points<-readRDS("r_objects/profile_points.rds")
@@ -647,101 +683,161 @@ all_storms_500km<-f.rm_empty(all_storms_500km)
 rm(z)
 ```
 
+
 ### add points and time of overlap
 points
 ```{r}
 # points
 # w<-f.point_of_overpass(z=all_storms_500km,h.tracks)
 all_storms_500km<-f.point_of_overpass(z=all_storms_500km,h.tracks)
+all_storms_500km<-lapply(all_storms_500km, na.omit) # for some reason f.point of overpass creates empty rows which brak next steps
 # time relative
 
 
 ```
 
-time
+### add time of over pas in and rleativ edays
 ```{r}
 
+all_storms_500km<-f.time_relative_overpass(z=all_storms_500km, h.pts=h.pts)
 
-f.time_relative_overpass<-function(z, h.pts){
- f.line<-function(x, np) {
-    l<-st_as_sf(rbind(np,x))
-    l$multipoints<-st_combine(l$geometry)
-    st_geometry(l)<-NULL
-    l<-dplyr::select(l, DateTime,multipoints)
-    l$geometry<-l$multipoints
-    l<-select(l, -multipoints)
-    l<-l[1,]
-    st_geometry(l)<-l$geometry
-    l<-st_cast(l, "LINESTRING")
-    return(l)
- }
- 
-  
-  
-z<-all_storms_500km
-z<-Map(cbind, z, Key= names(z))
+```
 
 
 
-# lapply function: 
-  f.per_storm_t<-function(z, h.pts){}
-  z<-z[[1]] # testing
-  z.key<-unique(z$Key) 
-  y<-filter(h.pts, Key ==z.key) 
-  y$DateTime<-
-  f.time_estimation<-function(y,pt){
-    i<-1 #testing
-    pt<-z[i,] #tesing
-    y$distance_m<-st_distance(y$geometry,pt$geometry) %>% as.vector(.)
-    np<-filter(y, distance_m == min(y$distance_m)) %>%dplyr::select(.,  DateTime, geometry, distance_m)
-    
-    #ad if else staement here
-    if(np =end){pt$overpass_time =np$DateTime} else if (np = first) {pt$overpass_time =np$DateTime} else {
-   
-    pp<-y[(which(y$DateTime==np$DateTime) -1),] %>% dplyr::select(., DateTime, geometry, distance_m)
-    fp<-y[(which(y$DateTime==np$DateTime) +1),] %>% dplyr::select(., DateTime, geometry, distance_m)
-    #pp = past point
-    
-   
-    pl<-f.line(pp, np)
-    fl<-f.line(fp, np)
-    
-    
-    
-    
-    fld<-st_distance(pt$overpass_point, fl)
-    pld<-st_distance(pt$overpass_point, pl)  
-   
-    if(fld < pld){
-      direction <- "f"
-    } else if (pld < fld){
-      direction <-"p"}
-    f.overpass_time<-function(np,fp, pp, distance) {}
-    
-    pt$overpass_time<-f.overpas
-    }
-      
-      
-       pt$
-    pt<-dplyr::select(pt, -Key)
-    return(pt)
-  }
-  
-  q<-vector(mode='list', length(z))
-  for(i in 1:length(q)){
-   i<-1 #tesing 
-   pt<-z[i,]
-   pt<-f.time_estimation(y,pt)
-   
-   
-  q<-as.data.frame(do.call(rbind, q))
-  return(w) 
-  
+```{r}
+test<-all_storms_500km$CP022006
 
-q<-lapply(q, f.per_storm_t, h.pts=h.pts)
+f.signs<-function(x){
+  x$s<-mean(sign(x$day_difference))
+return(x)}
+z<-lapply(all_storms_500km, f.signs)
+f.filter<-function(x){
+  x<-filter(x, x$s == 0)
+  return(x)
+}
+z<-lapply(z, f.filter)
+z<-f.rm_empty(z)
 
-return(q)}
+```
 
+
+
+
+#### save and load temp
+```{r}
+# setwd(wd)
+# saveRDS(all_storms_500km, "r_objects/all_storms_500km.R")
+# saveRDS(h.pts, "r_objects/h.pts.R")
+# all_storms_500km<-readRDS("r_objects/all_storms_500km.R")
+# h.pts<-readRDS("r_objects/h.pts.R")
+```
+
+
+#####  not fucntioninfg fucntion 
+time aproximate  just gets the time of neae h.pts. other function cant get to work... sigh
+```{r}
+##### function v2 ####
+
+# f.time_relative_overpass<-function(z, h.pts){
+#   ### internal functions ####
+#   
+#   # f.custom_min <- function(x) {if (length(x)>0) min(x) else Inf}  
+#   f.line<-function(x, np) {
+#     x<-dplyr::select(x, DateTime, geometry)
+#     np<-dplyr::select(np, DateTime, geometry)
+#     l<-st_as_sf(rbind(np,x))
+#     l$multipoints<-st_combine(l$geometry)
+#     st_geometry(l)<-NULL
+#     l<-dplyr::select(l, DateTime, multipoints)
+#     l$geometry<-l$multipoints
+#     l<-select(l, -multipoints)
+#     l<-l[1,]
+#     st_geometry(l)<-l$geometry
+#     l<-st_cast(l, "LINESTRING")
+#     return(l)
+#   }
+#   f.overpass_time<-function(np, fp, pp, direction) {
+#     if(direction == "p") { 
+#       v<-(st_distance(np$geometry, pp$geometry))/(as.numeric((difftime(np$DateTime, pp$DateTime, units="secs"))))
+#       d<-st_distance(pt$overpass_point, np$geometry) 
+#       tt<-np$DateTime-(as.numeric(d)/(as.numeric(v)))
+#     } else if (direction == "f") {
+#       v<-(st_distance(np$geometry, fp$geometry))/as.numeric((difftime(np$DateTime, fp$DateTime, units="secs")))
+#       d<-st_distance(pt$overpass_point, np$geometry) 
+#       tt<-np$DateTime+(as.numeric(d)/as.numeric(v))
+#     }
+#     return(ymd_hms(tt))
+#   }
+#   f.time_estimation<-function(y,z){
+#     w<-vector(mode = 'list', length=dim(z)[1])
+#     for(i in 1:length(w)){
+#       pt<-z[i,]
+#       pt$overpass_time<-NA
+#       y2<-y
+#       y2$distance_m<-st_distance(y2$geometry,pt$overpass_point) %>% as.vector(.)
+#       
+#       np<-filter(y2, distance_m == min(y2$distance_m))
+#       first<-y2 %>% .[1,]
+#       end<-y2 %>% .[dim(y2)[1],]
+#       
+#       # np<-filter(y, distance_m == min(y$distance_m)) %>%dplyr::select(.,  DateTime, geometry, distance_m)
+#       # first<- y%>%dplyr::select(.,  DateTime, geometry, distance_m) %>% .[1,]
+#       # end<- y%>%dplyr::select(.,  DateTime, geometry, distance_m) %>% .[length(y),]
+#       
+#       # if(is.null(np$Date)==T) {
+#       #   pt$overpass_time<-NA} else if (isTRUE(np$DateTime) && np$DateTime  == end$DateTime) {pt$overpass_time<-np$DateTime
+#       #   } else if (isTRUE(np$DateTime) && np$DateTime == first$DateTime) {
+#       #     pt$overpass_time<-np$DateTime} else {
+#       
+#       
+#       
+#       # if (np$DateTime == end$DateTime) {pt$overpass_time<-np$DateTime
+#       #     } else if (np$DateTime == first$DateTime) {
+#       #       pt$overpass_time<-np$DateTime} else {
+#       
+#       pp<-y2[(which(y2$DateTime==np$DateTime) -1),]
+#       fp<-y2[(which(y2$DateTime==np$DateTime) +1),]
+#       
+#       pl<-f.line(x = pp, np)
+#       fl<-f.line(x = fp, np)
+#       
+#       fld<-st_distance(pt$overpass_point, fl)
+#       pld<-st_distance(pt$overpass_point, pl)  
+#       
+#       
+#       if(fld < pld){
+#         direction <- "f"
+#       } else if (pld < fld){
+#         direction <-"p"}
+#       
+#       pt$overpass_time<-f.overpass_time(np=np, fp=fp, pp=pp, direction=direction)
+#       # }
+#       # rm(pp, fp, pp, fp, pl, fl, fld, pld, np)} 
+#       
+#       pt$day_difference<-as.numeric(date(pt$time)-date(pt$overpass_time))    
+#       
+#       
+#       w[[i]]<-pt
+#       #rm(pt, y2)
+#     }
+#     
+#     w<-as.data.frame(do.call(rbind, w))
+#     return(w)} 
+#   f.per_storm_t<-function(z, h.pts){
+#     z.key<-unique(z$Key) 
+#     y<-filter(h.pts, Key ==z.key) 
+#     z<-f.time_estimation(z=z,y=y)
+#     return(z)
+#   }  
+#   
+#   ### master function ####
+#   z<-Map(cbind, z, Key= names(z))
+#   z<-lapply(z, st_as_sf)
+#   z<-lapply(z, f.per_storm_t, h.pts = h.pts)
+#   z<-lapply(z, na.omit)
+#   return(z)
+# }
 
 
 ```
@@ -909,7 +1005,7 @@ see: https://gis.stackexchange.com/questions/243994/how-to-calculate-distance-fr
 
 ```{r}
 y<-vector(mode='list')
-y$read_me<-(" this is a list created from first script in ch2 seq , 'ch_2_tc_argo_matchup_eastern_pacific.Rmd'created 2023-09-25 -19:00. $function_variablebles give parameters for selected objects. debugging track issue ")
+y$read_me<-(" this is a list created from first script in ch2 seq , 'ch_2_tc_argo_matchup_eastern_pacific.Rmd'created 2023-10-02 -17:45. $function_variablebles give parameters for selected objects. debugging track issue. Only retunr storms with equal before and after profiles for pefexct strom slection")
 y$function_variables<-function_variables
 
 x<-vector(mode='list')
