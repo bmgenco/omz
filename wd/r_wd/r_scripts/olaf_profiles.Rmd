@@ -17,7 +17,10 @@ from mike:
 
 
 ```{r setup}
-rm(list=ls())
+
+r_scriptwd<-getwd()
+wd<-substring(r_scriptwd,1,nchar(r_scriptwd) -10) # hardcoding replace here
+knitr::opts_knit$set(root.dir = wd)
 # relative directories
 robj<-"r_objects"
 fig<-"../../figures"
@@ -31,7 +34,7 @@ bathy_d<-"../../data/bathy" # edit this
 drop_img<-"/home/brandon/Dropbox/MERCED/dissertation/presentations/images"
 
 knitr::opts_chunk$set(echo =FALSE)
-knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+# knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
 ## Packages
@@ -67,7 +70,7 @@ print(paste0("Current Working Directory is ", getwd()))
 
 wd<-getwd()
 ```
-## Load submodule for bio-argo floats
+## Load submodule for bio-argo floats older
 
 ```{r argo submodule}
 setwd(wd)
@@ -98,6 +101,49 @@ packages<-c("gsw", "R.utils","Matrix")
 f.ipak(packages)
 rm(f.ipak, packages, path_code)
 ```
+
+## Load submodules newer
+
+```{r}
+# setwd(wd)
+
+# main functions
+path<-"r_scripts/submodules/OneArgo-R/"
+
+source(paste0(path, "get_lon_lat_time.R"))
+source(paste0(path, "initialize_argo.R"))
+source(paste0(path, "load_float_data.R"))
+source(paste0(path, "select_profiles.R"))
+source(paste0(path, "show_profiles.R"))
+source(paste0(path, "show_sections.R"))
+source(paste0(path, "show_time_series.R"))
+source(paste0(path, "show_trajectories.R"))
+
+# auxilary functions
+path = "r_scripts/submodules/OneArgo-R/auxil/"
+file_path<-paste0(wd,"/",path)
+files<-list.files(file_path, pattern ="\\.R$")
+
+for(i in 1:length(files)){
+  source(paste0(path, files[i]))
+}
+
+# packages<-c("gsw", "R.utils","Matrix")
+# f.ipak(packages)
+# 
+rm(path, file_path, files)
+
+####   this doesn't work... ####
+# perhaps not functions R files breaks it
+#file_path<-paste0(wd, "/", path)
+
+#files<-list.files(file_path, pattern ="\\.R")
+# for(i in 1:length(files)){
+#   source(paste0(path, files[i]), local=F)
+# }
+
+```
+
 
 ## Functions
 
@@ -537,8 +583,10 @@ text_size<-2
 station_color<-"black"
 
 # figure margins
-t=0.5
-r=0
+# t=0.5
+t=0
+# r=0
+r=0.5
 l=0
 b=.25
 
@@ -777,12 +825,14 @@ c3a<-coord_sf(xlim = c(-116, -100), ylim = c(14, 26))
 # bud point
 
 bl<-bud_fig1[bud_fig1$print_date == 10,] %>% na.omit()
-bl$label<-"Hurricane Bud"
+# bl$label<-"Hurricane Bud"
+bl$label<-"Bud 2018-06"
 site_size=4
 bud_label<-geom_sf_text(aes(label = label),data=bl,size = site_size, hjust =1.2)
 
 ol<-h.pts[5,] 
-ol$label<-"Hurricane Olaf"
+# ol$label<-"Hurricane Olaf"
+ol$label<-"Olaf 2021-09"
 site_size=4
 olaf_label<-geom_sf_text(aes(label = label),data=ol,size = site_size, hjust= -.25)
 

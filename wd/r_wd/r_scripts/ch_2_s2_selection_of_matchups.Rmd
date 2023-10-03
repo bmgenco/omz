@@ -201,7 +201,7 @@ list.200<-data$tc_search_radi_profiles$km_200
 list.500<-data$tc_search_radi_profiles$km_500
 
 # temp for memory space
-rm(data)
+# rm(data)
 
 ```
 
@@ -240,6 +240,15 @@ unique(x$Key)
 
 ```
 
+
+```{r}
+# 2
+x<-filter(h, Key == "EP082009") 
+
+
+```
+
+
 ## plotiing objects and function
 
 ```{r}
@@ -256,11 +265,12 @@ return(x)
 
 
 ```
+# picking storms:
 ```{r}
-key_id<-"EP072014"
+key_id<-"EP022018"
 g<-filter(h, Key == key_id)
 y<-f.select_name(x= list.500, key_id)
-y<-f.select_name(x= list.500, key_id)
+
 g.track<-filter(h.tracks, Key == key_id)
 g.pts<-filter(h.pts, Key == key_id)
 
@@ -282,7 +292,6 @@ m3
 ```{r}
 key_id<-"EP242018"
 g<-filter(h, Key == key_id)
-y<-f.select_name(x= list.500, key_id)
 y<-f.select_name(x= list.500, key_id)
 g.track<-filter(h.tracks, Key == key_id)
 g.pts<-filter(h.pts, Key == key_id)

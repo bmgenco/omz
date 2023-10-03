@@ -1,10 +1,12 @@
 rm(list=ls())
 
 # wd<-"/home/brandon/vestawd/omz/wd/r_wd/r_scripts"
-wd<-"/home/brandon/vestawd/omz/wd/r_wd/"
+# wd<-"/home/brandon/vestawd/omz/wd/r_wd/"
+
+
 
 # wd<-"/home/brandon/europawd/omz/wd/r_wd/"
-# wd<-"/home/brandon/callistowd/omz/wd/r_wd"
+wd<-"/home/brandon/callistowd/omz/wd/r_wd"
 
 robj<-"r_objects"
 setwd(wd)
@@ -24,7 +26,7 @@ packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate"
 f.ipak(packages)
 
 setwd(wd)
-path_code = "r_scripts/submodules/BGC-ARGO_R_WORKSHOP/"
+# path_code = "r_scripts/submodules/BGC-ARGO_R_WORKSHOP/"
 
 source(paste0(path_code, "initialize_argo.R"))
 source(paste0(path_code, "try_download.R"))
