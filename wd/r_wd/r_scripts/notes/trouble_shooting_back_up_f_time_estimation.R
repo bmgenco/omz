@@ -223,4 +223,71 @@ f.time_relative_overpass<-function(z, h.pts){
 }
 
 
-#### bah ####
+#### toruble shooting olaf ####
+f.point_of_overpass<-function(z, h.tracks){
+  # x is object created from lapply(z,  f.radi_select)
+  y<-h.tracks
+  z<-Map(cbind, all_storms_500km, Key= names(z))
+ 
+z.1$Key<-"EP152021"  
+z<-st_as_sf(z.1)   
+z<-lapply(z, st_as_sf)
+  
+  f.per_storm<-function(z,y){
+    z.key<-unique(z$Key)
+    y<-filter(y, Key ==z.key) %>%st_as_sf(.)
+    
+    f.point<-function(y,p){
+      np<-st_nearest_points(p$geometry,y)%>% st_cast(., "POINT") %>% st_sf(.)
+      st_geometry(np) <- "geometry"
+      np$dis<-st_distance(np,y)
+      p$overpass_point<-np[order(np$dis),] %>% .[1,] %>% .$geometry %>% st_drop_geometry(.)
+      p<-dplyr::select(p, -Key)
+      return(p)  
+    }
+    w<-vector(mode='list', length =dim(z)[1])
+    
+    # for loop is slow change to apply
+    for(i in 1:length(w)){
+      p<-z[i,]
+      p<-f.point(y,p)
+      w[[i]]<-p
+    }
+    w<-as.data.frame(do.call(rbind, w))
+    return(w)
+  }
+  z<-lapply(z, f.per_storm, y=y)
+  return(z)}
+
+### trouble shooting statistics
+### trf. inbeweetn time ###
+
+f.in_between_time<-function(h.tracks, function_variables, df.profile_points){
+  x<-dplyr::select(h.tracks, -geometry) %>% as.data.frame(.)
+  y<-df.profile_points
+  y$time<-date(y$time)
+  pre<-function_variables$h.prior
+  post<-function_variables$h.post
+  
+  x$start_dt <-x$start_dt %>% as_datetime(.) %>%round_date(., "day") %>%as_date(.) -pre
+  x$end_dt<-x$end_dt %>% as_datetime(.) %>%round_date(., "day") %>%as_date(.) + pre  
+  
+  z<-vector(mode="list", length(x$Key))
+  names(z)<-x$Key
+  
+  for(i in 1:length(z)){
+    z[[i]]<-filter(y, time >= x[i,]$start_dt & time <=x[i,]$end_dt)
+  }
+  z<-z[unlist(lapply(z, nrow) != 0)]
+  return(z)
+}
+
+## trouble shooting profile points
+
+f.radi_select<-function(x, tc_radi){
+  x<-filter(x, distance_m <= tc_radi)
+  return(x)
+}
+
+test<-all_storms_500km$EP152021
+t_500<-f.radi_select(test, tc_radi = function_variables$tc.radi_3)

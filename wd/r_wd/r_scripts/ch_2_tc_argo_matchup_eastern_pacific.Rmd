@@ -182,7 +182,8 @@ post<-function_variables$h.post
 x$start_dt <-x$start_dt %>% as_datetime(.) %>%round_date(., "day") %>%as_date(.) -pre
 x$end_dt<-x$end_dt %>% as_datetime(.) %>%round_date(., "day") %>%as_date(.) + pre  
 
-z<-vector(mode="list", length(x$Key))
+# z<-vector(mode="list", length(x$Key))
+z<-vector(mode="list", dim(x)[1])
 names(z)<-x$Key
 
 for(i in 1:length(z)){
@@ -236,16 +237,12 @@ f.intersect<-function(x, selection){
     return(x)
   }
 
-
-  
   h.storm_list<-lapply(h.storm_list, f.selection, tc_selection=tc_selection)
   h.storm_list<-f.rm_empty(h.storm_list) %>%names(.)
 
-  
     x<-f.intersect(x, selection=h.storm_list)
 return(x)
 }
-
 
 ## get point of intersection of profile to h.track line
 f.point_of_overpass<-function(z, h.tracks){
@@ -266,7 +263,9 @@ f.per_storm<-function(z,y){
     p<-dplyr::select(p, -Key)
     return(p)  
 }
-w<-vector(mode='list', length = length(z))
+# w<-vector(mode='list', length = length(z)) this was in error in past
+  w<-vector(mode='list', length =dim(z)[1])
+  
 
 # for loop is slow change to apply
 for(i in 1:length(w)){
@@ -442,7 +441,7 @@ Add variables here
 
 Appending 'function_variables' with dynamic variables from hurdat 'h' data set \* originally from script "Hurricane_insitu_matchup_v2.Rmd" \* define here as opposed to within function or sub blocks + add hurdat coordinates as bbox feature
 
-Note importance of "function_variables\<-vector(mode="list")"
+Note importance of "function_variables <-vector(mode="list")"
 
 ```{r}
 function_variables<-vector(mode="list") # for storing all function variables that may be dynamic or other wise
@@ -505,11 +504,11 @@ This will now download all the NC Files!
 ```{r}
 #select profiles and floats within the  TC selection plus buffer does not remove coast
 
-function_variables$argo_sensor<-NA
-ep_total_floats<-f.floats_within_EP(function_variables)
-
-function_variables$argo_sensor<-"DOXY"
-ep_doxy_floats<-f.floats_within_EP(function_variables)
+# function_variables$argo_sensor<-NA
+# ep_total_floats<-f.floats_within_EP(function_variables)
+# 
+# function_variables$argo_sensor<-"DOXY"
+# ep_doxy_floats<-f.floats_within_EP(function_variables)
 
 ```
 
@@ -518,18 +517,18 @@ ep_doxy_floats<-f.floats_within_EP(function_variables)
 ```{r}
 # setwd(wd)
 # setwd(robj)
-saveRDS(ep_doxy_floats, "r_objects/ep_doxy_floats.rds")
+# saveRDS(ep_doxy_floats, "r_objects/ep_doxy_floats.rds")
 # ep_doxy_floats<-readRDS("r_objects/ep_doxy_floats.rds")
 ```
 
 ## summarry statitics
 
 ```{r}
-print(length(unique((na.omit(ep_total_floats$float_ids)))))
-print(sum(lengths(ep_total_floats$float_profs)))
-
-print(length(unique((na.omit(ep_doxy_floats$float_ids)))))
-print(sum(lengths(ep_doxy_floats$float_profs)))
+# print(length(unique((na.omit(ep_total_floats$float_ids)))))
+# print(sum(lengths(ep_total_floats$float_profs)))
+# 
+# print(length(unique((na.omit(ep_doxy_floats$float_ids)))))
+# print(sum(lengths(ep_doxy_floats$float_profs)))
 # #
 ```
 
@@ -538,8 +537,8 @@ print(sum(lengths(ep_doxy_floats$float_profs)))
 This will now re-download all the NC Files! plus time it takes to search through nc files
 
 ```{r}
-print("this takes a long time")
-profile_points<-f.profiles_to_pts(selected_profiles = ep_doxy_floats)
+# print("this takes a long time")
+# profile_points<-f.profiles_to_pts(selected_profiles = ep_doxy_floats)
 ```
 
 # save/load profile_points
@@ -570,6 +569,8 @@ cl<-st_crop(coastline, xmin=function_variables$bgc.lon_min, ymin=function_variab
 ```
 
 ## some plots
+* save iamge for manuscript
+  -- crop reduce size and 
 
 ```{r}
 m.coast <- ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+
@@ -677,6 +678,8 @@ rm(x,x.key,y)
 variable on time window -if change in set of radi, then will need to write function to make variable names dynamic
 ### pick by function variables
 timed an max buffer
+
+
 ```{r}
 all_storms_500km<-lapply(z, f.radi_select, tc_radi=function_variables$tc.radi_3)
 all_storms_500km<-f.rm_empty(all_storms_500km)
@@ -686,6 +689,7 @@ rm(z)
 
 ### add points and time of overlap
 points
+error her in olaf?
 ```{r}
 # points
 # w<-f.point_of_overpass(z=all_storms_500km,h.tracks)
@@ -704,20 +708,46 @@ all_storms_500km<-f.time_relative_overpass(z=all_storms_500km, h.pts=h.pts)
 ```
 
 
+# get stats on tcs with before and after
 
 ```{r}
 test<-all_storms_500km$CP022006
 
-f.signs<-function(x){
-  x$s<-mean(sign(x$day_difference))
+# orignal v1 
+# f.signs<-function(x){
+#   x$s<-mean(sign(x$day_difference))
+# return(x)}
+# z<-lapply(all_storms_500km, f.signs)
+# f.filter<-function(x){
+#   x<-filter(x, x$s == 0)
+#   return(x)
+# }
+# z<-lapply(z, f.filter)
+# z<-f.rm_empty(z)
+
+# v2
+f.signs_1<-function(x){
+  x$s<-sign(x$day_difference)
+  # counting zero as after
+  x$s[x$s ==0]<-1
+  x$s<-as.factor(x$s)
+  if(length(levels(x$s))==2){x<-x} else {x<-NULL}
+  
 return(x)}
-z<-lapply(all_storms_500km, f.signs)
-f.filter<-function(x){
-  x<-filter(x, x$s == 0)
-  return(x)
-}
-z<-lapply(z, f.filter)
-z<-f.rm_empty(z)
+z<-lapply(all_storms_500km, f.signs_1)
+z<-z[lengths(z) !=0]
+
+f.signs_2<-function(x){
+  x$s<-sign(x$day_difference)
+  # counting zero as after
+  x$s[x$s ==0]<--1
+  x$s<-as.factor(x$s)
+  if(length(levels(x$s))==2){x<-x} else {x<-NULL}
+return(x)}
+z<-lapply(z, f.signs_2)
+z<-z[lengths(z) !=0]
+
+
 
 ```
 
@@ -849,16 +879,16 @@ plotting tests
 
 # ploting
 
-z<-w# testing
-z<-Map(cbind, z, Key= names(z))
-z<-z[[8]]
-t1<-ggplot()+geom_sf(data=st_as_sf(z))
-t2<-t1+geom_sf(data=st_as_sf(z$overpass_point), col= "blue")
-
-tmp.key<-unique(z$Key)
-track<-filter(h.tracks, Key==tmp.key)
-t3<-t2+geom_sf(data=track)
-t3
+# z<-w# testing
+# z<-Map(cbind, z, Key= names(z))
+# z<-z[[8]]
+# t1<-ggplot()+geom_sf(data=st_as_sf(z))
+# t2<-t1+geom_sf(data=st_as_sf(z$overpass_point), col= "blue")
+# 
+# tmp.key<-unique(z$Key)
+# track<-filter(h.tracks, Key==tmp.key)
+# t3<-t2+geom_sf(data=track)
+# t3
 
 ```
 
@@ -871,6 +901,10 @@ t3
 
 # add 
 
+# z<-all_storms_500km # for use if not using sign elmination
+
+
+
 km_100<-lapply(z, f.radi_select, tc_radi=function_variables$tc.radi_1)
 km_100<-f.rm_empty(km_100)
 km_200<-lapply(z, f.radi_select, tc_radi=function_variables$tc.radi_2)
@@ -882,7 +916,7 @@ km_500<-f.rm_empty(km_500)
 
 # create list of above lists fo future selection 
 
-rm(z)
+# rm(z)
 ```
 
 
@@ -896,8 +930,9 @@ rm(z)
 
 
 ```{r}
-storm_list<-names(all_storms_500km)
-rm(all_storms_500km)
+# storm_list<-names(all_storms_500km)
+storm_list<-names(z)
+# rm(all_storms_500km)
 h.storm_list<-filter(h, Key %in% storm_list) %>% dplyr::select(., Key, Status)%>% split(., .$Key) 
 
 # all_100<-f.storm_strength_filter(km_100,  h.storm_list, storm_level = 'all')
@@ -1005,7 +1040,7 @@ see: https://gis.stackexchange.com/questions/243994/how-to-calculate-distance-fr
 
 ```{r}
 y<-vector(mode='list')
-y$read_me<-(" this is a list created from first script in ch2 seq , 'ch_2_tc_argo_matchup_eastern_pacific.Rmd'created 2023-10-02 -17:45. $function_variablebles give parameters for selected objects. debugging track issue. Only retunr storms with equal before and after profiles for pefexct strom slection")
+y$read_me<-(" this is a list created from first script in ch2 seq , 'ch_2_tc_argo_matchup_eastern_pacific.Rmd'created 2023-10-04 -16:12. $function_variablebles give parameters for selected objects. Fixed error in slecton function that incoreclte filter floats and profiel per storm. improved  before/after slection. now removed stroms without bot before and after. use this version fior suplemnatl figures")
 y$function_variables<-function_variables
 
 x<-vector(mode='list')
