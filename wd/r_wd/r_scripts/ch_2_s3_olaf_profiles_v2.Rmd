@@ -35,6 +35,7 @@ bathy_d<-"../../data/bathy" # edit this
 drop_img<-"/home/brandon/Dropbox/MERCED/dissertation/presentations/images"
 
 knitr::opts_chunk$set(echo =FALSE)
+knitr::purl("ch_2_s3_olaf_profiles_v2.Rmd")
 # knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
@@ -56,7 +57,7 @@ f.ipak <- function(pkg){
   sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
 }
 
-packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce","data.table","raster", "fasterize", "RStoolbox", "scales", "purrr", "marmap", "cowplot")
+packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce","data.table","raster", "fasterize", "RStoolbox", "scales", "purrr", "marmap", "cowplot", "gsw")
 
 f.ipak(packages)
 # lapply(packages, require, character.only = TRUE)
@@ -69,7 +70,6 @@ wd<-getwd()
 ## Load submodules newer
 
 ```{r}
-
 # main functions
 path<-"r_scripts/submodules/OneArgo-R/"
 
@@ -98,23 +98,9 @@ rm(path, file_path, files)
 
 ```
 
-
 ## Functions
 
 ```{r}
-
-
-### function to select an individual storm by name OR  key from hurdat, "h" datsetset  ####
-# f.select_ts<-function(key_id){
-# # can use or operator io incle storm name
-# x<-filter(h, Key == key_id)
-# # assign(key_id, x)
-# # rm(x, key_id)
-# # x<-ls()
-# # return(x[1])
-# }
-
-### function to convert depth when reading in nc files ####
 
 #### function to create buffer around hurricane points ####
 f.cl_buffer<-function(function_variables, cl){
@@ -135,11 +121,14 @@ f.cl_buffer<-function(function_variables, cl){
 ## match up functions
 
 
-f.select_name<-function(x, key_id){
+
+f.select_tc<-function(x, key_id){
 x<-x$tc
 x<-x[which(names(x) == key_id)]
 return(x)
 }
+
+### from script 'aargo_float_OLAF.profile
 
 ```
 
@@ -167,7 +156,7 @@ list.500<-data$tc_search_radi_profiles$km_500
 # rm(data)
 
 ```
-## temp load/save works save for next steps
+
 
 ## natural earth coastlines
 source : https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-coastline/
@@ -179,513 +168,49 @@ coastline<-st_read("./ne_50m_land/ne_50m_land.shp")
 
 ```
 
-## might be redundant need to torble shoot this...
 ## Import BioArgo metadata (requires submodule install):
 
 ```{r}
-setwd(wd)
-setwd(robj)
-load("init_argo.RData")
+
+# setwd(wd)
+# setwd(robj)
+# load("init_argo.RData")
 ```
 
 
-## find olaf
+## olaf
 need to change h.pts
 
 ```{r}
-temp<-filter(h, Key == "EP152021")
-h.pts<- sf::st_as_sf(temp, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+key_id<-"EP152021"
+
+tc.pts<-filter(h.pts, Key ==key_id )
 
 conv<-1.94384 # convert to m/s
-h.pts$max_sustained_wind_m_s<-h.pts$Wind/conv
-rm(temp)
+tc.pts$max_sustained_wind_m_s<-tc.pts$Wind/conv
 
+tc.p<-f.select_tc(x=list.500, key_id)
 
 ```
 
-
-# Load and make float tracks
+per float trying..
 ```{r}
-setwd(wd)
-setwd(robj)
-floats.sp<-readRDS("olaf_argo_floats_spatial.R")
+x<-tc.p$EP152021 %>% filter(. , float == "6903093")
 ```
 
 ```{r}
 
-dot_size=0.5
-f1_color<-"black"
-argo_point_shape<-20
-f2_color<-"blue"
+float.x<-as.numeric(x$float[1])
+# show_sections(float_ids = float.x, float_profs = x$profile )
 
-cols.tracks = c("6903093" = f1_color, "6903094" = f2_color)
-
-
-float1<-names(floats.sp)[1]
-float2<-names(floats.sp)[2]
-
-f1<-geom_sf(data=floats.sp$`6903093`, color=f1_color, shape= argo_point_shape, size =dot_size)
-f2<-geom_sf(data=floats.sp$`6903094`, color=f2_color, shape= argo_point_shape, size =dot_size)
-
-track1<-st_geometry(floats.sp$`6903093`) %>%  as(., 'Spatial')  %>% as(., "SpatialLines")%>% st_as_sf(.)
-track2<-st_geometry(floats.sp$`6903094`) %>%  as(., 'Spatial')  %>% as(., "SpatialLines")%>% st_as_sf(.)
-
-# t1<-geom_sf(data=track1, color=f1_color, linetype= "dotted", show.legend = "line", inherit.aes = F)
-# t2<-geom_sf(data=track2, color=f2_color, linetype= "solid", show.legend = "line", inherit.aes = F)
-
-
-t1<-geom_sf(data=track1, aes(fill = "6903093"), color=f1_color, linetype= "dotted", show.legend = "line", inherit.aes = F)
-t2<-geom_sf(data=track2, aes(fill = "6903094"), color=f2_color, linetype= "solid", show.legend = "line", inherit.aes = F)
-
-
-l3<-scale_fill_manual(name = "Argo Floats", values = cols.tracks, guide =guide_legend(override.aes = list(linetype=  c("dotted", "solid"), color = cols.tracks)))
-l4<-theme(legend.position = c(0.12, 0.12))
-
-th2<-theme(text=element_text(family="Helvetica"))+ theme( plot.background = element_blank(),panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x=element_blank(), axis.title.y=element_blank(), plot.title = element_text(hjust = 0.5), plot.margin = unit(c(t, r, b, l), "cm"), legend.box.margin=margin(-15,-10,-10,-10))
-
-
-
+show_time_series(float_ids = unique(x$float))
 
 ```
-
-
-
 
 ```{r}
-# m.map<-m.coast+t1+t2+p1a+p1b+ggtitle("Hurricane Olaf and Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+l1+l2+t1+a1+y1 
-# 
-# 
-# m.map<-m.coast+t1+t2+p1a+p1b+ggtitle("Hurricane Olaf and Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+l1+l2+th1+a1+y1 
-# 
-# 
-
-# l.map<-ggplot()+c1+c2+t1+t2+l3+l4+ggtitle("Hurricane Olaf and Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+a1+y1
-# l.map
-
-#floast not lines
-m.map<-ggplot()+c1+c2+f1+f2+p2a+p1b+ggtitle("Hurricane Olaf and Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+l1+l2+th1+a1+y1
-
-#lines
-
-m.map1<-ggplot()+c1+c2+t1+t2+l3+ggtitle("Hurricane Olaf and Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+a1+y1+th2
-
-t1<-geom_sf(data=track1,  color=f1_color, linetype= "dotted")
-t2<-geom_sf(data=track2, color=f2_color, linetype= "solid")
-
-m.map2<-ggplot()+c1+c2+t1+t2+p2a+p1b+ggtitle("Hurricane Olaf and Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+l1+l2+th1+a1+y1
-m.map3<-ggplot()+c1+c2+t1+t2+p2a+p1b+ggtitle("Hurricane Olaf and Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+a1+y1+th2+guides(fill="none")
-
-# here: (draw line an make points)
-#https://thegraphcourses.org/topic/working-with-coordinates-labels-segments-and-points-under-development/
-
-
-# name <- "Bud"
-# lon  <- 11.49633 #coordinates source: openstreetmap.org
-# latitude_school  <- 3.89247
-# 
-# school <- data.frame(name, longitude_school, latitude_school)
-# 
-# bud.text<-geom_sf_text(data="Bud",  )
-
-
-argo_legend<-get_legend(m.map1)
-olaf_legend<-get_legend(m.map2)
-
-legends<-plot_grid(olaf_legend, argo_legend, ncol=1, rel_heights = c(-1, -.5))
-p<-plot_grid(m.map3, NULL,  legends, ncol=3, rel_widths = c(1,-.6,1), align = "v")
-# above works!
-
-#add ing toe hurricanes??
-
-m.map4<-ggplot()+c1+c2+t1+t2+p1a+p2a+p1b+ggtitle("Hurricanes Olaf & Bud with Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+l1+l2+th1+a1+y1
-
-
-site_size=3
-symbol_size=6.5
-shape_s<-21
-all_stations<-geom_sf(data=stations_mapped, shape=shape_s, size=symbol_size, fill="white")
-all_stations_labled<-geom_sf_text(aes(label = station),data= stations_mapped,size = site_size, fontface = "bold")
-m.coast+all_stations
-
-
-# c3<-coord_sf(xlim = c(-119.5, -100.5), ylim = c(11.55, 32.45))
-# c4<-coord_sf(xlim = c(-110,-106), ylim =c(19.5, 22))
-c3a<-coord_sf(xlim = c(-116, -100), ylim = c(14, 26))
-
-# bud point
-
-bl<-bud_fig1[bud_fig1$print_date == 10,] %>% na.omit()
-# bl$label<-"Hurricane Bud"
-bl$label<-"Bud 2018-06"
-site_size=4
-bud_label<-geom_sf_text(aes(label = label),data=bl,size = site_size, hjust =1.2)
-
-ol<-h.pts[5,] 
-# ol$label<-"Hurricane Olaf"
-ol$label<-"Olaf 2021-09"
-site_size=4
-olaf_label<-geom_sf_text(aes(label = label),data=ol,size = site_size, hjust= -.25)
-
-m.map4_ws<-ggplot()+c1+c2+t1+t2+p1a+p2a+p1b+ggtitle("Hurricanes Olaf & Bud with Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+all_stations+all_stations_labled+c3a+l1+l2+th1+a1 + bud_label +olaf_label
-
-
-# p2<-m.map4_ws+annotation_custom(grob = argo_legend, xmin = -Inf,  ymin = -Inf, ymax=15, xmax = -115)
-p2<-m.map4_ws+annotation_custom(grob = argo_legend, xmin = -Inf,  ymin = -Inf, ymax=16, xmax = -113)
-
-
-dev.off()
-
-```
-
-  
-# save plots 1
-```{r}
-
-# might need to change this
-setwd(wd)
-setwd(fig)
-pdf("Olaf_Bud_and_argo_floats.pdf", height=8.5 , width =7.5)
-p2
-dev.off()
-```
-
-# window profiles
-
-```{r}
-setwd(wd)
-setwd(robj)
-
-
-olaf_profiles<-readRDS("olaf_profiles_list.R")
-
-
-
-
+knitr::purl("ch_2_s3_olaf_profiles_v2.Rmd")
 ```
 
 
 
-
-## plot window
-
-```{r}
-dot_size=0.5
-f1_color<-"black"
-argo_point_shape<-20
-f2_color<-"blue"
-
-select_color<-"#046307"
-
-cols.tracks = c("6903093" = f1_color, "6903094" = f2_color)
-
-
-x<-olaf_profiles$window.sp
-
-# z<-x$`6903093` %>% filter(., CYCLE_NUMBER %in% c(48, 49, 50, 51, 52))
-z<-x$`6903093` %>% filter(., CYCLE_NUMBER %in% c(46, 47, 48, 49, 50, 51, 52, 53))
-
-z$TIME<-z$TIME %>% date(.) %>% ymd(.) %>% as.character() %>% substring(., 6)
-
-# date_labels<-geom_sf_text(aes(label = TIME), data=z, size =2.6, hjust=1.1,  color =select_color)
-date_labels<-geom_sf_text(aes(label = TIME), data=z, size =2.8, hjust=1.2, angle =25,  color =select_color)
-
-test<-format(as.Date(h.pts$DateTime), "%m-%d")
-bah<-as.character(hour(h.pts$DateTime))
-h.pts$time_abrv<-paste0(test, "-", bah, ":00")
-rm(test, bah)
-
-olaf_labels<-geom_sf_text(aes(label = time_abrv), data=h.pts, size =2.8, hjust=-.6, angle=-10, color ="black")
-
-buffer<-olaf_profiles$window$`6903094`$bufer_number
-buffer_subtitle<-paste0("tracks are ", buffer, " profiles before and after date of Olaf overpass window")
-
-float1<-names(x)[1]
-float2<-names(x)[2]
-
-f1<-geom_sf(data=x$`6903093`, color=f1_color, shape= argo_point_shape, size =dot_size)
-f2<-geom_sf(data=x$`6903094`, color=f2_color, shape= argo_point_shape, size =dot_size)
-f1b<-geom_sf(data=z, color=select_color, shape= 9, size =1)
-
-
-track1<-st_geometry(x$`6903093`) %>%  as(., 'Spatial')  %>% as(., "SpatialLines")%>% st_as_sf(.)
-track2<-st_geometry(x$`6903094`) %>%  as(., 'Spatial')  %>% as(., "SpatialLines")%>% st_as_sf(.)
-
-t1<-geom_sf(data=track1,  color=f1_color, linetype= "dotted")
-t2<-geom_sf(data=track2, color=f2_color, linetype= "solid")
-
-m.map5<-ggplot()+c1+c2+f1+f2+t1+t2+p2a+p1b+ggtitle("Hurricanes Olaf and corresponding Argo Float Tracks", subtitle = buffer_subtitle )+theme(plot.title = element_text(size = title.size))+f1b+s1+s3+s5+s7+s9+c3+l1+l2+th1+a1+y1+theme(plot.subtitle=element_text(hjust=0.5))
-
-
-
-p3<-m.map5+annotation_custom(grob = argo_legend, xmin = -Inf,  ymin = -Inf, ymax=15, xmax = -115)
-
-# c4<-coord_sf(xlim = c(-115,-105), ylim =c(15, 25))
-
-# c4<-coord_sf(xlim = c(-114,-104), ylim =c(15.5, 24.5))
-c4<-coord_sf(xlim = c(-110,-106), ylim =c(19.5, 22))
-
-
-# buffer_subtitle<-paste0("Profiles corresponding to Cycles 48-52 in green")
-buffer_subtitle<-paste0("Profiles corresponding to Cycles 46-53 in green")
-
-m.map6<-ggplot()+c1+c2+f1+f2+t1+t2+p2a+p1b+ggtitle("Hurricanes Olaf and corresponding Argo Float Tracks", subtitle = buffer_subtitle )+theme(plot.title = element_text(size = title.size))+f1b+s1+s2+s3+s5+s7+s8+s9+c4+l1+l2+th1+a1+y1+theme(plot.subtitle=element_text(hjust=0.5))+date_labels+olaf_labels
-
-m.map6<-ggplot()+c1+c2+f1+f2+t1+t2+p2a+p1b+ggtitle("Hurricanes Olaf and corresponding Argo Float Tracks", subtitle = buffer_subtitle )
-
-+theme(plot.title = element_text(size = title.size))+f1b+s1+s2+s3+s5+s7+s8+s9+c4+l1+l2+a1+th2+theme(plot.subtitle=element_text(hjust=0.5))+date_labels+olaf_labels
-
-
-p4<-m.map6 +annotation_custom(grob = argo_legend, xmin = -Inf,  ymin = -Inf, ymax=19, xmax = -110)
- 
-maps<-plot_grid(p2,p3, p4, ncol=3)
-
-```
-
-
-# save plots 2
-```{r}
-setwd(wd)
-setwd(fig)
-# pdf("Olaf_and_argo_float_window.pdf", height=8.5 , width =7.5)
-# p3
-# dev.off()
-
-
-pdf("Olaf_and_argo_float_window_zoomed.pdf", height=8.5 , width =7.5)
-p4
-dev.off()
-```
-
-
-# select profiles:
-
-### newset
-
-```{r}
-
-```
-
-
-```{r}
-rgocor<-"../../data/argo/coriolis_dac"
-setwd(wd)
-setwd(rgocor)
-files<-list.files()
-
-
-
-```
-
-
-## newer
-
-
-```{r}
-setwd(wd)
-
-x<-olaf_profiles$window.sp
-z<-x$`6903093` %>% filter(., CYCLE_NUMBER %in% c(48, 49, 50, 51, 52))
-e<-extent(z)
-
-q<-select_profiles(lon_lim=c(e[1],e[2]), lat_lim=c(e[3], e[4]), start_date=(z$TIME[1]-1), end_date=(z$TIME[length(z$TIME)]+1), outside="none", sensor=NULL)
-
-
-# d<-(storm_profiles$floats[i])
-# plot_profiles()
-# 
-# select_profiles <- function(lon_lim=c(-180,180), lat_lim=c(-90, 90), 
-#                             start_date="1995-01-01", end_date="2038-01-19",
-#                             outside="none", sensor=NULL) {
-```
-
-
-```{r}
-setwd(wd)
-setwd(robj)
-# show_profiles(profile_ids = q$floats[1], variables = 'TEMP')
-setwd("Profiles")
-
-files<-list.files()
-
-x<-files[charmatch(q$floats, files)]
-t<-tidync(x)
-# t<-tidync(x) %>%activate("D0, ")
-# t<-t %>% hyper_filter(DATE_TIME = z$TIME )%>% hyper_tibble()
-# x<-tidync(x)%>% hyper_tibble()
-
-
-# hyper_filter(lat = lat >= min(z$lat) & lat <= max(z$lat), lon = lon>= min(z$lon)
-
-# for(i in 1:length(files)){
-#     file<-files[i]
-#     t<-tidync(file)%>% hyper_filter(lat = lat >= min(z$lat) & lat <= max(z$lat), lon = lon>= min(z$lon) & lon<= max(z$lon)) %>% hyper_tibble()
-
-```
-
-# combined plot
-
-## older
-
-```{r}
-
-setwd(wd)
-float<-"6903093"
-download_multi_floats(float)
-
-box<-extent(h.pts)
-st_date<-as.character(date(min(h.pts$DateTime)))
-ed_date<-as.character(date(max(h.pts$DateTime)))
-
-# profiles<-select_profiles(lon_lim=c(box[1],box[2]), lat_lim=c(box[3], box[4]), 
-#                             start_date=st_date, end_date=ed_date,
-#                             outside="none", sensor=c("DOXY")) 
-# 
-# 
-# 
-# 
-# 
-# show_profiles(profiles$profiles, variables = c("TEMP"))
-# show_profiles(bud_keep$bud_window$prior$profile_index, variables = c("TEMP"))
-# 
-# 
-# show_profiles(bud_keep$bud_window$post$profile_index, variables = c("DOXY"))
-# show_profiles(bud_keep$bud_window$post$profile_index, variables = c("TEMP"))
-# 
-# show_trajectories("6903093")
-# show_sections("6903093", variables = c("TEMP"))
-# show_sections("6903093", variables = c("DOXY"))
-
-show_sections("6903093", variables = c("TEMP"))
-
-
-```
-
-try nc....
-
-```{r}
-setwd(wd)
-
-
-```
- code cut from "argo_float_OLAF.R"
-```{r}
-sp_foloats
-
-data<-data 
-
-
-float<-as.numeric(float)
-selection<-data$Data[[float]]
-
-
-
-select_profiles(lon_lim = c()
- 
-                
-              
-                
-                
-e<-extent(stations_mapped)
-l<-select_profiles(lon_lim=c(e[1],e[2]), lat_lim=c(e[3], e[4]), start_date=date(st_date), end_date=date(ed_date), outside="none", sensor=NULL)
-
-download_multi_floats(l$floats)
-
-data<-load_float_data(l$floats)
-a<-plot_trajectories(da)
-
-
-plot_trajectories(l$floats)
-
-## hijacked code from (selct profiles:)
-
-
-lon_lim[lon_lim > 180] = lon_lim[lon_lim > 180] - 360 
-lon_lim[lon_lim < -180] = lon_lim[lon_lim < -180] + 360
-
-# ADJUST INPUT DATES TO DATENUM FORMAT
-dn1 = as.POSIXct(start_date, tz="UTC")
-dn2 = as.POSIXct(end_date, tz="UTC")
-
-# GET INDEX OF PROFILES WITHIN USER-SPECIFIED GEOGRAPHIC POLYGON
-if ( lon_lim[1] > lon_lim[2] ) { # crossing the dateline
-  lonv1 = c(lonv[1], 180)
-  lonv2 = c(-180, lonv[2])
-  inpoly =  ( (Sprof$lon>lonv1[1] & Sprof$lon<lonv1[2]) | 
-                (Sprof$lon>lonv2[1] & Sprof$lon<lonv2[2]) ) & 
-    (Sprof$lat>lat_lim[1] & Sprof$lat<lat_lim[2])
-} else {
-  inpoly = (Sprof$lon>lon_lim[1] & Sprof$lon<lon_lim[2] & 
-              Sprof$lat>lat_lim[1] & Sprof$lat<lat_lim[2])
-}
-
-
-#  1 round profile dates
-
-sensors = unique(Sprof$sens[profiles])
-load_float_data <-(float_ids=float)
-
-# plot_trajectories(float)
-
-WMO<-as.numeric(float)
-plot_trajectories()
-setwd("..")
-
-float_file = nc_open(paste0("Profiles/", WMO,"_Sprof.nc"))
-data = load_float_data(float_ids= WMO, # specify WMO number
-                       variables=c('PSAL','TEMP', 'DOXY'))
-
-show_trajectories(float_ids=WMO)
-
-
-show_profiles( profile_ids=profiles, 
-               variables=c('TEMP', 'DOXY'),
-               type="floats", # given IDs refer to the floats
-               obs='on', # 'on' shows points on the profile at which each measurement was made
-               raw="yes" # show the unadjusted data 
-)
-
-
-
-# f.profile.select<-function(storm_profiles, days_around){ 
-#   profile.windows<-vector(mode="list", length=length(storm_profiles$floats))
-#   
-#   
-#   
-#   for(i in 1:length(profile.windows)){  
-#     float<-storm_profiles$floats[i] 
-#     float_idx <-which(Float$wmoid==float)
-#     prof_ids = c(Float$prof_idx1[float_idx]:Float$prof_idx2[float_idx])
-#     dates = Sprof$date[prof_ids] 
-#     
-#     overpass<-dates[dates <= ed_date]%>% .[dates >= st_date] %>% .[1]
-#     selection<-which(round_date(dates)==round_date(overpass))
-#     window<-seq(from=(selection-days_around), to=(selection+days_around), by=1)
-#     profiles<-prof_ids[window]
-#     TIME<-dates[window]
-#     t<-data.frame(TIME, profiles)
-#     profile.windows[[i]]<-t
-#     names(profile.windows)[i]<-storm_profiles$floats[i]  
-#   }    
-#   return(profile.windows)
-#   rm(t)
-# }
-
-
-
-#   f.subset<-function(profile.windows, floats.sp){
-# window.sp<-vector(mode="list", length=length(storm_profiles$floats))
-#   for(i in 1:length(profile.windows)){
-#     x<-profile.windows[[i]]$data$TIME %>% as.character(.)
-#     y<-floats.sp[[i]]
-#     
-#     
-#     y<- y %>% filter(ymd_h(y$TIME) %in% x) 
-#     window.sp[[i]]<-y
-#     names(window.sp)[i]<-storm_profiles$floats[i]
-#   }
-# return(window.sp)
-#   }
-
-
-```
 
