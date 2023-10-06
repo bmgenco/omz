@@ -38,7 +38,7 @@ packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate"
 # below is how to calcuale averages
 # remotes::install_github("clayton33/csasMarPhys")
 # library("csasAtlPhys")
-a<-averageCtds(y)
+# a<-averageCtds(y)
 
 # library("stringr.tools")
 

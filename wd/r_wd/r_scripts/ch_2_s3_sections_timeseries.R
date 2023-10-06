@@ -1,4 +1,4 @@
-#set_up
+#### set_up ####
 
 rm(list=ls())
 # r_scriptwd<-getwd()
@@ -60,7 +60,13 @@ f.select_tc<-function(x, key_id){
   return(x)
 }
 
-# data
+
+#### data ####
+
+## get meta data ##
+initialize_argo()
+
+
 
 data<-readRDS("r_objects/ch2_seq_1_data.R")
 #objects
@@ -75,14 +81,16 @@ list.100<-data$tc_search_radi_profiles$km_100
 list.200<-data$tc_search_radi_profiles$km_200
 list.500<-data$tc_search_radi_profiles$km_500
 
-# get meta data
-initialize_argo()
+
 
 # olaf
 key_id<-"EP152021"
 tc.pts<-filter(h.pts, Key ==key_id )
 conv<-1.94384 # convert to m/s
 tc.pts$max_sustained_wind_m_s<-tc.pts$Wind/conv
+
+
+
 
 f.select_tc_specific_profiles<-function(list.500, key_id){
 
@@ -91,22 +99,58 @@ e<-extent(tc.p)%>%as.vector(.)
 q<-select_profiles(lon_lim=c(e[1],e[2]), lat_lim=c(e[3], e[4]), start_date = as.character(min(tc.p$time)-1), end_date =as.character(max(tc.p$time)+1),  outside="none", sensor=NULL)
 }
 
+x<-tc.p
+f.reformat_profiles_for_ONE_Argo<-function(tc.p){
+  s<-vector(mode="list")
+  s$float_ids<-unique(tc.p$float)
+  s$float_profs<-vector(mode="list", length=length(s$float_ids))
+  for(i in 1:length(s$float_profs)){
+   f<-s$float_ids[i] 
+   x<-filter(tc.p, float ==f)
+   s$float_profs[[i]]<-as.integer(x$profile)
+  }
+  return(s)}
+
+s<-f.reformat_profiles_for_ONE_Argo(tc.p)
 #convert tc.p into frame
 
 
 
 
 # specifc float
-x<-tc.p$EP152021 %>% filter(. , float == "6903093")
+x<-tc.p%>% filter(. , float == "6903093")
 float.x<-as.numeric(x$float[1])
 
 floats_2<-unique(tc.p$EP152021$float) %>%as.numeric(.) %>%.[-1]
 
+
+
+f.reformat_profiles_for_ONE_Argo<-function(x, ){
+q<-vector
+  
+}
+
 # show_time_series(float_ids = float.x, plot_depth =50)
-show_time_series(float_ids = floats_2, plot_depth =90)
+show_time_series(float_ids = q$float_ids, float_profs = q$float_profs, plot_depth =90)
 show_trajectories(float_ids = floats_2, )
 
+show_sections(float_ids = q$float_ids[2], float_profs = q$float_profs[2] )
 
+show_trajectories(float_ids = q$float_ids[2], float_profs = q$float_profs[2])
+
+
+t.50<-show_time_series(float_ids = q$float_ids[2], float_profs = q$float_profs[2], plot_depth =50)
+t.60<-show_time_series(float_ids = q$float_ids[2], float_profs = q$float_profs[2], plot_depth =60)
+t.70<-show_time_series(float_ids = q$float_ids[2], float_profs = q$float_profs[2], plot_depth =70)
+t.80<-show_time_series(float_ids = q$float_ids[2], float_profs = q$float_profs[2], plot_depth =80)
+t.90<-show_time_series(float_ids = q$float_ids[2], float_profs = q$float_profs[2], plot_depth =90)
+
+show_profiles(float_ids = q$float_ids[2], float_profs = q$float_profs[2])
+
+
+t.
+# a function
+f.subset_tc_profiles<-function
 
 min(tc.p$EP152021$)
 
