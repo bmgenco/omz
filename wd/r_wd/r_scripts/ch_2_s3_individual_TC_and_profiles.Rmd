@@ -38,7 +38,7 @@ fig<-"../../figures"
 gis_data<-"../../data/gis_data"
 output<-"../../output"
 data_d<-"../../data"
-
+my_functions<-"r_scripts/submodules/BG_functions/"
 # ocean_color<-"../../data/ocean_color_bud"
 # bathy_d<-"../../data/bathy" # edit this
 
@@ -46,95 +46,39 @@ knitr::opts_chunk$set(echo =FALSE)
 #knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
-## Packages
-Installed custom hurdat package using r markdown menu
-* download  tar from archive as no longer maintained on cran repository
-* https://cran.r-project.org/src/contrib/Archive/HURDAT/
-+ include as git submodule instead
+
+# source
 
 ```{r}
-wd<-getwd()
-f.ipak <- function(pkg){
-  # loads packages, quietly, given by a vector of package names e.g., pkg<-c("ggplot", "tidyverse")
-  # will install  packages listed , and their dependencies, if needed.
-  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
-  if (length(new.pkg))
-    install.packages(new.pkg, dependencies = TRUE, quiet=T, verbose = F)
-  sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
-}
-packages<-c("plyr","sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT" , "gsw", "R.utils","Matrix")
-# "HURDAT",
+
+source(paste0(my_functions, "ch2_functions.R"))
+source(paste0(my_functions, "ch2_header.R"))
+
 f.ipak(packages)
-# lapply(packages, require, character.only = TRUE)
-# rm(f.ipak, packages)
-print(paste0("Current Working Directory is ", getwd()))
-```
+## get metadata ##
+# initialize_argo()
 
-## Load submodule for bio-argo floats
-* using newer OneArgo-R
-* https://github.com/NOAA-PMEL/OneArgo-R
-
-```{r}
-# setwd(wd)
-
-# main functions
-path<-"r_scripts/submodules/OneArgo-R/"
-
-source(paste0(path, "get_lon_lat_time.R"))
-source(paste0(path, "initialize_argo.R"))
-source(paste0(path, "load_float_data.R"))
-source(paste0(path, "select_profiles.R"))
-source(paste0(path, "show_profiles.R"))
-source(paste0(path, "show_sections.R"))
-source(paste0(path, "show_time_series.R"))
-source(paste0(path, "show_trajectories.R"))
-
-# auxilary functions
-path = "r_scripts/submodules/OneArgo-R/auxil/"
-file_path<-paste0(wd,"/",path)
-files<-list.files(file_path, pattern ="\\.R$")
-
-for(i in 1:length(files)){
-  source(paste0(path, files[i]))
-}
-
-# packages<-c("gsw", "R.utils","Matrix")
-# f.ipak(packages)
-# 
-rm(path, file_path, files)
-
-####   this doesn't work... ####
-# perhaps not functions R files breaks it
-#file_path<-paste0(wd, "/", path)
-
-#files<-list.files(file_path, pattern ="\\.R")
-# for(i in 1:length(files)){
-#   source(paste0(path, files[i]), local=F)
-# }
 
 ```
 
-# functions
-```{r}
-# select storm by key from hurdat objects
 
-f.select_name<-function(x, key_id){
-x<-x$tc
-x<-x[which(names(x) == key_id)]
-return(x)
-}
-```
 
 # data
 
-
 ```{r}
 data<-readRDS("r_objects/ch2_seq_1_data.R")
-```
 
-## doxy floast
-```{r}
- ep_doxy_floats<-readRDS("r_objects/ep_doxy_floats.rds")
+h<-data$selected_zone_hurdat$h
+function_variables<-data$function_variables
+# hurdat 
+h.pts<-data$selected_zone_hurdat$h.pts
+h.tracks<-data$selected_zone_hurdat$h.tracks
+
+list.100<-data$tc_search_radi_profiles$km_100
+list.200<-data$tc_search_radi_profiles$km_200
+list.500<-data$tc_search_radi_profiles$km_500
+
+# rm(data)
 ```
 
 
@@ -146,29 +90,95 @@ setwd(gis_data)
 # save shape files in named directory
 coastline<-st_read("./ne_50m_land/ne_50m_land.shp") 
 
+cl<-st_crop(coastline, xmin=-170, ymin=-20, xmax=-80, ymax=40)
+m.coast <-ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+theme_bw()+ theme(text = element_text(size =12))
+```
+
+#
+
+
+# olaf ggplots
+
+```{r}
+key_id<-"EP152021"
+tc.pts<-f.single_storm_h.pts(key_id = key_id, h.pts)
+conv<-1.94384 # convert to m/s
+tc.pts$max_sustained_wind_m_s<-tc.pts$Wind/conv
+tc.track<-filter(h.tracks, Key == key_id)
+tc.p<-list.500$tc$EP152021 # can make a function
+
+c3a<-coord_sf(xlim = c(-116, -105), ylim = c(16, 26))
+
 ```
 
 
-# select items from data
-#
+GG plot itmes
 ```{r}
 
-function_variables<-data$function_variables
-# hurdat objects
-h<-data$selected_zone_hurdat$h
-h.pts<-data$selected_zone_hurdat$h.pts
-h.tracks<-data$selected_zone_hurdat$h.tracks
+#image defaluts
 
-# match_up
+# figure margins
+# t=0.5
+t=0
+# r=0
+r=0.5
+l=0
+b=.25
 
-list.100<-data$tc_search_radi_profiles$km_100
-list.200<-data$tc_search_radi_profiles$km_200
-list.500<-data$tc_search_radi_profiles$km_500
+width=1
+height=14
 
-# temp for memory space
-# rm(data)
+marks.textsize=2
+title.textsize=8
+lp<-"right"
+
+n<-30
+custom_color<-cmocean('matter', version="2.0")(n)
+
+title_two<-expression(textstyle("Wind m s"^-1*""))
+l1<-scale_fill_gradientn(colors = custom_color ,  na.value=NA, name=waiver()) 
+l2<-guides(fill=guide_colourbar(title=title_two, barheight = height, 
+                                barwidth = width, title.position = "top",  
+                                # title.hjust = 0.5,
+                                title.theme = element_text(size=title.textsize)), 
+                                legend.text=element_text(size=marks.textsize))
+
+
+
+tc_wind<-geom_sf(aes(fill=max_sustained_wind_m_s), data=tc.pts,  shape=21, size=3, color="white")
+
+
+th1<-theme(text=element_text(family="Helvetica"))+ theme(legend.position=lp, plot.background = element_blank(),panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x=element_blank(), axis.title.y=element_blank(), plot.title = element_text(hjust = 0.5), plot.margin = unit(c(t, r, b, l), "cm"), legend.box.margin=margin(-15,-10,-10,-10))
+
+cut_off<-coord_sf(xlim = c(-113, -105.5), ylim = c(17, 24))
 
 ```
+
+
+
+```{r}
+tc.p.sf<-st_as_sf(tc.p)
+p_labels<-geom_sf_text(aes(label = day_difference), data=tc.p.sf , size = 3,  vjust=1.5, hjust =1.5)
+```
+
+
+
+```{r}
+m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
+m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off
+
+```
+
+
+
+
+
+
+
+
+
+
+
 
 # slect indviudla tc
 

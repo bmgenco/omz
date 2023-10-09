@@ -59,7 +59,7 @@ f.ipak <- function(pkg){
 
 # tidyverse: is all of the following packages: ggplot2, dplyr, tidyr, readr, purr, tibble, sringr, & forcats.
 
-packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce","data.table","raster", "fasterize", "RStoolbox", "scales", "purrr", "marmap", "cowplot")
+packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce","data.table","raster", "fasterize", "RStoolbox", "scales", "purrr", "marmap", "cowplot", "gsw", "R.utils","Matrix")
 
 # "HURDAT",
 
@@ -73,33 +73,33 @@ wd<-getwd()
 ## Load submodule for bio-argo floats older
 
 ```{r argo submodule}
-setwd(wd)
-path_code = "r_scripts/submodules/BGC-ARGO_R_WORKSHOP/"
-
-source(paste0(path_code, "initialize_argo.R"))
-source(paste0(path_code, "try_download.R"))
-source(paste0(path_code, "do_download.R"))
-source(paste0(path_code, "download_float.R"))
-source(paste0(path_code, "download_multi_floats.R"))
-source(paste0(path_code, "check_dir.R"))
-source(paste0(path_code, "get_var_name_units.R"))
-source(paste0(path_code, "select_profiles.R"))
-source(paste0(path_code, "load_float_data.R"))
-source(paste0(path_code, "plot_trajectories.R"))
-source(paste0(path_code, "get_lon_lat_lims.R"))
-source(paste0(path_code, "show_trajectories.R"))
-source(paste0(path_code, "do_pause.R"))
-source(paste0(path_code, "depth_interp.R"))
-source(paste0(path_code, "calc_auxil.R"))
-source(paste0(path_code, "get_multi_profile_mean.R"))
-source(paste0(path_code, "show_profiles.R"))
-source(paste0(path_code, "plot_profiles.R"))
-source(paste0(path_code, "show_sections.R"))
-source(paste0(path_code, "plot_sections.R"))
-
-packages<-c("gsw", "R.utils","Matrix")
-f.ipak(packages)
-rm(f.ipak, packages, path_code)
+# setwd(wd)
+# path_code = "r_scripts/submodules/BGC-ARGO_R_WORKSHOP/"
+# 
+# source(paste0(path_code, "initialize_argo.R"))
+# source(paste0(path_code, "try_download.R"))
+# source(paste0(path_code, "do_download.R"))
+# source(paste0(path_code, "download_float.R"))
+# source(paste0(path_code, "download_multi_floats.R"))
+# source(paste0(path_code, "check_dir.R"))
+# source(paste0(path_code, "get_var_name_units.R"))
+# source(paste0(path_code, "select_profiles.R"))
+# source(paste0(path_code, "load_float_data.R"))
+# source(paste0(path_code, "plot_trajectories.R"))
+# source(paste0(path_code, "get_lon_lat_lims.R"))
+# source(paste0(path_code, "show_trajectories.R"))
+# source(paste0(path_code, "do_pause.R"))
+# source(paste0(path_code, "depth_interp.R"))
+# source(paste0(path_code, "calc_auxil.R"))
+# source(paste0(path_code, "get_multi_profile_mean.R"))
+# source(paste0(path_code, "show_profiles.R"))
+# source(paste0(path_code, "plot_profiles.R"))
+# source(paste0(path_code, "show_sections.R"))
+# source(paste0(path_code, "plot_sections.R"))
+# 
+# packages<-c("gsw", "R.utils","Matrix")
+# f.ipak(packages)
+# rm(f.ipak, packages, path_code)
 ```
 
 ## Load submodules newer
@@ -496,7 +496,8 @@ rm(temp)
 setwd(wd)
 setwd(data_d)
 setwd("./ODV_exported")
-woa<-read_tsv("isosurface_data.txt", skip=1) %>% select(., 'Depth [m]  at  Oxygen [ml/l]=0.45 @ Depth [m]  at  Oxygen [ml/l]=0.45=first', 'Longitude', "Latitude")
+# setwd("/home/brandon/vestawd/omz/data/2018_data/ODV_exported/")
+woa<-read_tsv("isosurface_data.txt", skip=1) %>% dplyr::select(., 'Depth [m]  at  Oxygen [ml/l]=0.45 @ Depth [m]  at  Oxygen [ml/l]=0.45=first', 'Longitude', "Latitude")
 
 
 ```
@@ -721,24 +722,51 @@ setwd(robj)
 floats.sp<-readRDS("olaf_argo_floats_spatial.R")
 ```
 
+added 2023-10-09 3rd float
+
+
+```{r}
+initialize_argo()
+new.float<-get_lon_lat_time(float_ids = as.numeric("5905068"))
+# new.float<-load_float_data(float_ids=as.numeric("5905068"))
+
+```
+
+
+
 ```{r}
 
 dot_size=0.5
 f1_color<-"black"
 argo_point_shape<-20
 f2_color<-"blue"
+f2_color<-"gray50"
+# f3_color<-"darkgreen"
+f3_color<-"gray40"
 
-cols.tracks = c("6903093" = f1_color, "6903094" = f2_color)
+cols.tracks = c("6903093" = f1_color, "6903094" = f2_color, "5905068" =f3_color )
 
 
 float1<-names(floats.sp)[1]
 float2<-names(floats.sp)[2]
+float3<-"5905068"
 
 f1<-geom_sf(data=floats.sp$`6903093`, color=f1_color, shape= argo_point_shape, size =dot_size)
 f2<-geom_sf(data=floats.sp$`6903094`, color=f2_color, shape= argo_point_shape, size =dot_size)
 
+new.float<-as.data.frame(cbind(new.float$time[[1]], round(as.numeric(new.float$lon[[1]]),3), round(as.numeric(new.float$lat[[1]]),3)))
+names(new.float)<-c("time", "lon", "lat")
+new.float$lon<-as.numeric(new.float$lon)
+new.float$lat<-as.numeric(new.float$lat)
+
+f3<-sf::st_as_sf(new.float, coords=c("lon", "lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+track3<-st_geometry(f3) %>%  as(., 'Spatial')  %>% as(., "SpatialLines")%>% st_as_sf(.)
+f3<-geom_sf(data=f3, color=f3_color, shape= argo_point_shape, size =dot_size)
+
+
 track1<-st_geometry(floats.sp$`6903093`) %>%  as(., 'Spatial')  %>% as(., "SpatialLines")%>% st_as_sf(.)
 track2<-st_geometry(floats.sp$`6903094`) %>%  as(., 'Spatial')  %>% as(., "SpatialLines")%>% st_as_sf(.)
+
 
 # t1<-geom_sf(data=track1, color=f1_color, linetype= "dotted", show.legend = "line", inherit.aes = F)
 # t2<-geom_sf(data=track2, color=f2_color, linetype= "solid", show.legend = "line", inherit.aes = F)
@@ -746,9 +774,10 @@ track2<-st_geometry(floats.sp$`6903094`) %>%  as(., 'Spatial')  %>% as(., "Spati
 
 t1<-geom_sf(data=track1, aes(fill = "6903093"), color=f1_color, linetype= "dotted", show.legend = "line", inherit.aes = F)
 t2<-geom_sf(data=track2, aes(fill = "6903094"), color=f2_color, linetype= "solid", show.legend = "line", inherit.aes = F)
+t3<-geom_sf(data=track3, aes(fill = "5905068"), color=f3_color, linetype= "longdash", show.legend = "line", inherit.aes = F)
 
-
-l3<-scale_fill_manual(name = "Argo Floats", values = cols.tracks, guide =guide_legend(override.aes = list(linetype=  c("dotted", "solid"), color = cols.tracks)))
+# l3<-scale_fill_manual(name = "Argo Floats", values = cols.tracks, guide =guide_legend(override.aes = list(linetype=  c("dotted", "solid"), color = cols.tracks)))
+l3<-scale_fill_manual(name = "Argo Floats", values = cols.tracks, guide =guide_legend(override.aes = list(linetype=  c("dotted", "solid", "longdash"), color = cols.tracks)))
 l4<-theme(legend.position = c(0.12, 0.12))
 
 th2<-theme(text=element_text(family="Helvetica"))+ theme( plot.background = element_blank(),panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x=element_blank(), axis.title.y=element_blank(), plot.title = element_text(hjust = 0.5), plot.margin = unit(c(t, r, b, l), "cm"), legend.box.margin=margin(-15,-10,-10,-10))
@@ -773,17 +802,18 @@ th2<-theme(text=element_text(family="Helvetica"))+ theme( plot.background = elem
 # l.map
 
 #floast not lines
-m.map<-ggplot()+c1+c2+f1+f2+p2a+p1b+ggtitle("Hurricane Olaf and Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+l1+l2+th1+a1+y1
+m.map<-ggplot()+c1+c2+f1+f2+f3+p2a+p1b+ggtitle("Hurricane Olaf and Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+l1+l2+th1+a1+y1
 
 #lines
 
-m.map1<-ggplot()+c1+c2+t1+t2+l3+ggtitle("Hurricane Olaf and Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+a1+y1+th2
+m.map1<-ggplot()+c1+c2+t1+t2+t3+l3+ggtitle("Hurricane Olaf and Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+a1+y1+th2
 
 t1<-geom_sf(data=track1,  color=f1_color, linetype= "dotted")
 t2<-geom_sf(data=track2, color=f2_color, linetype= "solid")
+t3<-geom_sf(data=track3, color=f3_color, linetype= "longdash")
 
-m.map2<-ggplot()+c1+c2+t1+t2+p2a+p1b+ggtitle("Hurricane Olaf and Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+l1+l2+th1+a1+y1
-m.map3<-ggplot()+c1+c2+t1+t2+p2a+p1b+ggtitle("Hurricane Olaf and Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+a1+y1+th2+guides(fill="none")
+m.map2<-ggplot()+c1+c2+t1+t2+t3+p2a+p1b+ggtitle("Hurricane Olaf and Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+l1+l2+th1+a1+y1
+m.map3<-ggplot()+c1+c2+t1+t2+t3+p2a+p1b+ggtitle("Hurricane Olaf and Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+a1+y1+th2+guides(fill="none")
 
 # here: (draw line an make points)
 #https://thegraphcourses.org/topic/working-with-coordinates-labels-segments-and-points-under-development/
@@ -807,10 +837,11 @@ p<-plot_grid(m.map3, NULL,  legends, ncol=3, rel_widths = c(1,-.6,1), align = "v
 
 #add ing toe hurricanes??
 
-m.map4<-ggplot()+c1+c2+t1+t2+p1a+p2a+p1b+ggtitle("Hurricanes Olaf & Bud with Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+l1+l2+th1+a1+y1
+m.map4<-ggplot()+c1+c2+t1+t2+t3+p1a+p2a+p1b+ggtitle("Hurricanes Olaf & Bud with Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+s1+s3+s5+s7+s9+c3+l1+l2+th1+a1+y1
 
 
 site_size=3
+
 symbol_size=6.5
 shape_s<-21
 all_stations<-geom_sf(data=stations_mapped, shape=shape_s, size=symbol_size, fill="white")
@@ -820,12 +851,16 @@ m.coast+all_stations
 
 # c3<-coord_sf(xlim = c(-119.5, -100.5), ylim = c(11.55, 32.45))
 # c4<-coord_sf(xlim = c(-110,-106), ylim =c(19.5, 22))
-c3a<-coord_sf(xlim = c(-116, -100), ylim = c(14, 26))
+# c3a<-coord_sf(xlim = c(-116, -100), ylim = c(14, 26))
+c3a<-coord_sf(xlim = c(-116, -100), ylim = c(12, 26))
 
 # bud point
 
-bl<-bud_fig1[bud_fig1$print_date == 10,] %>% na.omit()
+# bl<-bud_fig1[bud_fig1$print_date == 10,] %>% na.omit()
 # bl$label<-"Hurricane Bud"
+# moved ecuase of new float
+bl<-bud_fig1[bud_fig1$print_date == 9,] %>% na.omit()
+
 bl$label<-"Bud 2018-06"
 site_size=4
 bud_label<-geom_sf_text(aes(label = label),data=bl,size = site_size, hjust =1.2)
@@ -836,7 +871,7 @@ ol$label<-"Olaf 2021-09"
 site_size=4
 olaf_label<-geom_sf_text(aes(label = label),data=ol,size = site_size, hjust= -.25)
 
-m.map4_ws<-ggplot()+c1+c2+t1+t2+p1a+p2a+p1b+ggtitle("Hurricanes Olaf & Bud with Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+all_stations+all_stations_labled+c3a+l1+l2+th1+a1 + bud_label +olaf_label
+m.map4_ws<-ggplot()+c1+c2+t1+t2+t3+p1a+p2a+p1b+ggtitle("Hurricanes Olaf & Bud with Argo Float Tracks")+theme(plot.title = element_text(size = title.size))+all_stations+all_stations_labled+c3a+l1+l2+th1+a1 + bud_label +olaf_label
 
 
 # p2<-m.map4_ws+annotation_custom(grob = argo_legend, xmin = -Inf,  ymin = -Inf, ymax=15, xmax = -115)
@@ -854,7 +889,7 @@ dev.off()
 # might need to change this
 setwd(wd)
 setwd(fig)
-pdf("Olaf_Bud_and_argo_floats.pdf", height=8.5 , width =7.5)
+pdf("Olaf_Bud_and_3_argo_floats.pdf", height=8.5 , width =7.5)
 p2
 dev.off()
 ```
