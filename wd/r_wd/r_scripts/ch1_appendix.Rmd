@@ -103,6 +103,38 @@ return(split)}
 
 # adcp
 # ctd casts
+
+```{r}
+d.sec<-readRDS("r_objects/OC1806A_ctd_sections.R")
+d35<-d.sec$st3.5
+
+c1<-d35@data$station[[1]]
+c2<-d35@data$station[[2]]
+c3<-d35@data$station[[3]]
+c4<-d35@data$station[[4]]
+c5<-d35@data$station[[5]]
+
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+plot(d35, drawIsobaths=T, which="map")
+plot(d35, which=3, ztype="image", xtype="time")
+plot(d35, which="salinity", ztype="image", xtype="time")
+plot(d35, which="temperature", ztype="image", xtype="time")
+plot(d35, which="oxygen2", ztype="image", xtype="time")
+plot(d35, which="fluorescence", ztype="image", xtype="time")
+
+```
+
+
+
 # export flux
 ### export flux load data
 #### load hurricanes
