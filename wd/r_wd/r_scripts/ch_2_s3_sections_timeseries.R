@@ -3,8 +3,8 @@
 rm(list=ls())
 # r_scriptwd<-getwd()
 # wd<-substring(r_scriptwd,1,nchar(r_scriptwd) -10) # hardcoding replace here
-# wd<-"/home/brandon/vestawd/omz/wd/r_wd"
-wd<-"/home/brandon/callistowd/omz/wd/r_wd"
+wd<-"/home/brandon/vestawd/omz/wd/r_wd"
+# wd<-"/home/brandon/callistowd/omz/wd/r_wd"
 setwd(wd)
 
 # relative directories
@@ -168,7 +168,16 @@ tc.p<-list.500$tc$EP152021 # can make a function
 x<-tc.p%>% filter(. , float == "6903093")
 s<-f.reformat_profiles_for_ONE_Argo(x)
 
+sb<-s$float_profs[[1]][1:4]
+show_profiles(float_ids = s$float_ids[1], float_profs = sb, variables=c("TEMP", "CHLA", "DOXY"))
+sd<-s$float_profs[[1]][5:6]
+show_profiles(float_ids = s$float_ids[1], float_profs = 54, variables=c("TEMP", "CHLA", "DOXY"))
+sa<-s$float_profs[[1]][7:10]
+show_profiles(float_ids = s$float_ids[1], float_profs = sa, variables=c("TEMP", "CHLA", "DOXY"))
+show_sections(float_ids = s$float_ids[1], float_profs = s$float_profs[1])
 
+x<-tc.p%>% filter(. , float == "5905068")
+s<-f.reformat_profiles_for_ONE_Argo(x)
 
 ### plotting genieve
 t.50<-show_time_series(float_ids = s$float_ids[1], float_profs = s$float_profs[1], plot_depth =50)
@@ -179,7 +188,7 @@ t.90<-show_time_series(float_ids = s$float_ids[1], float_profs = s$float_profs[1
 t.100<-show_time_series(float_ids = s$float_ids[1], float_profs = s$float_profs[1], plot_depth =100)
 show_profiles(float_ids = s$float_ids[1], float_profs = s$float_profs[1])
 
-show_profiles(float_ids = s$float_ids[1], float_profs = s$float_profs[1], variables=c("TEMP", "CHLA"))
+show_profiles(float_ids = s$float_ids[1], float_profs = s$float_profs[1][1:3], variables=c("TEMP", "CHLA", "DOXY"))
 t.50<-show_time_series(float_ids = s$float_ids[1], float_profs = s$float_profs[1], plot_depth =50, variables=c("TEMP", "CHLA"))
 t.60<-show_time_series(float_ids = s$float_ids[1], float_profs = s$float_profs[1], plot_depth =60, variables=c("TEMP", "CHLA"))
 t.70<-show_time_series(float_ids = s$float_ids[1], float_profs = s$float_profs[1], plot_depth =70, variables=c( "TEMP", "CHLA"))

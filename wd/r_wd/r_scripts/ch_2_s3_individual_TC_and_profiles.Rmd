@@ -78,7 +78,7 @@ list.100<-data$tc_search_radi_profiles$km_100
 list.200<-data$tc_search_radi_profiles$km_200
 list.500<-data$tc_search_radi_profiles$km_500
 
-# rm(data)
+ rm(data)
 ```
 
 
@@ -94,31 +94,9 @@ cl<-st_crop(coastline, xmin=-170, ymin=-20, xmax=-80, ymax=40)
 m.coast <-ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+theme_bw()+ theme(text = element_text(size =12))
 ```
 
-#
-
-
-# olaf ggplots
+# ggplot defaults
 
 ```{r}
-key_id<-"EP152021"
-tc.pts<-f.single_storm_h.pts(key_id = key_id, h.pts)
-conv<-1.94384 # convert to m/s
-tc.pts$max_sustained_wind_m_s<-tc.pts$Wind/conv
-tc.track<-filter(h.tracks, Key == key_id)
-tc.p<-list.500$tc$EP152021 # can make a function
-
-c3a<-coord_sf(xlim = c(-116, -105), ylim = c(16, 26))
-
-```
-
-
-GG plot itmes
-```{r}
-
-#image defaluts
-
-# figure margins
-# t=0.5
 t=0
 # r=0
 r=0.5
@@ -134,8 +112,8 @@ lp<-"right"
 
 n<-30
 custom_color<-cmocean('matter', version="2.0")(n)
-
 title_two<-expression(textstyle("Wind m s"^-1*""))
+
 l1<-scale_fill_gradientn(colors = custom_color ,  na.value=NA, name=waiver()) 
 l2<-guides(fill=guide_colourbar(title=title_two, barheight = height, 
                                 barwidth = width, title.position = "top",  
@@ -144,27 +122,33 @@ l2<-guides(fill=guide_colourbar(title=title_two, barheight = height,
                                 legend.text=element_text(size=marks.textsize))
 
 
+```
+
+
+
+# olaf ggplots
+
+```{r}
+key_id<-"EP152021"
+tc.pts<-f.single_storm_h.pts(key_id = key_id, h.pts)
+conv<-1.94384 # convert to m/s
+tc.pts$max_sustained_wind_m_s<-tc.pts$Wind/conv
+tc.track<-filter(h.tracks, Key == key_id)
+tc.p<-list.500$tc$EP152021 # can make a function
+
 
 tc_wind<-geom_sf(aes(fill=max_sustained_wind_m_s), data=tc.pts,  shape=21, size=3, color="white")
-
 
 th1<-theme(text=element_text(family="Helvetica"))+ theme(legend.position=lp, plot.background = element_blank(),panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x=element_blank(), axis.title.y=element_blank(), plot.title = element_text(hjust = 0.5), plot.margin = unit(c(t, r, b, l), "cm"), legend.box.margin=margin(-15,-10,-10,-10))
 
 cut_off<-coord_sf(xlim = c(-113, -105.5), ylim = c(17, 24))
-
-```
-
-```{r}
 tc.p.sf<-st_as_sf(tc.p)
 p_labels<-geom_sf_text(aes(label = day_difference), data=tc.p.sf , size = 3,  vjust=1.5, hjust =1.5)
-```
 
-```{r}
 m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
 m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off
 
 ```
-
 
 # genieve ggplots
 
@@ -184,6 +168,33 @@ p_labels<-geom_sf_text(aes(label = day_difference), data=tc.p.sf , size = 3,  vj
 tc_wind<-geom_sf(aes(fill=max_sustained_wind_m_s), data=tc.pts,  shape=21, size=3, color="white")
 cut_off<-coord_sf(xlim = c(-113, -105.5), ylim = c(14, 19))
 
+
+
+m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
+m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off
+
+```
+
+
+
+# IVETTE
+```{r}
+key_id<-"EP102022"
+tc.pts<-f.single_storm_h.pts(key_id = key_id, h.pts)
+conv<-1.94384 # convert to m/s
+tc.pts$max_sustained_wind_m_s<-tc.pts$Wind/conv
+tc.track<-filter(h.tracks, Key == key_id)
+tc.p<-list.500$tc$EP122022 # can make a function
+
+
+tc.p.sf<-st_as_sf(tc.p)
+p_labels<-geom_sf_text(aes(label = day_difference), data=tc.p.sf , size = 3,  vjust=1.5, hjust =1.5)
+
+
+# c3a<-coord_sf(xlim = c(-116, -105), ylim = c(16, 26))
+tc_wind<-geom_sf(aes(fill=max_sustained_wind_m_s), data=tc.pts,  shape=21, size=3, color="white")
+cut_off<-coord_sf(xlim = c(-113, -105.5), ylim = c(14, 19))
+
 l1<-scale_fill_gradientn(colors = custom_color ,  na.value=NA, name=waiver()) 
 l2<-guides(fill=guide_colourbar(title=title_two, barheight = height, 
                                 barwidth = width, title.position = "top",  
@@ -193,14 +204,56 @@ l2<-guides(fill=guide_colourbar(title=title_two, barheight = height,
 
 
 
-cut_off<-coord_sf(xlim = c(-113, -105.5), ylim = c(14, 19))
+cut_off<-coord_sf(xlim = c(-128, -99), ylim = c(9, 35))
 
 m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
 m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off
 
+
 ```
 
-# mysterious kay
+
+
+# ivette float5906484 
+
+
+# Javier
+```{r}
+key_id<-"EP112022"
+tc.pts<-f.single_storm_h.pts(key_id = key_id, h.pts)
+conv<-1.94384 # convert to m/s
+tc.pts$max_sustained_wind_m_s<-tc.pts$Wind/conv
+tc.track<-filter(h.tracks, Key == key_id)
+tc.p<-list.500$tc$EP122022 # can make a function
+
+
+tc.p.sf<-st_as_sf(tc.p)
+p_labels<-geom_sf_text(aes(label = day_difference), data=tc.p.sf , size = 3,  vjust=1.5, hjust =1.5)
+
+
+# c3a<-coord_sf(xlim = c(-116, -105), ylim = c(16, 26))
+tc_wind<-geom_sf(aes(fill=max_sustained_wind_m_s), data=tc.pts,  shape=21, size=3, color="white")
+cut_off<-coord_sf(xlim = c(-113, -105.5), ylim = c(14, 19))
+
+l1<-scale_fill_gradientn(colors = custom_color ,  na.value=NA, name=waiver()) 
+l2<-guides(fill=guide_colourbar(title=title_two, barheight = height, 
+                                barwidth = width, title.position = "top",  
+                                # title.hjust = 0.5,
+                                title.theme = element_text(size=title.textsize)), 
+                                legend.text=element_text(size=marks.textsize))
+
+
+
+cut_off<-coord_sf(xlim = c(-128, -99), ylim = c(9, 35))
+
+m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
+m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off
+
+
+```
+## Javier float: 6903093
+## avier float: 5906484 
+# kay
 KAy all
 ```{r}
 key_id<-"EP122022"
@@ -236,9 +289,9 @@ m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off
 
 ```
 
-KAy centre strong TC
+## Kay float: 6903093 centre strong TC
 
-
+float: 6903093
 
 ```{r}
 key_id<-"EP122022"
@@ -251,7 +304,7 @@ tc.p<-list.100$hu$EP122022 # can make a function
 
 
 tc.p.sf<-st_as_sf(tc.p)
-p_labels<-geom_sf_text(aes(label = day_difference), data=tc.p.sf , size = 3,  vjust=1.5, hjust =1.5)
+p_labels<-geom_sf_text(aes(label = day_difference), data=tc.p.sf , size = 3,  vjust=1.5, hjust =1)
 
 
 # c3a<-coord_sf(xlim = c(-116, -105), ylim = c(16, 26))
@@ -267,13 +320,67 @@ l2<-guides(fill=guide_colourbar(title=title_two, barheight = height,
 
 
 
-cut_off<-coord_sf(xlim = c(-113, -110), ylim = c(18, 21))
+cut_off<-coord_sf(xlim = c(-113, -111), ylim = c(18.5, 20.8))
 
 m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
 m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off
 
 
 ```
+
+
+
+
+
+
+
+
+## Kay float: 5906484 2nd float
+
+
+
+```{r}
+# float_id<-"4903026"
+# float_id<-"5906294"
+# float_id<-"5906295"
+# float_id<-"5906477"
+float_id<-"5906484"
+key_id<-"EP122022"
+tc.pts<-f.single_storm_h.pts(key_id = key_id, h.pts)
+conv<-1.94384 # convert to m/s
+tc.pts$max_sustained_wind_m_s<-tc.pts$Wind/conv
+tc.track<-filter(h.tracks, Key == key_id)
+tc.p<-list.500$tc$EP122022 # can make a function
+tc.p<-filter(tc.p, float==float_id)
+
+
+tc.p.sf<-st_as_sf(tc.p)
+
+
+
+# c3a<-coord_sf(xlim = c(-116, -105), ylim = c(16, 26))
+tc_wind<-geom_sf(aes(fill=max_sustained_wind_m_s), data=tc.pts,  shape=21, size=3, color="white")
+cut_off<-coord_sf(xlim = c(-113, -105.5), ylim = c(14, 19))
+
+l1<-scale_fill_gradientn(colors = custom_color ,  na.value=NA, name=waiver()) 
+l2<-guides(fill=guide_colourbar(title=title_two, barheight = height, 
+                                barwidth = width, title.position = "top",  
+                                # title.hjust = 0.5,
+                                title.theme = element_text(size=title.textsize)), 
+                                legend.text=element_text(size=marks.textsize))
+
+
+cut_off<-coord_sf(xlim = c(-110, -105), ylim = c(15, 20))
+p_labels<-geom_sf_text(aes(label = day_difference), data=tc.p.sf , size = 3,  vjust=.95, hjust =1.75)
+m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
+m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off
+m.map1
+
+```
+
+
+
+
 
 
 
