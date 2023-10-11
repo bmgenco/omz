@@ -121,7 +121,37 @@ l2<-guides(fill=guide_colourbar(title=title_two, barheight = height,
                                 title.theme = element_text(size=title.textsize)), 
                                 legend.text=element_text(size=marks.textsize))
 
+th1<-theme(text=element_text(family="Helvetica"))+ theme(legend.position=lp, plot.background = element_blank(),panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x=element_blank(), axis.title.y=element_blank(), plot.title = element_text(hjust = 0.5), plot.margin = unit(c(t, r, b, l), "cm"), legend.box.margin=margin(-15,-10,-10,-10))
 
+
+```
+
+
+
+
+# pre Nora
+
+
+```{r}
+key_id<-"EP142021"
+tc.pts<-f.single_storm_h.pts(key_id = key_id, h.pts)
+conv<-1.94384 # convert to m/s
+tc.pts$max_sustained_wind_m_s<-tc.pts$Wind/conv
+tc.track<-filter(h.tracks, Key == key_id)
+tc.p<-list.500$tc$EP142021 # can make a function
+
+
+tc_wind<-geom_sf(aes(fill=max_sustained_wind_m_s), data=tc.pts,  shape=21, size=3, color="white")
+
+
+
+cut_off<-coord_sf(xlim = c(-113, -105.5), ylim = c(17, 24))
+tc.p.sf<-st_as_sf(tc.p)
+p_labels<-geom_sf_text(aes(label = day_difference), data=tc.p.sf , size = 3,  vjust=1.5, hjust =1.5)
+storm_title<-paste(unique(tc.pts$Name), date(min(tc.pts$DateTime)), "-", date(max(tc.pts$DateTime)))
+
+m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
+m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off+ggtitle(storm_title)
 ```
 
 
@@ -139,15 +169,15 @@ tc.p<-list.500$tc$EP152021 # can make a function
 
 tc_wind<-geom_sf(aes(fill=max_sustained_wind_m_s), data=tc.pts,  shape=21, size=3, color="white")
 
-th1<-theme(text=element_text(family="Helvetica"))+ theme(legend.position=lp, plot.background = element_blank(),panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x=element_blank(), axis.title.y=element_blank(), plot.title = element_text(hjust = 0.5), plot.margin = unit(c(t, r, b, l), "cm"), legend.box.margin=margin(-15,-10,-10,-10))
+
 
 cut_off<-coord_sf(xlim = c(-113, -105.5), ylim = c(17, 24))
 tc.p.sf<-st_as_sf(tc.p)
 p_labels<-geom_sf_text(aes(label = day_difference), data=tc.p.sf , size = 3,  vjust=1.5, hjust =1.5)
+storm_title<-paste(unique(tc.pts$Name), date(min(tc.pts$DateTime)), "-", date(max(tc.pts$DateTime)))
 
 m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
-m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off
-
+m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off+ggtitle(storm_title)
 ```
 
 # genieve ggplots
@@ -158,6 +188,8 @@ tc.pts<-f.single_storm_h.pts(key_id = key_id, h.pts)
 conv<-1.94384 # convert to m/s
 tc.pts$max_sustained_wind_m_s<-tc.pts$Wind/conv
 tc.track<-filter(h.tracks, Key == key_id)
+
+
 tc.p<-list.500$tc$EP122020 # can make a function
 
 tc.p.sf<-st_as_sf(tc.p)
@@ -167,11 +199,11 @@ p_labels<-geom_sf_text(aes(label = day_difference), data=tc.p.sf , size = 3,  vj
 # c3a<-coord_sf(xlim = c(-116, -105), ylim = c(16, 26))
 tc_wind<-geom_sf(aes(fill=max_sustained_wind_m_s), data=tc.pts,  shape=21, size=3, color="white")
 cut_off<-coord_sf(xlim = c(-113, -105.5), ylim = c(14, 19))
-
+storm_title<-paste(unique(tc.pts$Name), date(min(tc.pts$DateTime)), "-", date(max(tc.pts$DateTime)))
 
 
 m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
-m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off
+m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off+ggtitle(storm_title)
 
 ```
 
@@ -184,7 +216,7 @@ tc.pts<-f.single_storm_h.pts(key_id = key_id, h.pts)
 conv<-1.94384 # convert to m/s
 tc.pts$max_sustained_wind_m_s<-tc.pts$Wind/conv
 tc.track<-filter(h.tracks, Key == key_id)
-tc.p<-list.500$tc$EP122022 # can make a function
+tc.p<-list.500$tc$EP102022 # can make a function
 
 
 tc.p.sf<-st_as_sf(tc.p)
@@ -202,19 +234,22 @@ l2<-guides(fill=guide_colourbar(title=title_two, barheight = height,
                                 title.theme = element_text(size=title.textsize)), 
                                 legend.text=element_text(size=marks.textsize))
 
-
+storm_title<-paste(unique(tc.pts$Name), date(min(tc.pts$DateTime)), "-", date(max(tc.pts$DateTime)))
 
 cut_off<-coord_sf(xlim = c(-128, -99), ylim = c(9, 35))
 
 m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
-m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off
+m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off+ggtitle(storm_title)
 
 
 ```
 
 
 
-# ivette float5906484 
+# ivette float 5906484 
+```{r}
+
+```
 
 
 # Javier
@@ -246,8 +281,10 @@ l2<-guides(fill=guide_colourbar(title=title_two, barheight = height,
 
 cut_off<-coord_sf(xlim = c(-128, -99), ylim = c(9, 35))
 
+storm_title<-paste(unique(tc.pts$Name), date(min(tc.pts$DateTime)), "-", date(max(tc.pts$DateTime)))
+
 m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
-m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off
+m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off+ggtitle(storm_title)
 
 
 ```
@@ -282,9 +319,10 @@ l2<-guides(fill=guide_colourbar(title=title_two, barheight = height,
 
 
 cut_off<-coord_sf(xlim = c(-128, -99), ylim = c(9, 35))
+storm_title<-paste(unique(tc.pts$Name), date(min(tc.pts$DateTime)), "-", date(max(tc.pts$DateTime)))
 
 m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
-m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off
+m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off+ggtitle(storm_title)
 
 
 ```
@@ -322,8 +360,10 @@ l2<-guides(fill=guide_colourbar(title=title_two, barheight = height,
 
 cut_off<-coord_sf(xlim = c(-113, -111), ylim = c(18.5, 20.8))
 
+storm_title<-paste(unique(tc.pts$Name), date(min(tc.pts$DateTime)), "-", date(max(tc.pts$DateTime)))
+
 m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
-m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off
+m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off+ggtitle(storm_title)
 
 
 ```
@@ -373,7 +413,9 @@ l2<-guides(fill=guide_colourbar(title=title_two, barheight = height,
 cut_off<-coord_sf(xlim = c(-110, -105), ylim = c(15, 20))
 p_labels<-geom_sf_text(aes(label = day_difference), data=tc.p.sf , size = 3,  vjust=.95, hjust =1.75)
 m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
-m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off
+storm_title<-paste(unique(tc.pts$Name), date(min(tc.pts$DateTime)), "-", date(max(tc.pts$DateTime)))
+m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off+ggtitle(storm_title)
+
 m.map1
 
 ```

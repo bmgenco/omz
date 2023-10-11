@@ -4,10 +4,12 @@ author: "Brandon M. Genco"
 date: "1/11/2022"
 output: html_document
 ---
+
 # Setup
+
 ## Directories and defaults
-Use r proj file for relative directories
-see: https://yihui.org/knitr/options/
+
+Use r proj file for relative directories see: <https://yihui.org/knitr/options/>
 
 ```{r setup}
 rm(list=ls())
@@ -28,10 +30,8 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
 ## Packages
-Installed custom hurdat package using r markdown menu
-* download  tar from archive as no longer maintained on cran repository
-* https://cran.r-project.org/src/contrib/Archive/HURDAT/
-+ include as git submodule instead
+
+Installed custom hurdat package using r markdown menu \* download tar from archive as no longer maintained on cran repository \* <https://cran.r-project.org/src/contrib/Archive/HURDAT/> + include as git submodule instead
 
 ```{r}
 f.ipak <- function(pkg){
@@ -56,6 +56,36 @@ f.ipak(packages)
 # rm(f.ipak, packages)
 print(paste0("Current Working Directory is ", getwd()))
 ```
+
+
+
+### tesitng to see if  removing packages gets plot to work
+
+```{r}
+f.ipak <- function(pkg){
+  # loads packages, quietly, given by a vector of package names e.g., pkg<-c("ggplot", "tidyverse")
+  # will install  packages listed , and their dependencies, if needed.
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg))
+    install.packages(new.pkg, dependencies = TRUE, quiet=T, verbose = F)
+  sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
+}
+
+# packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "RColorBrewer", "marmap", "extrafont", "oce", "MODIS", "measurements")  # set packages here
+
+# tidyverse: is all of the following packages: ggplot2, dplyr, tidyr, readr, purr, tibble, sringr, & forcats.
+
+packages<-c ( "fasterize", "sf", "cmocean", "ggplot2")
+
+# "HURDAT",
+
+f.ipak(packages)
+# lapply(packages, require, character.only = TRUE)
+# rm(f.ipak, packages)
+print(paste0("Current Working Directory is ", getwd()))
+```
+
+
 ## Load submodule for bio-argo floats
 
 ```{r argo submodule}
@@ -344,14 +374,17 @@ f.argo_by_database_w_selection_options<-function(database, year_begin, function_
 ```
 
 # Important objects and data sets
+
 ## temp load/save works save for next steps
 
 ```{r}
-setwd(robj)
+# setwd(wd)
+# setwd(robj)
 # bud_match<-readRDS("bud_match.R")
 # match<-readRDS("match.R")
-load("20220201_temp_workspace.RData")
-rm(function_variables)
+# load("20220201_temp_workspace.RData")
+load("r_wd/r_objects/20220201_temp_workspace.RData")
+# rm(function_variables)
 
 # save(function_variables, m.coast, database,  file="20220207_temp_workspace.RData")
 # saveRDS(match, "match.R")
@@ -369,28 +402,22 @@ load("init_argo.RData")
 ```
 
 ## Read in "Best Track Data (HURDAT2)" hurricane data
-Using/used 'hurdat package'
-* Data source: [hurdat2](https://www.nhc.noaa.gov/data/#text) 
-+ current version download 2022-01-11
-+ "This dataset was provided on 30 April 2021 to include the best tracks for 
-  the 2020 hurricane season, 2019's Ema (CP012019), and an update for 2019's 
-  Erick (EP062019) within the North Central Pacific basin."
+
+Using/used 'hurdat package' \* Data source: [hurdat2](https://www.nhc.noaa.gov/data/#text) + current version download 2022-01-11 + "This dataset was provided on 30 April 2021 to include the best tracks for the 2020 hurricane season, 2019's Ema (CP012019), and an update for 2019's Erick (EP062019) within the North Central Pacific basin."
 
 ```{r}
 # download from online. Basin is eastern pacific
 # h<-get_hurdat(basin="EP")
 # saveRDS(h, "r_objects/hurdat.R")
-
-h<-readRDS("r_objects/hurdat.R")
+h<-readRDS("r_wd/r_objects/hurdat.R")
+# h<-readRDS("r_objects/hurdat.R")
 h$DateTime<-with_tz(h$DateTime, tz="UTC")
 # h<-filter(h, between(Lon,-113,-108)) %>% filter(., between(Lat, 18,22))
 ```
 
 # function_variables (INCLUDES DYNAMIC VARIABLES based on Hurdat (h)):
-Appending 'function_variables' with dynamic variables from hurdat 'h' data set
-* define here as opposed to within function or sub blocks
-+ add hurdat coordinates as bbox feature
-Note importance of "function_variables<-vector(mode="list")"
+
+Appending 'function_variables' with dynamic variables from hurdat 'h' data set \* define here as opposed to within function or sub blocks + add hurdat coordinates as bbox feature Note importance of "function_variables\<-vector(mode="list")"
 
 ```{r}
 function_variables<-vector(mode="list") # for storing all function variables that may be dynamic or other wise
@@ -436,10 +463,12 @@ function_variables$selection<-paste0("Lat (", function_variables$h.lat_min, ", "
 rm(f.function_vars_fill)
 ```
 
-## ploting and coastal subsetting objects 
-- see script "GRL_Main_Figures.Rmd"
+## ploting and coastal subsetting objects
+
+-   see script "GRL_Main_Figures.Rmd"
+
 ```{r}
-setwd(gis_data)
+setwd("/home/brandon/vestawd/omz/data/gis_data/")
 coastline<-st_read("./ne_50m_land/ne_50m_land.shp") 
 # ocean<-st_read("./ne_50m_ocean/ne_50m_ocean.shp") 
 cl<-st_crop(coastline, xmin=function_variables$h.lon_min, ymin=function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax=function_variables$h.lat_max)
@@ -452,32 +481,29 @@ m.coast <- ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_bla
 # oc<-st_crop(ocean, xmin=function_variables$h.lon_min, ymin=function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax=function_variables$h.lat_max)
 ```
 
-#  Addtional Data sets Import:
-## read in meta data from urls -List of locations for metadata: 
+# Addtional Data sets Import:
 
-[World Ocean Database](https://www.ncei.noaa.gov/access/world-ocean-database-select/dbsearch.html)
-* Downloaded spatial search -> in omz/outputWorld Ocean Database Select and Retrieval System_files
-+ TODO: convert  html to table
-+ see [oce function](https://rdrr.io/cran/oce/man/read.woa.html)
-[WOA](https://www.ncei.noaa.gov/products/world-ocean-atlas)
-[SAMOS](https://samos.coaps.fsu.edu/html/webservices.php)
-+nothing done yet
-[BCO-DMO - metadata](https://erddap.bco-dmo.org/erddap/search/advanced.html?page=1&itemsPerPage=1000)
-*use ODV to download [meta data](https://erddap.bco-dmo.org/erddap/griddap/documentation.html)
+## read in meta data from urls -List of locations for metadata:
+
+[World Ocean Database](https://www.ncei.noaa.gov/access/world-ocean-database-select/dbsearch.html) \* Downloaded spatial search -\> in omz/outputWorld Ocean Database Select and Retrieval System_files + TODO: convert html to table + see [oce function](https://rdrr.io/cran/oce/man/read.woa.html) [WOA](https://www.ncei.noaa.gov/products/world-ocean-atlas) [SAMOS](https://samos.coaps.fsu.edu/html/webservices.php) +nothing done yet [BCO-DMO - metadata](https://erddap.bco-dmo.org/erddap/search/advanced.html?page=1&itemsPerPage=1000) \*use ODV to download [meta data](https://erddap.bco-dmo.org/erddap/griddap/documentation.html)
 
 ## read in in situ
-* ODZ Atlas files
-* Additional ???
+
+-   ODZ Atlas files
+-   Additional ???
 
 ### read in ODZ actual
-* using nc files from [online repository](https://www.bco-dmo.org/dataset/865316)
-* use [tidy nc package](https://ropensci.org/blog/2019/11/05/tidync/)
-+[additional reference](https://uomresearchit.github.io/r-tidyverse-intro/04-dplyr/)
 
-create  raster of number of observations from odz atlas:
+-   using nc files from [online repository](https://www.bco-dmo.org/dataset/865316)
+-   use [tidy nc package](https://ropensci.org/blog/2019/11/05/tidync/) +[additional reference](https://uomresearchit.github.io/r-tidyverse-intro/04-dplyr/)
+
+create raster of number of observations from odz atlas:
 
 ```{r}
-file<-(file.path(data_d, "odz_atlas/nc_depth.nc"))
+# file<-(file.path(data_d, "odz_atlas/nc_depth.nc"))
+file<-(file.path("/home/brandon/vestawd/omz/data/", "odz_atlas/nc_depth.nc"))
+
+
 x<-tidync(file) %>% hyper_tibble(select_var = "numObs")
 rm(file)
 y<-x%>% group_by(Longitude, Latitude) %>% summarise(sum_obs = sum(numObs)) %>% filter(., sum_obs >1) %>% as.data.frame(.) #return 2d dataframe of depth integareted observations
@@ -493,7 +519,6 @@ crs(x) <- "+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
 numobs_raster.odz<-x
 rm(x)
 ```
-
 
 ### read in ODZ interoplated
 
@@ -511,24 +536,27 @@ gc()
 ```
 
 #### convert to dbar to depth usinc oce package
-* see methods for function 'swDepth' in oce
-+ TODO: write function to loop through data sets
 
+-   see methods for function 'swDepth' in oce
+-   TODO: write function to loop through data sets
 
-### read in WOA actual 
+### read in WOA actual
 
-### read in WOA interpolated 
+### read in WOA interpolated
 
 ### SST products:
-* TO DO
-* download [SST](https://psl.noaa.gov/data/gridded/data.noaa.oisst.v2.highres.html)
-* see [nc file tutorial](https://ropensci.org/blog/2019/11/05/tidync/)
+
+-   TO DO
+-   download [SST](https://psl.noaa.gov/data/gridded/data.noaa.oisst.v2.highres.html)
+-   see [nc file tutorial](https://ropensci.org/blog/2019/11/05/tidync/)
 
 # Initial data subsetting
+
 ## spatial h reformation & Hurricanes only
-* may be redundant with large clipping
-* may have many points at land/sea interface
-+ Hurdat2 intentional includes landfall data points
+
+-   may be redundant with large clipping
+-   may have many points at land/sea interface
+-   Hurdat2 intentional includes landfall data points
 
 ```{r}
 x<-filter(h, Status == "HU") # save 'h' in order to adjust function variables if needed.
@@ -539,11 +567,10 @@ h.pts<-st_difference(h.pts, st_combine(st_geometry(cl))) # remove all points ove
 rm(x)
 ```
 
-Plotting basic
-double check re projecting issues: 
-*https://geocompr.robinlovelace.net/reproj-geo-data.html
+Plotting basic double check re projecting issues: \*<https://geocompr.robinlovelace.net/reproj-geo-data.html>
 
 #### Plotting Hurricanes with wind speed
+
 ```{r}
 # option 1
 # m.map<-m.coast+geom_sf(mapping = aes(col=Wind), data=h.pts, size=.25)+ggtitle(paste0("Hurricanes: ", Selection))+ labs(color = "Wind speed (m/s)")
@@ -574,7 +601,8 @@ h.buf<-f.buffer_select(h.pts, function_variables, cl)
 # h.pts
 ```
 
-#### plotting h.buf 
+#### plotting h.buf
+
 ```{r}
 m.map<-ggplot()+geom_sf(data=h.pts[1,], size= .25)+geom_sf(data =h.buf[1,], fill = NA, color = gray(.5)) + ggtitle("100 km radius")
 # + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
@@ -605,9 +633,9 @@ rm(temp)
 # rm(m.map, m.map1)
 ```
 
-
 ## match up odz to hurricane buffer
-*convert sf to raster
+
+\*convert sf to raster
 
 ```{r}
 #create raster from buffers
@@ -652,12 +680,15 @@ m.map
 ```
 
 ### filtering and subsetting odz-atlas and hurricane ovelap
-*416 grids 
-* over median (100)-> 225 grid cells
+
+*416 grids* over median (100)-\> 225 grid cells
 
 #### match up with hurricane
-##### Hurrican count per grid cell 
-https://gis.stackexchange.com/questions/110117/counting-number-of-points-in-polygon-using-r
+
+##### Hurrican count per grid cell
+
+<https://gis.stackexchange.com/questions/110117/counting-number-of-points-in-polygon-using-r>
+
 ```{r}
 grid<-st_make_grid(numobs_pts.odz, cellsize = 0.5, what="polygons", offset = st_bbox(numobs_pts.odz)[c("xmin", "ymin")], crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
 
@@ -681,6 +712,7 @@ names(grid)[names(grid) == "num_h"] <- "track_count"
 rm(y,temp, numobs_pts.odz)
 gc()
 ```
+
 #### plotting Hurricane count per grid
 
 ```{r}
@@ -695,8 +727,44 @@ m.map
 ```
 
 
+##### duplicate of above created 2023-09-26
+
+
+```{r}
+# 
+# new_database<-select(database, track_count, cell)
+# numobs_raster.odz
+x<-select(database, lon, lat, track_count) %>% st_drop_geometry(.)
+
+
+# y<-x %>% st_drop_geometry(.)
+y<-st_as_sf(x, coords = c('lon','lat'))
+
+st_crs(y)<-st_crs(database)
+
+m.map<-m.coast+geom_sf(data=y, aes(fill=track_count),lwd = 0)+scale_fill_cmocean(name="matter", direction =1) +labs(fill = "Count")+ggtitle("Hurricane observations per 0.5º x 0.5º cell")
+
+m.map<-m.coast+geom_sf(data=y, aes(fill=track_count),lwd = 0)+labs(fill = "Count")+ggtitle("Hurricane observations per 0.5º x 0.5º cell")
+
+
+# x<-fasterize(database$cell, numobs_raster.odz, field=database$track_count)
+```
+
+```{r}
+
+m.map<-m.coast+geom_sf(data=database, aes(fill=track_count),lwd = 0)+scale_fill_cmocean(name="matter", direction =1) +labs(fill = "Count")+ggtitle("Hurricane observations per 0.5º x 0.5º cell")
+
+
+m.map
+
+
+
+```
+
+
 ### match up create spatail datbase oobject
-* combine .5 x .5 degree gridded odz statitics and hurricane counts
+
+-   combine .5 x .5 degree gridded odz statitics and hurricane counts
 
 ```{r}
 
@@ -744,15 +812,14 @@ knitr::plot_crop(paste0(drop_img, "/", "weight_100.pdf"))
 rm(m.map, m.map1, overlap.odz)
 ```
 
-
 ### combining database, needs to be improved create selction function
- * combines:
- + h.buf data 
- + summary data ODZ
 
- https://community.rstudio.com/t/performing-a-full-join-on-sf-objects/43902/10
- https://r-spatial.github.io/sf/reference/st_make_grid.html
- 
+-   combines:
+-   h.buf data
+-   summary data ODZ
+
+<https://community.rstudio.com/t/performing-a-full-join-on-sf-objects/43902/10> <https://r-spatial.github.io/sf/reference/st_make_grid.html>
+
 ```{r}
 temp<-h.buf
 y<-st_coordinates(temp$points) %>% as.data.frame(.)
@@ -776,14 +843,16 @@ rm(database_1, h.buf)
 ```
 
 depth function on database depths
+
 ```{r}
 
 ```
 
 # create match up
-* create bounding box from center point (same resolution as raster)
-* sort by date
-* append to 
+
+-   create bounding box from center point (same resolution as raster)
+-   sort by date
+-   append to
 
 ```{r}
 # define selection criteria. if not see function defaults:
@@ -809,6 +878,7 @@ print(paste0("number of grid cells with matches is ", length(match)-1))
 ```
 
 temproarry bud match
+
 ```{r}
 setwd(robj)
 bud_match<-readRDS("bud_match.R")
@@ -909,11 +979,8 @@ bud_keep$bud_window
 
 ```
 
-
-
-
-
 ## searching through match object
+
 ```{r}
 
 # seraching through list
@@ -976,24 +1043,24 @@ show_sections("5905068", variables = c("DOXY"))
 
 ```
 
-
 #### saveing outout
+
 ```{r}
 sink("argo_match_up.txt")
 print(print)
 sink()
 ```
 
-
-
-
 ## select insitu by h_meta.sp
 
 # misc:
 
 ## Storms specific data from h
+
 #### find storms near areas with high
+
 #### Specific storms
+
 Improve this for actually use
 
 ```{r}
@@ -1016,5 +1083,5 @@ OHO<-filter(h, Name == storm_name)
 ```
 
 #### Storm selction space and time
-TODO: Create spatial database of poygons with data from f date set
 
+TODO: Create spatial database of poygons with data from f date set

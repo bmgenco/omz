@@ -41,7 +41,7 @@ Installed custom hurdat package using r markdown menu
 + include as git submodule instead
 
 ```{r}
-wd<-getwd()
+# wd<-getwd()
 
 f.ipak <- function(pkg){
   # loads packages, quietly, given by a vector of package names e.g., pkg<-c("ggplot", "tidyverse")
@@ -103,24 +103,59 @@ return(split)}
 
 # adcp
 # ctd casts
+```{r}
+print(getwd())
+```
 
 ```{r}
+
 d.sec<-readRDS("r_objects/OC1806A_ctd_sections.R")
 d35<-d.sec$st3.5
 
 c1<-d35@data$station[[1]]
+
 c2<-d35@data$station[[2]]
 c3<-d35@data$station[[3]]
 c4<-d35@data$station[[4]]
 c5<-d35@data$station[[5]]
 
+times<-c(c1@metadata$date, c2@metadata$date, c3@metadata$date, c4@metadata$date, c5@metadata$date) 
+times<-ymd_hms(times)%>%with_tz(., tzone="US/Mountain")%>%round_date(., 'minute')%>% as.character(.) %>%as.POSIXct(.)      
+times<-format(times, format="%m-%d %H:%M")
+
+# d35@metadata$time<-times
+
+d4<-d.sec$st4
+
+
 
 ```
 
 
 ```{r}
+# need to use local time on these objects. will need to photohsop times
+
+
+plot(d35, which="oxygen2", ztype="image", xtype="time", ylim=c(-20,80), xlab=NULL)
+plot(d35, which=3, ztype="image", xtype="time", ylim=c(-20,80)) # density
+
+plot(d35, which="fluorescence", ztype="image", xtype="time", ylim=c(-20,80))
+plot(d35, which="par", ztype="image", xtype="time", ylim=c(-20,80)) #not neede
 
 ```
+
+
+```{r}
+plot(d4, which="oxygen2", ztype="image", xtype="time", ylim=c(-20,80), xlab=NULL)
+plot(d4, which=3, ztype="image", xtype="time", ylim=c(-20,80)) # density
+
+plot(d4, which="fluorescence", ztype="image", xtype="time", ylim=c(-20,80))
+plot(d4, which="par", ztype="image", xtype="time", ylim=c(-20,80)) #not neede
+
+st_4times<-ymd_hms(d4@metadata$time)%>%with_tz(., tzone="US/Mountain")%>%round_date(., 'minute')%>% as.character(.) %>%as.POSIXct(.) 
+```
+
+
 
 
 ```{r}
