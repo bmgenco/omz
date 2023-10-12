@@ -3,8 +3,10 @@
 rm(list=ls())
 # r_scriptwd<-getwd()
 # wd<-substring(r_scriptwd,1,nchar(r_scriptwd) -10) # hardcoding replace here
-wd<-"/home/brandon/vestawd/omz/wd/r_wd"
-# wd<-"/home/brandon/callistowd/omz/wd/r_wd"
+# wd<-"/home/brandon/vestawd/omz/wd/r_wd"
+wd<-"/home/brandon/callistowd/omz/wd/r_wd"
+# wd<-"/home/brandon/europawd/omz/wd/r_wd"
+
 setwd(wd)
 
 # relative directories
@@ -42,6 +44,10 @@ list.500<-data$tc_search_radi_profiles$km_500
 
 rm(data)
 
+#load and creatw dta objects
+
+
+
 
 #### olaf ####
 key_id<-"EP152021"
@@ -49,6 +55,12 @@ tc.pts<-f.single_storm_h.pts(key_id = key_id, h.pts)
 tc.p<-list.500$tc$EP152021 # can make a function
 #co .ld be used to find profiels in time and sapce not asscoaited with hurricnae
 # tc.p<-f.select_tc_specific_profiles(list.x = list.500, key_id = key_id) 
+
+
+#load and creatw dta objects
+
+
+
 
 # specific float
 # x<-tc.p%>% filter(. , float == "6903094")
@@ -62,6 +74,10 @@ s<-f.reformat_profiles_for_ONE_Argo(x)
 
 
 all.floats<-f.reformat_profiles_for_ONE_Argo(tc.p)
+
+# olaf.profiles<-load_float_data(float_ids = all.floats$float_ids, float_profs = all.floats$float_profs)
+
+
 
 # picking tjus t to floats aof intertest
 # floats_2<-unisue(tc.p$EP152021$float) %>%as.numeric(.) %>%.[-1]
@@ -140,7 +156,7 @@ key_id<-"EP122020"
 tc.pts<-f.single_storm_h.pts(key_id = key_id, h.pts)
 tc.p<-list.500$tc$EP122020
 s<-f.reformat_profiles_for_ONE_Argo(tc.p)
-
+Geneive.profiles<-load_float_data(float_ids = s$float_ids, float_profs = s$float_profs)
 
 ### plotting genieve
 t.50<-show_time_series(float_ids = s$float_ids[1], float_profs = s$float_profs[1], plot_depth =50)
@@ -158,15 +174,20 @@ show_sections(float_ids = s$float_ids[1], float_profs = s$float_profs[1], plot_m
 
 ### kay ####
 
+# did I plot the worng porfiles?
+
 key_id<-"EP122022"
 tc.pts<-f.single_storm_h.pts(key_id = key_id, h.pts)
-tc.p<-list.500$tc$EP152021 # can make a function
+tc.p<-list.500$tc$EP122021 # can make a function
 #co .ld be used to find profiels in time and sapce not asscoaited with hurricnae
 # tc.p<-f.select_tc_specific_profiles(list.x = list.500, key_id = key_id) 
 
 # specific float
 x<-tc.p%>% filter(. , float == "6903093")
 s<-f.reformat_profiles_for_ONE_Argo(x)
+all.floats<-f.reformat_profiles_for_ONE_Argo(tc.p)
+
+kay.profiles<-load_float_data(float_ids = all.floats$float_ids, float_profs = all.floats$float_profs)
 
 sb<-s$float_profs[[1]][1:4]
 show_profiles(float_ids = s$float_ids[1], float_profs = sb, variables=c("TEMP", "CHLA", "DOXY"))
@@ -196,4 +217,12 @@ t.80<-show_time_series(float_ids = s$float_ids[1], float_profs = s$float_profs[1
 t.90<-show_time_series(float_ids = s$float_ids[1], float_profs = s$float_profs[1], plot_depth =90, variables=c( "TEMP", "CHLA"))
 t.100<-show_time_series(float_ids = s$float_ids[1], float_profs = s$float_profs[1], plot_depth =100, variables=c("TEMP", "CHLA"))         
 
+### saveing porifles
 
+profiles.data<-list(olaf.profiles, kay.profiles, geneive.profiles)
+names(profiles.data)<-c("olaf.profiles", "kay.profiles", "geneive.profiles")
+setwd(robj)
+saveRDS(profiles.data, "profiles_data.rds")
+
+setwd(robj)
+test<-readRDS("profiles_data.rds")
