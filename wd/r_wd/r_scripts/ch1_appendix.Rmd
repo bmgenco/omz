@@ -138,9 +138,13 @@ d4<-d.sec$st4
 
 plot(d35, which="oxygen2", ztype="image", xtype="time", ylim=c(-20,80), xlab=NULL)
 plot(d35, which=3, ztype="image", xtype="time", ylim=c(-20,80)) # density
+plot(d35, which=c("oxygen2", "density"), ztype="point", xtype="time", ylim=c(-20,70)) # density
+
+plot(d35, which=c("oxygen2", "beamAttenuation", "density"), ztype="image", xtype="time", ylim=c(-20,70)) # density
 
 plot(d35, which="fluorescence", ztype="image", xtype="time", ylim=c(-20,80))
-plot(d35, which="par", ztype="image", xtype="time", ylim=c(-20,80)) #not neede
+plot(d35, which="par", ztype="image", xtype="time", ylim=c(-20,70)) #not neede
+plot(d35, which="par", ztype="points", xtype="time", ylim=c(-20,70)) #not neede
 
 ```
 
@@ -153,8 +157,13 @@ plot(d4, which="fluorescence", ztype="image", xtype="time", ylim=c(-20,80))
 plot(d4, which="par", ztype="image", xtype="time", ylim=c(-20,80)) #not neede
 
 st_4times<-ymd_hms(d4@metadata$time)%>%with_tz(., tzone="US/Mountain")%>%round_date(., 'minute')%>% as.character(.) %>%as.POSIXct(.) 
-```
 
+```{r}
+
+
+
+
+```
 
 
 
@@ -168,7 +177,27 @@ plot(d35, which="fluorescence", ztype="image", xtype="time")
 
 ```
 
+## individual plots
 
+
+corelation
+```{r}
+
+```
+
+c2
+```{r}
+plot(c2, which=c("oxygen2", 6), type="l"m yl)
+plot(c2, which=c("oxygen2", 2), type="l")
+plot(c2, which=c("oxygen2", 6, "temperature", "beamAttenuation"), type="l", zlim)
+
+```
+
+
+## stats
+```{r}
+cor(c2@data$oxygen2, c2@data$beamAttenuation)
+```
 
 # export flux
 ### export flux load data
