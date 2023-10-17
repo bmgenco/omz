@@ -137,10 +137,13 @@ d4<-d.sec$st4
 
 
 plot(d35, which="oxygen2", ztype="image", xtype="time", ylim=c(-20,80), xlab=NULL)
-plot(d35, which=3, ztype="image", xtype="time", ylim=c(-20,80)) # density
+plot(d35, which=3, ztype="image", xtype="time", ylim=c(-20,80), add=T) # density
 plot(d35, which=c("oxygen2", "density"), ztype="point", xtype="time", ylim=c(-20,70)) # density
 
 plot(d35, which=c("oxygen2", "beamAttenuation", "density"), ztype="image", xtype="time", ylim=c(-20,70)) # density
+plot(d35, which=c("oxygen2", "beamAttenuation", "density"), ztype="image", xtype="time")
+
+
 
 plot(d35, which="fluorescence", ztype="image", xtype="time", ylim=c(-20,80))
 plot(d35, which="par", ztype="image", xtype="time", ylim=c(-20,70)) #not neede
@@ -169,9 +172,9 @@ st_4times<-ymd_hms(d4@metadata$time)%>%with_tz(., tzone="US/Mountain")%>%round_d
 
 ```{r}
 plot(d35, drawIsobaths=T, which="map")
-plot(d35, which=3, ztype="image", xtype="time")
-plot(d35, which="salinity", ztype="image", xtype="time")
-plot(d35, which="temperature", ztype="image", xtype="time")
+plot(d35, which=3, ztype="image")
+# plot(d35, which="salinity", ztype="image", xtype="time")
+# plot(d35, which="temperature", ztype="image", xtype="time")
 plot(d35, which="oxygen2", ztype="image", xtype="time")
 plot(d35, which="fluorescence", ztype="image", xtype="time")
 
@@ -181,15 +184,78 @@ plot(d35, which="fluorescence", ztype="image", xtype="time")
 
 
 corelation
+
+# other plots
 ```{r}
+plot(c2, which=c("oxygen2", 6), type="l")
+plot(c2, which=c("oxygen2", 2), type="l")
+plot(c2, which=c("oxygen2", 6, "temperature", "beamAttenuation"), type="l")
+plotProfile(c2, which=c("oxygen2", "temperature", "beamAttenuation"), type="l",ylim=c(0,80))
+
+plotProfile(c2, xtype="density+dddt", type="l", ylim=c(80,10)
+            
+            
+            Will need to clautlae density
 
 ```
 
-c2
+ ch1 appendix
 ```{r}
-plot(c2, which=c("oxygen2", 6), type="l"m yl)
-plot(c2, which=c("oxygen2", 2), type="l")
-plot(c2, which=c("oxygen2", 6, "temperature", "beamAttenuation"), type="l", zlim)
+
+
+
+
+# main plot do in console
+# depth  profiles
+par(mfrow = c(3, 2))
+plotProfile(c2, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+plotProfile(c2, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+plotProfile(c2, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+plotProfile(c2, xtype="par",ylim=c(80,10), col ="purple", ytype="depth")
+plotProfile(c2, xtype="density", ylim=c(80,10), col="brown", ytype="depth")
+plotProfile(c2, xtype="temperature", ylim=c(80,10), col="red", ytype="depth")
+
+bo<-recordPlot()
+pdf("station_35_profiles.pdf", height =9, width=6)
+bo
+dev.off()
+
+# density profiles
+par(mfrow = c(2, 2))
+plotProfile(c2, xtype="beamAttenuation",  ytype="sigmaTheta")
+plotProfile(c2, xtype="oxygen2",  ytype="sigmaTheta", col="blue")
+# plotProfile(c2, xtype="oxygen2",  ytype="sigmaTheta", col="blue")
+plotProfile(c2, xtype="fluorescence",col ="green", ytype="sigmaTheta")
+plotProfile(c2, xtype="par",  ytype="sigmaTheta", col="purple")
+b1<-recordPlot()
+
+
+pdf("station_35_density_profiles.pdf", height =9, width=8)
+b1
+dev.off()
+
+
+par(mfrow = c(2, 2))
+plotProfile(c2, xtype="density+N2", ylim=c(80,10),  ytype="depth")
+plotProfile(c2, xtype="salinity+temperature", ylim=c(80,10))
+plotProfile(c2, xtype="spice", ylim=c(80,10),  ytype="depth")
+plotProfile(c2, xtype="Rrho", ylim=c(80,10),  ytype="depth")
+
+b2<-recordPlot()
+
+pdf("station_35_oceanography_profiles.pdf", height =9, width=8)
+b2
+dev.off()
+
+
+
+
+```
+
+
+station 4
+
+```{r}
 
 ```
 
