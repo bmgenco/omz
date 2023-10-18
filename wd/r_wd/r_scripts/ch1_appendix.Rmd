@@ -108,7 +108,7 @@ print(getwd())
 ```
 
 ```{r}
-setwd()
+setwd(wd)
 d.sec<-readRDS("r_objects/OC1806A_ctd_sections.R")
 d35<-d.sec$st3.5
 
@@ -310,21 +310,21 @@ dev.off()
 
 
 
-par(mfrow = c(2, 2))
-plotProfile(c2, xtype="beamAttenuation",  ytype="sigmaTheta")
-pa<-recordPlot()
+# par(mfrow = c(2, 2))
 plotProfile(c2, xtype="oxygen2",  ytype="sigmaTheta", col="blue")
+pa<-recordPlot()
+plotProfile(c2, xtype="beamAttenuation",  ytype="sigmaTheta")
 pb<-recordPlot()
 # plotProfile(c2, xtype="oxygen2",  ytype="sigmaTheta", col="blue")
 plotProfile(c2, xtype="fluorescence",col ="green", ytype="sigmaTheta")
 pc<-recordPlot()
 plotProfile(c2, xtype="par",  ytype="sigmaTheta", col="purple")
-bd<-recordPlot()
+pd<-recordPlot()
 
 
-pdf("station_35 density_profiles_v2.pdf", height =14.5, width=9.5)
+pdf("station_35 density_profiles_v2.pdf")
 plot_grid(pa, pb, pc, pd, nrow=2, ncol=2,
-         labels = c('a', 'b', 'c', 'd',), align = "h", scale=.83, greed=T, axis="r")
+         labels = c('a', 'b', 'c', 'd'), align = "h", scale=.83, greed=T, axis="r")
 dev.off()
 
 
