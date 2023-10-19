@@ -321,11 +321,32 @@ pc<-recordPlot()
 plotProfile(c2, xtype="par",  ytype="sigmaTheta", col="purple")
 pd<-recordPlot()
 
-
-pdf("station_35 density_profiles_v2.pdf")
+setwd(wd)
+setwd(fig)
+pdf("station_35 density_profiles_v2.pdf", height=9, width=8)
 plot_grid(pa, pb, pc, pd, nrow=2, ncol=2,
-         labels = c('a', 'b', 'c', 'd'), align = "h", scale=.83, greed=T, axis="r")
+         labels = c('a', 'b', 'c', 'd'), align = "h", scale=1, greed=T, axis="r")
 dev.off()
+
+
+par(mfrow = c(2, 2))
+plotProfile(c2, xtype="density+N2", ylim=c(80,10),  ytype="depth")
+# pa<-recordPlot()
+plotProfile(c2, xtype="salinity+temperature", ylim=c(80,10))
+# pb<-recordPlot()
+plotProfile(c2, xtype="spice", ylim=c(80,10),  ytype="depth")
+# pc<-recordPlot()
+plotProfile(c2, xtype="Rrho", ylim=c(80,10),  ytype="depth")
+# pd<-recordPlot()
+
+
+pdf("station_35_oceanography_profiles_v2.pdf", height =9, width=8)
+plot_grid(pa, pb, pc, pd, nrow=2, ncol=2,
+         labels = c('a', 'b', 'c', 'd'), align = "h", scale=.8, greed=T, axis="r")
+dev.off()
+
+
+
 
 
 ```
