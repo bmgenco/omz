@@ -130,6 +130,21 @@ d4<-d.sec$st4
 
 
 ```
+
+### checking dpdp
+
+```{r}
+par(mfrow = c(1, 3))
+
+
+
+plot(c1, which=2, plim=c(100,0), )
+plot(c2, which =6,  plim=c(100,0))
+plot(c3, which =6,  plim=c(100,0))
+
+```
+
+
 ## messing around with section plots:
 
 ```{r}
@@ -243,6 +258,18 @@ plotProfile(c2, xtype="par",ylim=c(80,10), col ="purple", ytype="depth")
 plotProfile(c2, xtype="density", ylim=c(80,10), col="brown", ytype="depth")
 plotProfile(c2, xtype="temperature", ylim=c(80,10), col="red", ytype="depth")
 
+
+
+
+par(mfrow = c(3, 2))
+plotProfile(c2, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+plotProfile(c2, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+plotProfile(c2, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+plotProfile(c2, xtype="par",ylim=c(80,10), col ="purple", ytype="depth")
+plotProfile(c2, xtype="density", ylim=c(80,10), col="brown", ytype="depth")
+plotProfile(c2, xtype="temperature", ylim=c(80,10), col="red", ytype="depth")
+
+
 bo<-recordPlot()
 pdf("station_35_profiles.pdf", height =9, width=6)
 bo
@@ -351,11 +378,66 @@ dev.off()
 
 ```
 
+### time seris of focus plots
+
+```{r}
+ # dev.off()
+par(mfrow = c(3, 5), oma=c(3,0,0,0), mar=c(5,0,0,0))
+
+plotProfile(c1, xtype="oxygen2",  ytype="sigmaTheta", col="blue", ylim=c(26.5,25))
+mtext("Cast 1", side=3, line=3, outer =T)
+
+plotProfile(c2, xtype="oxygen2",  ytype="sigmaTheta", col="blue", ylim=c(26.5,25))
+plotProfile(c3, xtype="oxygen2",  ytype="sigmaTheta", col="blue", ylim=c(26.5,25))
+plotProfile(c4, xtype="oxygen2",  ytype="sigmaTheta", col="blue", ylim=c(26.5,25))
+plotProfile(c5, xtype="oxygen2",  ytype="sigmaTheta", col="blue", ylim=c(26.5,25))
+plotProfile(c1, xtype="beamAttenuation",  ytype="sigmaTheta", col="black", ylim=c(26.5,25))
+plotProfile(c2, xtyp="beamAttenuation",  ytype="sigmaTheta", col="black", ylim=c(26.5,25))
+plotProfile(c3, xtype="beamAttenuation",  ytype="sigmaTheta", col="black", ylim=c(26.5,25))
+plotProfile(c4, xtype="beamAttenuation",  ytype="sigmaTheta", col="black", ylim=c(26.5,25))
+plotProfile(c5, xtype="beamAttenuation",  ytype="sigmaTheta", col="black", ylim=c(26.5,25))
+plotProfile(c1, xtype="fluorescence",  ytype="sigmaTheta", col="green", ylim=c(26.5,25))
+plotProfile(c2, xtyp="fluorescence",  ytype="sigmaTheta", col="green", ylim=c(26.5,25))
+plotProfile(c3, xtype="fluorescence",  ytype="sigmaTheta", col="green", ylim=c(26.5,25))
+plotProfile(c4, xtype="fluorescence",  ytype="sigmaTheta", col="green", ylim=c(26.5,25))
+plotProfile(c5, xtype="fluorescence",  ytype="sigmaTheta", col="green", ylim=c(26.5,25))
+
+
+```
+
+
+
+
 
 ## stats
 ```{r}
 cor(c2@data$oxygen2, c2@data$beamAttenuation)
 ```
+
+#ch1 appendi staion 4
+```{r}
+
+plotProfile(c1, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+pa<-recordPlot()
+plotProfile(c1, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+pb<-recordPlot()
+plotProfile(c1, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+pc<-recordPlot()
+plotProfile(c1, xtype="par",ylim=c(80,10), col ="purple", ytype="depth")
+pd<-recordPlot()
+plotProfile(c1, xtype="density", ylim=c(80,10), col="brown", ytype="depth")
+pe<-recordPlot()
+plotProfile(c1, xtype="temperature", ylim=c(80,10), col="red", ytype="depth")
+pf<-recordPlot()
+
+plot_grid(pa, pb, pc, pd, pe, pf, nrow=3, ncol=2,
+         labels = c('a', 'b', 'c', 'd', 'e', 'f'), align = "h", scale=.83, greed=T, axis="r")
+
+
+
+
+```
+
 
 # export flux
 ### export flux load data
