@@ -1,6 +1,52 @@
 # ploting is easier in r code, run r workbook tio get dat aobjects
 
 
+### multiple casts station 3.5
+
+
+plotProfile(c1, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+mtext("Cast 1", side=3, line=3)
+pa<-recordPlot()
+plotProfile(c2, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+mtext("Cast 2", side=3, line=3)
+pb<-recordPlot()
+plotProfile(c3, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+mtext("Cast 3", side=3, line=3)
+pc<-recordPlot()
+plotProfile(c4, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+mtext("Cast 4", side=3, line=3)
+pd<-recordPlot()
+plotProfile(c5, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+mtext("Cast 5", side=3, line=3)
+pe<-recordPlot()
+plotProfile(c1, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+pf<-recordPlot()
+plotProfile(c2, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+pg<-recordPlot()
+plotProfile(c3, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+ph<-recordPlot()
+plotProfile(c4, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+pi<-recordPlot()
+plotProfile(c5, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+pj<-recordPlot()
+plotProfile(c1, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+pk<-recordPlot()
+plotProfile(c2, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+pl<-recordPlot()
+plotProfile(c3, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+pm<-recordPlot()
+plotProfile(c4, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+pn<-recordPlot()
+plotProfile(c5, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+po<-recordPlot()
+
+dev.off()
+
+pdf("station_35_depth_TS.pdf", height=12, width=16)
+plot_grid(pa, pb, pc, pd, pe, pf, pg, ph, pi, pj, pk, pl, pm, pn, po, nrow=3, ncol=5,
+          labels = c('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o'), align = "h", scale=.82, greed=T, axis="r")
+dev.off()
+
 
 #### ploting DCM  TS station 3.5 ####
 
@@ -50,7 +96,7 @@ dev.off()
 setwd(wd)
 setwd(fig)
 
-pdf("station_35_density_TS_v2.pdf", height=12, width=16)
+pdf("station_35_density_TS.pdf", height=12, width=16)
 plot_grid(pa, pb, pc, pd, pe, pf, pg, ph, pi, pj, pk, pl, pm, pn, po, nrow=3, ncol=5,
           labels = c('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o'), align = "h", scale=.82, greed=T, axis="r")
 dev.off()
@@ -135,3 +181,5 @@ dev.off()
 
 
 ### sig
+
+### multiple casts station 3.5

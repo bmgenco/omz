@@ -242,6 +242,33 @@ plotProfile(c2, xtype="density+dddt", type="l", ylim=c(80,10))
 
 ```
 
+##
+
+
+```{r}
+par(mfrow = c(3, 5))
+
+plotProfile(c1, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+plotProfile(c2, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+plotProfile(c3, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+plotProfile(c4, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+plotProfile(c5, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+
+plotProfile(c1, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+plotProfile(c2, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+plotProfile(c3, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+plotProfile(c4, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+plotProfile(c5, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+
+plotProfile(c1, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+plotProfile(c2, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+plotProfile(c3, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+plotProfile(c4, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+plotProfile(c5, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+
+```
+
+
 #ch1 appendix v1 
 ```{r}
 
