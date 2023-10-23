@@ -467,7 +467,88 @@ plot_grid(pa, pb, pc, pd, pe, pf, nrow=3, ncol=2,
 
 
 # export flux
-### export flux load data
+## export flux load data
+
+```{r}
+setwd(wd)
+setwd(robj)
+
+data<-read_rds("vgpm_integrated_all_years_202200607.R")
+x<-data$st3.5
+rm(data)
+
+window_area<-round((x$`window_area (m^2)`[1]*1e-6),0)
+lab_total<-paste0("Station ", "3.5", ":", " Total Export Flux - ", window_area, " km^2 area")
+
+x$date<-ymd(x$date)
+x<-select(x, date, `mean_export_flux (mgC/m^2/day) for_window_area (total/sum_grid_area)`, `total_export_flux (mgC/day)`)
+names(x)<-c("date", "avg", "ef")
+x$ef<-x$ef/1000000
+
+sst<-readRDS("st35_sst_modis.R")
+z<-select(sst, date, `SST_mean (area weighted)`)
+rm(sst)
+names(z)<-c("date", "sst")
+z$date<-ymd(z$date)
+
+chl<-readRDS("st35_chl_modis.R")
+y<-select(chl, date, 'chl_mean (area weighted)')
+rm(chl)
+names(y)<-c("date", "chl")
+y$date<-ymd(y$date)
+
+```
+
+## create anomalies
+```{r}
+x$ef.a<-f.anomaly(x$ef)
+x$avg.a<-f.anomaly(x$avg)
+
+y$chl.a<-f.anomaly(y$chl)
+z$sst.a<-f.anomaly(z$sst)
+
+xnames<-c("date", "avg_EF_mgC_m2_day", "total_EF_mgC_day", "total_EF_anomaly_mgC_day", "avg_EF_anomaly_mgC_m2_day")
+ynames<-c("date", "avg_CHL_mg_m3_day","avg_CHL_anomaly_mg_m3_day")
+znames<-c("date", "avg_SST_C", "SST_anomaly_C")
+
+names(x)<-xnames
+names(y)<-ynames
+names(z)<-znames
+
+# conv<-3.944e+10
+# 94.11872*conv
+
+rm(xnames, ynames, znames)
+
+x1<-full_join(y,z, by="date")%>% full_join(., x, by="date")
+# missing_values<- x1[rowSums(is.na(x1)) > 0,] # a few misinf vlauers. see august 2020 for export flux
+rm(x,y,z)
+
+```
+## filled and non-filled dataset
+
+x1= non_filled
+
+```{r}
+start<-min(x1$date)
+end<-max(x1$date)%>%+7
+d<-data.frame(seq(ymd(start), ymd(end), b="days"), NA)
+names(d)<-c("date", "remove")
+
+
+x1[is.na(x1)]<--1 #save an values for later
+
+x2<-full_join(d, x1, by="date") %>% select(., -remove) 
+x2<-x2%>% fill(names(x2), .direction =  "down")
+x2[x2==-1]<-NA
+# rm(x1,d)
+
+```
+
+## spatil selection of storms
+
+
+
 #### load hurricanes
 ## load basic hurdat
 
@@ -514,7 +595,400 @@ y$date<-ymd(y$date)
 ```
 
 
+
+```{r}
+# 
+ # save_h<-h
+# h<-save_h
+
+h<-filter(h, DateTime >=date(min(x2$date))-60) 
+h$date<-date(h$DateTime)
+h<-select(h, date,Key, Name, Status, Pressure, Wind, Lon, Lat)
+
+# distance<-100000 #200 km
+distance<-200000 #400 km
+
+setwd(wd)
+setwd(robj)
+stations_positions_list<-readRDS("OC1806A_stations_positions_list.R")
+st<-stations_positions_list[[3]][4,cbind(2,3)]
+st<-sf::st_as_sf(st, coords =c("longitude", "latitude"),  crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+flat<-sf::st_transform(st, "+proj=aeqd +lat_0=18.5005 +lon_0=-108.502" )
+circle_3.5<-sf::st_buffer(flat, dist=distance)%>%sf::st_transform(., "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+bbox<-st_bbox(circle_3.5)
+
+h.pts<- sf::st_as_sf(h, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>% 
+sf::st_crop(., c(xmin=bbox$xmin[[1]], ymin=bbox$ymin[[1]], xmax=bbox$xmax[[1]], ymax=bbox$ymax[[1]])) #subset by user defined 
+
+h<-st_set_geometry(h.pts, NULL)
+
+# smoothing out multi-tiem points
+
+
+new.h<-h %>% distinct(date, .keep_all = TRUE)
+
+
+rm(circle_3.5, flat, stations_positions_list, st)
+
+```
+
+
+
 ## Signal and noise
+
+split date
+
+```{r}
+# data<-f.noise(x=x1, h.date=new.h$date, prior=14, post=24)
+# conservative, and more accutrate nounds
+data<-f.noise(x=x1, h.date=new.h$date, prior=10, post=24)
+
+```
+
+### full times series
+
+```{r}
+
+t<-na.omit(x1) %>%filter(date <= '2020-08-12') 
+# t<-na.omit(x1)
+t.d<-select(t, date)%>% .[,1]
+t<-t%>%select(.,avg_CHL_mg_m3_day, avg_SST_C, avg_EF_mgC_m2_day )
+names(t)<-c("CHL", "SST", "EF")
+
+t.sst<-t%>%select(., SST)%>% xts(., t.d)
+t.chl<-t%>%select(., CHL)%>% xts(., t.d)
+t.ef<-t%>%select(., EF)%>% xts(., t.d)
+
+# trends<-ts_trend(t)
+trend.sst<-ts_trend(t.sst)
+trend.chl<-ts_trend(t.chl)
+trend.ef<-ts_trend(t.ef)
+
+p1<-ts_ggplot(t.chl, ts_trend(t.chl))+scale_color_manual(values = c("darkgreen", "purple"), labels=c("Mean CHL [mg/m3/day]", "Loews Trend"))+ theme_tsbox() + ggtitle("Time Series")
+p2<-ts_ggplot(t.sst, ts_trend(t.sst))+scale_color_manual(values = c("red", "purple"), labels=c("Mean SST (°C)", "Loews Trend"))+ theme_tsbox() + ggtitle("Time Series")
+p3<-ts_ggplot(t.ef, ts_trend(t.ef))+scale_color_manual(values = c("black", "purple"), labels=c("Mean Export Flux (mgC/m^2/day)", "Loews Trend"))+ theme_tsbox() + ggtitle("Time Series")
+
+```
+
+
+### signal
+```{r}
+# x1<-x1 %>% filter(date <= '2020-08-12') 
+# t<-(x1)%>%select(.,avg_CHL_mg_m3_day, avg_SST_C, avg_EF_mgC_m2_day )
+# t<-na.omit(data$signal) %>%filter(date <= '2020-08-12') 
+
+
+t<-na.omit(data$signal) %>%filter(date <= '2020-08-12') 
+t.d<-select(t, date)%>% .[,1]
+t<-(t)%>%select(.,avg_CHL_mg_m3_day, avg_SST_C, avg_EF_mgC_m2_day )
+names(t)<-c("CHL", "SST", "EF")
+
+signal.sst<-t%>%select(., SST)%>% xts(., t.d)
+signal.chl<-t%>%select(., CHL)%>% xts(., t.d)
+signal.ef<-t%>%select(., EF)%>% xts(., t.d)
+
+# trends<-ts_trend(t)
+
+signal_trend.sst<-ts_trend(signal.sst)
+signal_trend.chl<-ts_trend(signal.chl)
+signal_trend.ef<-ts_trend(signal.ef)
+
+p4<-ts_ggplot(signal.chl, ts_trend(signal.chl))+scale_color_manual(values = c("darkgreen", "purple"), labels=c("Mean CHL [mg/m3/day]", "Loews Trend"))+ theme_tsbox()+ ggtitle("Non TC signal component")
+p5<-ts_ggplot(signal.sst, ts_trend(signal.sst))+scale_color_manual(values = c("red", "purple"), labels=c("Mean SST (°C)", "Loews Trend"))+ theme_tsbox() + ggtitle("Non TC signal component") 
+p6<-ts_ggplot(signal.ef, ts_trend(signal.ef))+scale_color_manual(values = c("black", "purple"), labels=c("Mean Export Flux (mgC/m^2/day)", "Loews Trend"))+ theme_tsbox() + ggtitle("Non TC signal component")
+
+
+```
+
+### noise
+
+```{r}
+
+t<-na.omit(data$noise) %>%filter(date <= '2020-08-12') 
+t.d<-select(t, date)%>% .[,1]
+t<-(t)%>%select(.,avg_CHL_mg_m3_day, avg_SST_C, avg_EF_mgC_m2_day )
+names(t)<-c("CHL", "SST", "EF")
+
+noise.sst<-t%>%select(., SST)%>% xts(., t.d)
+noise.chl<-t%>%select(., CHL)%>% xts(., t.d)
+noise.ef<-t%>%select(., EF)%>% xts(., t.d)
+
+# trends<-ts_trend(t)
+
+noise_trend.sst<-ts_trend(noise.sst)
+noise_trend.chl<-ts_trend(noise.chl)
+noise_trend.ef<-ts_trend(noise.ef)
+
+p7<-ts_ggplot(noise.chl, ts_trend(noise.chl))+scale_color_manual(values = c("darkgreen", "purple"), labels=c("Mean CHL [mg/m3/day]", "Loews Trend"))+ theme_tsbox() + ggtitle("TC noise component") 
+p8<-ts_ggplot(noise.sst, ts_trend(noise.sst))+scale_color_manual(values = c("red", "purple"), labels=c("Mean SST (°C)", "Loews Trend"))+ theme_tsbox()+ ggtitle("TC noise component")
+p9<-ts_ggplot(noise.ef, ts_trend(noise.ef))+scale_color_manual(values = c("black", "purple"), labels=c("Mean Export Flux (mgC/m^2/day)", "Loews Trend"))+ theme_tsbox()+ ggtitle("TC noise component")
+
+```
+
+#### comparing trends
+
+```{r}
+
+sst_trend.dif<-trend.sst-signal_trend.sst
+chl_trend.dif<-trend.chl-signal_trend.chl
+ef_trend.dif<-trend.ef-signal_trend.ef
+
+
+
+
+# p<-ts_ggplot(t.chl, signal.chl)
+
+
+```
+
+
+
+
+# matching ONI index to trend
+
+```{r}
+oni<-download_oni()
+oni<-oni%>% filter(Date>= min(t.chl$time), Date<=max(t.chl$time))
+t.oni<-xts(oni$ONI, oni$Date)
+
+cutoff<-'2020-08-12'
+start<-min(data$signal$date)
+pdo<-download_pdo()
+# heat.sst<-filter(t.sst, time<=cutoff)
+pdo<-pdo%>% filter(Date>= start, Date<=cutoff)
+# pdo<-pdo%>%filter(Date>= min(t.chl$time), Date<=max(t.chl$time))
+
+
+pdo$PDO<-scale(pdo$PDO)
+t.pdo<-xts(pdo$PDO, pdo$Date)
+
+# ccf need tim series to be smae smapling ferqucny..
+
+t.chl$CHL<-scale(t.chl$CHL)
+t.sst$SST<-scale(t.sst$SST)
+t.ef$EF<-scale(t.ef$EF)
+
+# t.pdo$value<-scale(t.pdo$value)
+p13<-ts_ggplot(t.pdo,  t.chl, ts_trend(t.chl), -ts_trend(t.pdo))+ theme_tsbox() + ggtitle("CHL")
+
+p14<-ts_ggplot(t.pdo,  t.sst, ts_trend(t.sst), -ts_trend(t.pdo))+ theme_tsbox()+ggtitle("SST")
+p15<-ts_ggplot(t.pdo,  t.ef, ts_trend(t.ef), -ts_trend(t.pdo))+ theme_tsbox() + ggtitle("EF")
+
+p16<-ts_ggplot(t.pdo,  t.chl, ts_trend(t.chl), ts_trend(t.pdo))+ theme_tsbox() + ggtitle("CHL")
+p17<-ts_ggplot(t.pdo,  t.sst, ts_trend(t.sst), ts_trend(t.pdo))+ theme_tsbox()+ggtitle("SST")
+p18<-ts_ggplot(t.pdo,  t.ef, ts_trend(t.ef), ts_trend(t.pdo))+ theme_tsbox() + ggtitle("EF")
+
+trend.pdo<--1*ts_trend(t.pdo)
+
+
+test<-(ts_trend(t.chl))
+# test%>%ts_frequency(., to="month", aggregate = "mean")
+# test1<-ts_frequency(((t) %>% filter(., id=="CHL")), to=12, aggregate = "mean")
+
+# trend.chl<- t.chl %>%ts_frequency(., to="month", aggregate="mean") %>% ts_trend()
+# cor(-ts_trend(t.pdo), ts_trend(t.chl))
+
+par(mfrow = c(2, 1))
+p13
+p15
+
+
+p.new<-ts_plot(t.pdo,  t.chl, ts_trend(t.chl), -ts_trend(t.pdo), title = "CHL") 
+```
+
+```{r}
+
+
+p10<-ggplot()+geom_point(data=data$signal, aes(x=date, y=avg_CHL_mg_m3_day, color="Signal"))+ 
+geom_point(data=data$noise, aes(x=date, y=avg_CHL_mg_m3_day, color="Noise"))+ 
+geom_line(data=ts_df(trend.chl), aes(x=time, y=value, color="Trend"))+
+labs(y="Mean CHL [mg/m3/day]")+
+scale_color_manual(values=c(Signal="darkgreen", Noise="#640064", Trend="black"))+
+theme(legend.position="bottom") +
+theme(legend.title=element_blank())
+
+
+# p.signal<-data$signal
+
+
+p11<-ggplot()+geom_point(data=data$signal, aes(x=date, y=avg_SST_C, color="Signal"))+ 
+geom_point(data=data$noise, aes(x=date, y=avg_SST_C, color="Noise"))+ 
+geom_line(data=ts_df(trend.sst), aes(x=time, y=value, color="Trend"))+
+xlim(min(data$signal$date), max(data$signal$date))+
+ylim(20, 30)+
+labs(y="Mean SST (°C)")+
+scale_color_manual(values=c(Signal="red", Noise="#00ffff", Trend="black"))+
+theme(legend.position="bottom") +
+theme(legend.title=element_blank())
+
+
+
+p12<-ggplot()+geom_point(data=data$signal, aes(x=date, y=avg_EF_mgC_m2_day, color="Signal"))+ 
+geom_point(data=data$noise, aes(x=date, y=avg_EF_mgC_m2_day, color="Noise"))+ 
+geom_line(data=ts_df(trend.ef), aes(x=time, y=value, color="Trend"))+
+ylim(35, 130)+
+labs(y="Mean Export Flux (mgC/m^2/day)")+
+scale_color_manual(values=c(Signal="brown", Noise="#2aa5a5", Trend="black"))+
+theme(legend.position="bottom") +
+theme(legend.title=element_blank())
+
+
+```
+
+
+
+# plots 1
+```{r}
+plots<-vector(mode='list')
+
+#time series with trends
+plots[[1]]<-p1
+plots[[2]]<-p2
+plots[[3]]<-p3
+
+plots
+
+
+
+
+```
+
+saving plots
+```{r}
+
+setwd(fig)
+# pdf("figure_a1_v2.png", height=11 , width =8.5)
+# plot_grid(plots[[1]], plots[[2]], plots[[3]], ncol=1, labels="auto")
+# dev.off()
+
+
+
+pdf("figure_a2_v3.pdf", height=11 , width =9.5)
+plot_grid(p4,p7,p5,p8,p6,p9, ncol=2, labels="auto")
+dev.off()
+
+
+# 
+# pdf("figure_a3_v2.pdf", height=11 , width =8.5)
+# plot_grid(p10, p11,p12, ncol=1, labels="auto")
+# dev.off()
+# 
+# 
+# pdf("figure_a4_v2.pdf", height=11 , width =8.5)
+# plot_grid(p13, p14,p15, ncol=1)
+# dev.off()
+
+
+```
+
+
+
+```{r}
+# p10<-ts_ggplot(signal_trend.chl, noise_trend.chl, trend.chl)+ylim(.05, .1)
+# p10<-ts_plot(signal_trend.chl, noise_trend.chl, trend.chl)
+
+
+pa<-ts_ggplot(signal_trend.sst)
+pb<-ts_ggplot(trend.sst)
+# p<-
+# p<-ts_ggplot(trend.sst, noise_trend.sst)
+
+```
+
+
+
+
+### random attempts
+```{r}
+
+s<-spectrum(t.chl)
+f.chl<-fft(t.chl$value)
+# stuff that dpes wqorkk.
+
+test<-t %>% model(stl = STL(value))
+
+test<-tidy_fft(t$value)
+
+
+test2<-ts_decompose(t)
+
+test<-ts_trend(t)
+
+
+test<-decompose(t)
+
+```
+
+
+
+
+
+### xts and ts
+requres t as xts object
+```{r}
+# seems like ther should be an easri way..
+
+
+remove(t.d)
+periodicity(t$avg_SST_C)
+
+# weekly hack
+
+ts.sst<-ts(x1$avg_SST_C, frequency=52, start=c(2002, 07))
+ts.chl<-ts(x1$avg_CHL_mg_m3_day, frequency=52, start=c(2002, 07))
+
+
+d.sst<-decompose(ts.sst, type = "multiplicative")
+s<-spectrum(ts, demean=T)
+
+
+test<-stl(ts)
+
+# messing asbout:
+test<-stl.xts(t, s.window="periodic")
+
+s<-spectrum(t$avg_SST_C, demean=F)
+
+test<-fft(t)
+
+
+
+plot(fft(t), type = "l")
+
+test<-acf(t, demean=T)
+s<-spectrum(t, demean=T)
+
+```
+
+
+
+
+## with ts whioch is  apin for 8 day observersations
+
+```{r}
+start<-min(x1$date)%>%as.POSIXct()
+end<-max(x1$date)%>%as.POSIXct()
+
+start<-c(20)
+
+start<-min(x1$date)
+end<-max(x1$date)
+
+
+t<-x1%>%select(.,avg_CHL_mg_m3_day, avg_SST_C, avg_EF_mgC_m2_day ) %>% ts(.,start=start, end=end, deltat =(8/365) )
+
+t<-x1%>%select(.,avg_EF_mgC_m2_day ) %>% ts(.,start=start, end=end, deltat =(7/365) )
+
+
+t1<-decompose(t, type ="additive", filter=NULL)
+
+
+```
+
+
+
+
+
 
 ## PDO & Enso
 
