@@ -126,10 +126,19 @@ times<-format(times, format="%m-%d %H:%M")
 # d35@metadata$time<-times
 
 d4<-d.sec$st4
+d3<-d.sec$st3
 
 
 
 ```
+
+
+```{r}
+setwd(wd)
+write.csv(times, "station3_local.csv")
+
+```
+
 
 ### checking dpdp
 
@@ -222,6 +231,32 @@ plot(d35, which="oxygen2", ztype="image", xtype="time")
 plot(d35, which="fluorescence", ztype="image", xtype="time")
 
 ```
+
+### station 3
+
+```{r}
+plot(d3, drawIsobaths=T, which="map")
+plot(d3, which=3, ztype="image")
+# plot(d35, which="salinity", ztype="image", xtype="time")
+# plot(d35, which="temperature", ztype="image", xtype="time")
+plot(d3, which="oxygen2", ztype="image", xtype="time")
+plot(d3, which="fluorescence", ztype="image", xtype="time")
+
+
+plot(d3, which="oxygen2", ztype="image", xtype="time", ylim=c(-20,180))
+
+plot(d3, which=3, ztype="image", xtype="time", ylim=c(-20,180)) # density
+
+plot(d3, which="fluorescence", ztype="image", xtype="time", ylim=c(-20,180))
+# plot(d3, which="par", ztype="image", xtype="time", ylim=c(-20,180)) #not needed
+
+
+```
+
+
+
+
+
 
 ## individual plots
 
