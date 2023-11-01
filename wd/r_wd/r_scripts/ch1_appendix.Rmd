@@ -127,7 +127,7 @@ times<-format(times, format="%m-%d %H:%M")
 
 d4<-d.sec$st4
 
-
+d3<-d.sec$st3
 
 ```
 
@@ -160,11 +160,30 @@ points(distance[look], depth[look], col="red")
 plot(d35, which="oxygen2", ztype="points", xtype="time", ylim=c(-20,80), xlab=NULL)
 ```
 
+# station 3
+```{r}
+plot(d3, which="oxygen2", ztype="image", xtype="time")
+plot(d3, which=3, ztype="image", xtype="time", ylim=c(-20,80), add=T) # density
+plot(d3, which=c("oxygen2", "density"), ztype="point", xtype="time", ylim=c(-20,70)) # density
+
+plot(d3, which=c("oxygen2", "beamAttenuation", "density"), ztype="image", xtype="time", ylim=c(-20,70)) # density
+plot(d3, which=c("oxygen2", "beamAttenuation", "density"), ztype="image", xtype="time")
+
+plot(d3, which="fluorescence", ztype="image", xtype="time", ylim=c(-20,80))
+plot(d3, which="par", ztype="image", xtype="time", ylim=c(-20,70)) #not neede
+plot(d3, which="par", ztype="points", xtype="time", ylim=c(-20,70)) #not needed
+
+
+```
 
 
 
 ```{r}
 # need to use local time on these objects. will need to photohsop times
+
+
+
+
 
 
 plot(d35, which="oxygen2", ztype="image", xtype="time", ylim=c(-20,80), xlab=NULL)
@@ -232,10 +251,17 @@ corelation
 ```{r}
 plot(c2, which=c("oxygen2", 6), type="l")
 plot(c2, which=c("oxygen2", 2), type="l")
-plot(c2, which=c("oxygen2", 6, "temperature", "beamAttenuation"), type="l")
+plot(c5, which=c("oxygen2", "density", "temperature", "beamAttenuation", "fluorescence"), type="l", plim=c(180, 0))
 plotProfile(c2, which=c("oxygen2", "temperature", "beamAttenuation"), type="l",ylim=c(0,80))
 
 plotProfile(c2, xtype="density+dddt", type="l", ylim=c(80,10))
+
+
+par(mfrow = c(2, 2))
+plotProfile(c5, xtype="density+N2", ylim=c(180,10),  ytype="depth")
+plotProfile(c2, xtype="salinity+temperature", ylim=c(180,10))
+ plotProfile(c1, xtype="spice", ylim=c(180,10),  ytype="depth")
+plotProfile(c1, xtype="Rrho", ylim=c(180,10),  ytype="depth")
             
             
             #Will need to clautlae density
@@ -910,7 +936,7 @@ test<-t %>% model(stl = STL(value))
 test<-tidy_fft(t$value)
 
 
-test2<-ts_decompose(t)
+test2<-ts_decompose(t$CHL)
 
 test<-ts_trend(t)
 
@@ -920,8 +946,8 @@ test<-decompose(t)
 ```
 
 
-
-
+Read me
+https://stackoverflow.com/questions/52703938/decomposing-time-series-data-no-or-less-than-2-periods
 
 ### xts and ts
 requres t as xts object
@@ -929,16 +955,29 @@ requres t as xts object
 # seems like ther should be an easri way..
 
 
+
+
 remove(t.d)
 periodicity(t$avg_SST_C)
+periodicity(t$CHL)
 
 # weekly hack
 
 ts.sst<-ts(x1$avg_SST_C, frequency=52, start=c(2002, 07))
 ts.chl<-ts(x1$avg_CHL_mg_m3_day, frequency=52, start=c(2002, 07))
+## added 
+
+ts.sst<-ts(x1$avg_SST_C, frequency=(365/8), start=c(2002, 07))
+ts.chl<-ts(x1$avg_CHL_mg_m3_day, frequency=52, start=c(2002, 07))
+
+
+d.noise_chl<-decompose(noise.chl, type = "multiplicative")
+d.noise
 
 
 d.sst<-decompose(ts.sst, type = "multiplicative")
+d.chl<-decompose(ts.chl, type = "multiplicative")
+
 s<-spectrum(ts, demean=T)
 
 
