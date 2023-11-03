@@ -184,6 +184,18 @@ plot(d3, which="par", ztype="points", xtype="time", ylim=c(-20,70)) #not needed
 
 
 ```
+## station 3 oceanogrpahic plots
+
+```{r}
+
+par(mfrow = c(2, 3))
+plotProfile(c6, xtype="density+N2", ylim=c(180,10),  ytype="depth")
+plotProfile(c6, xtype="salinity+temperature", ylim=c(180,10))
+plotProfile(c6, xtype="spice", ylim=c(180,10),  ytype="depth")
+plotProfile(c6, xtype="Rrho", ylim=c(180,10),  ytype="depth")
+
+
+```
 
 
 

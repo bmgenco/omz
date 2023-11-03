@@ -3,7 +3,9 @@
 #### setup ####
 
 rm(list=ls())
-wd<-"/home/brandon/callistowd/omz/wd/r_wd"
+# wd<-"/home/brandon/callistowd/omz/wd/r_wd"
+wd<-"/home/brandon/vestawd/omz/wd/r_wd"
+
 
 # relative directories
 robj<-"r_objects"
@@ -30,6 +32,7 @@ setwd(wd)
 d.sec<-readRDS("r_objects/OC1806A_ctd_sections.R")
 d35<-d.sec$st3.5
 d4<-d.sec$st4
+
 d3<-d.sec$st3
 
 
@@ -41,6 +44,124 @@ c3<-d3@data$station[[3]]
 c4<-d3@data$station[[4]]
 c5<-d3@data$station[[5]]
 c6<-d3@data$station[[6]]
+
+c7<-d3@data$station[[7]]
+
+c8<-d3@data$station[[8]]
+c9<-d3@data$station[[9]]
+c10<-d3@data$station[[10]]
+c11<-d3@data$station[[11]]
+c12<-d3@data$station[[12]]
+
+
+plotProfile(c1, xtype="oxygen2",ylim=c(160,10), col="blue", ytype= "depth")
+mtext("Cast 1", side=3, line=3)
+pa<-recordPlot()
+plotProfile(c6, xtype="oxygen2",ylim=c(160,10), col="blue", ytype= "depth")
+mtext("Cast 6", side=3, line=3)
+pb<-recordPlot()
+plotProfile(c12, xtype="oxygen2",ylim=c(160,10), col="blue", ytype= "depth")
+mtext("Cast 12", side=3, line=3)
+pc<-recordPlot()
+
+
+plotProfile(c1, xtype="beamAttenuation",ylim=c(160,10), col ="black", ytype= "depth")
+pd<-recordPlot()
+plotProfile(c6, xtype="beamAttenuation",ylim=c(160,10), col ="black", ytype= "depth")
+pe<-recordPlot()
+plotProfile(c12, xtype="beamAttenuation",ylim=c(160,10), col ="black", ytype= "depth")
+pf<-recordPlot()
+
+
+plotProfile(c1, xtype="fluorescence",ylim=c(160,10), col ="green", ytype="depth")
+pg<-recordPlot()
+plotProfile(c6, xtype="fluorescence",ylim=c(160,10), col ="green", ytype="depth")
+ph<-recordPlot()
+plotProfile(c12, xtype="fluorescence",ylim=c(160,10), col ="green", ytype="depth")
+pi<-recordPlot()
+
+
+
+plotProfile(c1, xtype="density",  ytype= "depth", col="brown", ylim=c(160,10))
+pj<-recordPlot()
+plotProfile(c6, xtype="density", ytype= "depth", col="brown", ylim=c(160,10))
+pk<-recordPlot()
+plotProfile(c12, xtype="density", ytype= "depth", col="brown", ylim=c(160,10))
+pl<-recordPlot()
+
+dev.off()
+setwd(wd)
+setwd(fig)
+
+pdf("station_3_depth_TS.pdf", height=16, width=12)
+plot_grid(pa, pb, pc, pd, pe, pf, pg, ph, pi, pj, pk, pl, nrow=4, ncol=3,
+          labels ="auto", align = "h", scale=.82, greed=T, axis="r")
+dev.off()
+
+#### staion 3 density ts ####
+
+
+
+plotProfile(c1, xtype="oxygen2",ylim=c(27,24), col="blue", ytype= "sigmaTheta")
+mtext("Cast 1", side=3, line=3)
+pa<-recordPlot()
+plotProfile(c6, xtype="oxygen2",ylim=c(27,24), col="blue", ytype= "sigmaTheta")
+mtext("Cast 6", side=3, line=3)
+pb<-recordPlot()
+plotProfile(c12, xtype="oxygen2",ylim=c(27,24), col="blue", ytype= "sigmaTheta")
+mtext("Cast 12", side=3, line=3)
+pc<-recordPlot()
+
+
+plotProfile(c1, xtype="beamAttenuation",ylim=c(27,24), col ="black", ytype= "sigmaTheta")
+pd<-recordPlot()
+plotProfile(c6, xtype="beamAttenuation",ylim=c(27,24), col ="black", ytype= "sigmaTheta")
+pe<-recordPlot()
+plotProfile(c12, xtype="beamAttenuation",ylim=c(27,24), col ="black", ytype= "sigmaTheta")
+pf<-recordPlot()
+
+
+plotProfile(c1, xtype="fluorescence",ylim=c(27,24), col ="green", ytype="sigmaTheta")
+pg<-recordPlot()
+plotProfile(c6, xtype="fluorescence",ylim=c(27,24), col ="green", ytype="sigmaTheta")
+ph<-recordPlot()
+plotProfile(c12, xtype="fluorescence",ylim=c(27,24), col ="green", ytype="sigmaTheta")
+pi<-recordPlot()
+
+dev.off()
+setwd(wd)
+setwd(fig)
+
+
+
+pdf("station_3_density_TS.pdf", height=12, width=12)
+plot_grid(pa, pb, pc, pd, pe, pf, pg, ph, pi, nrow=3, ncol=3,
+          labels ="auto", align = "h", scale=.82, greed=T, axis="r")
+dev.off()
+
+
+
+### station 3 ocenagprahic plots
+
+plotProfile(c6, xtype="density+N2", ylim=c(180,10),  ytype="depth")
+pa<-recordPlot()
+plotProfile(c6, xtype="salinity+temperature", ylim=c(180,10))
+pb<-recordPlot()
+plotProfile(c6, xtype="spice", ylim=c(180,10),  ytype="depth")
+pc<-recordPlot()
+plotProfile(c6, xtype="Rrho", ylim=c(180,10),  ytype="depth")
+pd<-recordPlot()
+
+dev.off()
+setwd(wd)
+setwd(fig)
+
+pdf("station_3_ocenao.pdf", height=12, width=12)
+plot_grid(pa, pb, pc, pd, nrow=2, ncol=2,
+          labels ="auto", align = "h", scale=.82, greed=T, axis="r")
+dev.off()
+
+
 
 
 
@@ -151,7 +272,7 @@ dev.off()
 
 
 
-#### Plotting depth all casta station 4
+#### Plotting depth all casta station 4 ####
 
 plotProfile(c1, xtype="oxygen2",  ytype= "depth", col="blue", ylim=c(80,10))
 mtext("Cast 1", side=3, line=3)

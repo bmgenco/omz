@@ -1109,14 +1109,24 @@ print(matched)#
 ## basic maths
 ```{r}
 lat<-16
+lat<-18
 rads<-lat*(pi/180)
 omega<-7.2921e-5
 f<-2*omega*sin(rads)
 # shoukld be in ceniters
+
 u<-.6
 v<-.6
+
+u<-.3
+v<-.3
+
 V<-sqrt((u^2)+(v^2))
 t<-36*3600
+t<-40*3600
+t<-24*3600
+
+
 u<-V*sin(f*t)
 
 #see mathmatic for imnversfunction
