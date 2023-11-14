@@ -31,7 +31,6 @@ rm(list=ls())
 r_scriptwd<-getwd()
 wd<-substring(r_scriptwd,1,nchar(r_scriptwd) -10) # hardcoding replace here
 knitr::opts_knit$set(root.dir = wd)
-
 # relative directories
 robj<-"r_objects"
 fig<-"../../figures"
@@ -46,11 +45,8 @@ knitr::opts_chunk$set(echo =FALSE)
 #knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
-
 # source
-
 ```{r}
-
 source(paste0(my_functions, "ch2_functions.R"))
 source(paste0(my_functions, "ch2_header.R"))
 
@@ -58,13 +54,9 @@ f.ipak(packages)
 ## get metadata ##
 # initialize_argo()
 
-
 ```
 
-
-
 # data
-
 ```{r}
 data<-readRDS("r_objects/ch2_seq_1_data.R")
 
@@ -97,22 +89,54 @@ m.coast <-ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_blan
 ```
 
 # new plots for chapter 3
-Make a and B
+Make a,bc,
 
 ```{r}
-
-#a
-test<-as.data.frame(do.call(rbind, list.500$tc))%>%st_as_sf(.)
+library(cowplot)
 
 xlim <- c(-175, -85.0)
 ylim <- c(2.5,36.75 )
 
+#a
+all_tc_profiles<-as.data.frame(do.call(rbind, list.500$tc))%>%st_as_sf(.)
 
 m.map<-m.coast+geom_sf(data=h.pts, col="cadetblue", size =0.075)
-m.map_a<-m.map+geom_sf(data=test, size=.075)+coord_sf(xlim = xlim, ylim = ylim)
-m.map
+m.map_a<-m.map+geom_sf(data=all_tc_profiles, size=.075)+coord_sf(xlim = xlim, ylim = ylim)+ggtitle("All Tropical Cyclones, with Oxygen BGC-Argo profiles interacting within 500km")
+
+#b
+hu_200<-as.data.frame(do.call(rbind, list.200$hu))%>%st_as_sf(.)
+key<-unique(hu_200$Key)
+tracks_hu_200<-filter(h.tracks, Key%in%key)
+
+m.map<-m.coast+geom_sf(data=tracks_hu_200, col="cadetblue", size =0.075)
+m.map_b<-m.map+geom_sf(data=hu_200, size=.075)+coord_sf(xlim = xlim, ylim = ylim)+ggtitle("Hurricane tracks and Oxygen BGC-Argo profiles interacting within 200km")
 
 
+#c
+shu_100<-as.data.frame(do.call(rbind, list.100$strong_hu))%>%st_as_sf(.)
+key<-unique(shu_100$Key)
+tracks_shu_100<-filter(h.tracks, Key%in%key)
+
+m.map<-m.coast+geom_sf(data=tracks_shu_100, col="cadetblue", size =0.075)
+m.map_c<-m.map+geom_sf(data=shu_100, size=.075)+coord_sf(xlim = xlim, ylim = ylim)+ggtitle("Major Hurricane tracks and Oxygen BGC-Argo profiles interacting within 100km")
+
+
+
+
+
+
+```
+
+##save plot
+```{r}
+setwd(wd)
+setwd(fig)
+
+
+pdf("tc_argo_match_up.pdf", height=12, width=8)
+plot_grid(m.map_a, m.map_b, m.map_c, nrow=3, ncol=1,
+          labels ="auto", align = "h", scale=1, greed=T, axis="r")
+dev.off()
 
 
 
