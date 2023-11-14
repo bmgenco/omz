@@ -78,7 +78,9 @@ list.100<-data$tc_search_radi_profiles$km_100
 list.200<-data$tc_search_radi_profiles$km_200
 list.500<-data$tc_search_radi_profiles$km_500
 
- rm(data)
+profile.pts<-data$selected_zone_float_metadata$df.profile_points
+
+rm(data)
 ```
 
 
@@ -93,6 +95,31 @@ coastline<-st_read("./ne_50m_land/ne_50m_land.shp")
 cl<-st_crop(coastline, xmin=-170, ymin=-20, xmax=-80, ymax=40)
 m.coast <-ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+theme_bw()+ theme(text = element_text(size =12))
 ```
+
+# new plots for chapter 3
+Make a and B
+
+```{r}
+
+#a
+test<-as.data.frame(do.call(rbind, list.500$tc))%>%st_as_sf(.)
+
+xlim <- c(-175, -85.0)
+ylim <- c(2.5,36.75 )
+
+
+m.map<-m.coast+geom_sf(data=h.pts, col="cadetblue", size =0.075)
+m.map_a<-m.map+geom_sf(data=test, size=.075)+coord_sf(xlim = xlim, ylim = ylim)
+m.map
+
+
+
+
+
+```
+
+
+
 
 # ggplot defaults
 
