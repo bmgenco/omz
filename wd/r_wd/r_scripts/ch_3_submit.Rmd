@@ -1,0 +1,749 @@
+---
+title: "ch _3_submit"
+output: html_document
+date: '2023-11-14'
+---
+
+
+# Setup
+## Directories and defaults
+
+Ideally uses proj file for relative directories
+see: https://yihui.org/knitr/options/
+
+Directory structure  used in this analysis:
+
+~/omz/wd
+-- /output
+-- /data
+-- /figures
+-- /r_wd
+
+~/omz/wd/r_wd
+-- /Index
+-- /Profiles
+-- /r_objects
+-- /r_scripts
+
+```{r setup}
+rm(list=ls())
+
+r_scriptwd<-getwd()
+wd<-substring(r_scriptwd,1,nchar(r_scriptwd) -10) # hardcoding replace here
+knitr::opts_knit$set(root.dir = wd)
+# relative directories
+robj<-"r_objects"
+fig<-"../../figures"
+gis_data<-"../../data/gis_data"
+output<-"../../output"
+data_d<-"../../data"
+cor_d<-"../../data/argo/coriolis_dac"
+my_functions<-"r_scripts/submodules/BG_functions/"
+# ocean_color<-"../../data/ocean_color_bud"
+# bathy_d<-"../../data/bathy" # edit this
+# olaf_profiles
+
+
+
+knitr::opts_chunk$set(echo =FALSE)
+#knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+# source
+```{r}
+source(paste0(my_functions, "ch2_functions.R"))
+source(paste0(my_functions, "ch2_header.R"))
+
+f.ipak(packages)
+## get metadata ##
+# initialize_argo()
+
+```
+
+# data
+```{r}
+data<-readRDS("r_objects/ch2_seq_1_data.R")
+
+h<-data$selected_zone_hurdat$h
+function_variables<-data$function_variables
+# hurdat 
+h.pts<-data$selected_zone_hurdat$h.pts
+h.tracks<-data$selected_zone_hurdat$h.tracks
+
+list.100<-data$tc_search_radi_profiles$km_100
+list.200<-data$tc_search_radi_profiles$km_200
+list.500<-data$tc_search_radi_profiles$km_500
+
+# profile.pts<-data$selected_zone_float_metadata$df.profile_points
+
+rm(data)
+```
+
+
+## natural earth coastlines
+source : https://www.naturalearthdata.com/downloads/10m-physical-vectors/10m-coastline/
+version: 4.1.0
+```{r}
+setwd(gis_data)
+# save shape files in named directory
+coastline<-st_read("./ne_50m_land/ne_50m_land.shp") 
+
+cl<-st_crop(coastline, xmin=-170, ymin=-20, xmax=-80, ymax=40)
+m.coast <-ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+theme_bw()+ theme(text = element_text(size =12))
+```
+
+
+# Olaf profiles
+```{r}
+
+setwd(wd)
+setwd(cor_d)
+files<-list.files()
+
+# plot
+t<-read.argo(files[4])
+u<-read.argo(files[5])
+v<-read.argo(files[6])
+w<-read.argo(files[7])
+x<-read.argo(files[8])
+y<-read.argo(files[9])
+z<-read.argo(files[10])
+a<-read.argo(files[11])
+
+olaf.sec<-as.section(list(t,u,v,w,x,y,z,a))
+
+
+```
+
+
+
+```{r}
+olaf.p<-filter(list.500$hu$EP152021, float==6903093)
+test.olaf<-olaf.p[,c(2:4,7)]%>% .[2:9,]
+nora.p<-filter(list.500$tc$EP142021,float==6903093)
+
+```
+tim dif
+```{r}
+time.p<-unique(x@metadata$time)
+time.o<-filter(olaf.p, day_difference == 0)%>% dplyr::select(., overpass_time)%>%.$overpass_time
+```
+
+
+## old plots
+```{r}
+
+mar=(c(0,3.1,3.1,0.15), cex.main=.25, cex.axis=.25, cex.lab=.25, cex=.25)
+
+dev.off()
+par(mfrow=c(1,1), cex=.75)
+
+# dev.new(width=2 ,height=6, noRStudioGD = F, unit="in")
+oce::plotProfile(t, xtype = "oxygen", ytype="depth", ylim=c(175,0),xlim=c(5,250), lty = 0, col="blue", mar=c(0,3.1,3.1,0.2)) # hack for x lab
+oce::plotProfile(t, xtype = "oxygenAdjusted", ytype="depth", ylim=c(175,0),xlim=c(5,250), lty = "dashed", col="blue", add=T)
+oce::plotProfile(u, xtype = "oxygenAdjusted", ytype="depth", ylim=c(175,0),xlim=c(5,250), lty = "dotted", col="blue", add=T)
+oce::plotProfile(v, xtype = "oxygenAdjusted", ytype="depth", ylim=c(175,0),xlim=c(5,250), lty = "solid", col="blue", add=T)
+bo<-recordPlot()
+
+
+dev.off()
+par(mfrow=c(1,1), cex=.75)
+# dev.new(width=.5 ,height=4, noRStudioGD = F, unit="in")
+oce::plotProfile(w, xtype = "oxygen", ytype="depth", ylim=c(175,0),xlim=c(5,250), lty = 0, col="blue",  mar=c(0,3.1,3.1,0.2))
+oce::plotProfile(w, xtype = "oxygenAdjusted", ytype="depth", ylim=c(175,0),xlim=c(5,250), lty = "dotted", col="blue", add=T)
+oce::plotProfile(x, xtype = "oxygenAdjusted", ytype="depth", ylim=c(175,0),xlim=c(5,250), lty = "solid", col="blue", add=T)
+do<-recordPlot()
+
+dev.off()
+par(mfrow=c(1,1), cex=.75)
+# dev.new(width=.5 ,height=4, noRStudioGD = F, unit="in")
+oce::plotProfile(y, xtype = "oxygen", ytype="depth", ylim=c(175,0),xlim=c(5,250), lty = 0, col="blue",  mar=c(0,3.1,3.1,0.2)) # hack for x lab
+oce::plotProfile(y, xtype = "oxygenAdjusted", ytype="depth", ylim=c(175,0),xlim=c(5,250), lty = "dashed", col="blue", add=T)
+oce::plotProfile(z, xtype = "oxygenAdjusted", ytype="depth", ylim=c(175,0),xlim=c(5,250), lty = "dotted", col="blue", add=T)
+oce::plotProfile(a, xtype = "oxygenAdjusted", ytype="depth", ylim=c(175,0),xlim=c(5,250), lty = "solid", col="blue", add=T)
+ao<-recordPlot()
+
+## Temp
+
+dev.off()
+par(mfrow=c(1,1), cex=.75)
+# dev.new(width=.5 ,height=4, noRStudioGD = F, unit="in")
+oce::plotProfile(t, xtype = "temperature", ytype="depth", ylim=c(175,0), xlim=c(5,35), lty = "dashed", col="red",  mar=c(0,3.1,3.1,0.2))
+oce::plotProfile(u, xtype = "temperature", ytype="depth", ylim=c(175,0), xlim=c(5,35), lty = "dotted", col="red", add=T)
+oce::plotProfile(v, xtype = "temperature", ytype="depth", ylim=c(175,0),  xlim=c(5,35), lty = "solid", col="red", add=T)
+bt<-recordPlot()
+
+dev.off()
+par(mfrow=c(1,1), cex=.75)
+# dev.new(width=.5 ,height=4, noRStudioGD = F, unit="in")
+oce::plotProfile(w, xtype = "temperature", ytype="depth", ylim=c(175,0), xlim=c(5,35), lty = "dotted", col="red",  mar=c(0,3.1,3.1,0.2))
+oce::plotProfile(x, xtype = "temperature", ytype="depth", ylim=c(175,0), xlim=c(5,35), lty = "solid", col="red", add=T)
+dt<-recordPlot()
+
+dev.off()
+par(mfrow=c(1,1), cex=.75)
+# dev.new(width=.5 ,height=4, noRStudioGD = F, unit="in")
+oce::plotProfile(y, xtype = "temperature", ytype="depth", ylim=c(175,0), xlim=c(5,35), lty = "dashed", col="red",  mar=c(0,3.1,3.1,0.2))
+oce::plotProfile(z, xtype = "temperature", ytype="depth", ylim=c(175,0), xlim=c(5,35), lty = "dotted", col="red", add=T)
+oce::plotProfile(a, xtype = "temperature", ytype="depth", ylim=c(175,0), xlim=c(5,35), lty = "solid", col="red", add=T)
+at<-recordPlot()
+
+## CHl-a
+dev.off()
+par(mfrow=c(1,1), cex=.75)
+
+# dev.new(width=2 ,height=6, noRStudioGD = F, unit="in")
+oce::plotProfile(t, xtype = "chlorophyllA", ytype="depth", ylim=c(175,0), xlim=c(0,1), lty = 0, col="green", mar=c(0,3.1,3.1,0.2)) # hack for x lab
+oce::plotProfile(t, xtype = "chlorophyllAAdjusted", ytype="depth", ylim=c(175,0),xlim=c(0,1), lty = "dashed", col="green", add=T)
+oce::plotProfile(u, xtype = "chlorophyllAAdjusted", ytype="depth", ylim=c(175,0),xlim=c(0,1), lty = "dotted", col="green", add=T)
+oce::plotProfile(v, xtype = "chlorophyllAAdjusted", ytype="depth", ylim=c(175,0),xlim=c(0,1), lty = "solid", col="green", add=T)
+bc<-recordPlot()
+
+
+dev.off()
+par(mfrow=c(1,1), cex=.75)
+# dev.new(width=.5 ,height=4, noRStudioGD = F, unit="in")
+oce::plotProfile(w, xtype = "chlorophyllA", ytype="depth", ylim=c(175,0),xlim=c(0,1), lty = 0, col="green",  mar=c(0,3.1,3.1,0.2))
+oce::plotProfile(w, xtype = "chlorophyllAAdjusted", ytype="depth", ylim=c(175,0),xlim=c(0,1), lty = "dotted", col="green", add=T)
+oce::plotProfile(x, xtype = "chlorophyllAAdjusted", ytype="depth", ylim=c(175,0),xlim=c(0,1), lty = "solid", col="green", add=T)
+dc<-recordPlot()
+
+dev.off()
+par(mfrow=c(1,1), cex=.75)
+# dev.new(width=.5 ,height=4, noRStudioGD = F, unit="in")
+oce::plotProfile(y, xtype = "chlorophyllA", ytype="depth", ylim=c(175,0),xlim=c(0,2), lty = 0, col="green",  mar=c(0,3.1,3.1,0.2)) # hack for x lab
+oce::plotProfile(y, xtype = "chlorophyllAAdjusted", ytype="depth", ylim=c(175,0),xlim=c(0,1), lty = "dashed", col="green", add=T)
+oce::plotProfile(z, xtype = "chlorophyllAAdjusted", ytype="depth", ylim=c(175,0),xlim=c(0,1), lty = "dotted", col="green", add=T)
+oce::plotProfile(a, xtype = "chlorophyllAAdjusted", ytype="depth", ylim=c(175,0),xlim=c(0,1), lty = "solid", col="green", add=T)
+ac<-recordPlot()
+
+
+## CDOM
+par(mfrow=c(1,1), cex=.75)
+
+# dev.new(width=2 ,height=6, noRStudioGD = F, unit="in")
+oce::plotProfile(t, xtype = "CDOM", ytype="depth", ylim=c(175,0), xlim=c(0,1), lty = 0, col="brown", mar=c(0,3.1,3.1,0.2)) # hack for x lab
+oce::plotProfile(t, xtype = "CDOM", ytype="depth", ylim=c(175,0),xlim=c(0,1), lty = "dashed", col="brown", add=T)
+oce::plotProfile(u, xtype = "CDOM", ytype="depth", ylim=c(175,0),xlim=c(0,1), lty = "dotted", col="brown", add=T)
+oce::plotProfile(v, xtype = "CDOM", ytype="depth", ylim=c(175,0),xlim=c(0,1), lty = "solid", col="brown", add=T)
+bcd<-recordPlot()
+
+
+dev.off()
+par(mfrow=c(1,1), cex=.75)
+# dev.new(width=.5 ,height=4, noRStudioGD = F, unit="in")
+oce::plotProfile(w, xtype = "CDOM", ytype="depth", ylim=c(175,0),xlim=c(0,1), lty = 0, col="brown",  mar=c(0,3.1,3.1,0.2))
+oce::plotProfile(w, xtype = "CDOM", ytype="depth", ylim=c(175,0),xlim=c(0,1), lty = "dotted", col="brown", add=T)
+oce::plotProfile(x, xtype = "CDOM", ytype="depth", ylim=c(175,0),xlim=c(0,1), lty = "solid", col="brown", add=T)
+dcd<-recordPlot()
+
+dev.off()
+par(mfrow=c(1,1), cex=.75)
+# dev.new(width=.5 ,height=4, noRStudioGD = F, unit="in")
+oce::plotProfile(y, xtype = "CDOM", ytype="depth", ylim=c(175,0),xlim=c(0,2), lty = 0, col="brown",  mar=c(0,3.1,3.1,0.2)) # hack for x lab
+oce::plotProfile(y, xtype = "CDOM", ytype="depth", ylim=c(175,0),xlim=c(0,1), lty = "dashed", col="brown", add=T)
+oce::plotProfile(z, xtype = "CDOM", ytype="depth", ylim=c(175,0),xlim=c(0,1), lty = "dotted", col="brown", add=T)
+oce::plotProfile(a, xtype = "CDOM", ytype="depth", ylim=c(175,0),xlim=c(0,1), lty = "solid", col="brown", add=T)
+acd<-recordPlot()
+
+setwd(wd)
+
+plot_list<-list(bo, do, ao, bt, dt, at, bc, dc, ac, bcd, dcd, acd)
+setwd(wd)
+setwd(robj)
+
+saveRDS(plot_list, "oflaf_profiles.R")
+
+setwd(wd)
+setwd(fig)
+dev.off()
+pdf("olaf_profiles.pdf", height =9, width=8)
+plot_grid(bo, do, ao, bt, dt, at, nrow=2, ncol=3,
+         labels = c('a', 'b', 'c', 'd', 'e', 'f'), align = "h", scale=.8, greed=T, axis="r")
+
+dev.off()
+
+
+
+setwd(wd)
+setwd(fig)
+dev.off()
+pdf("chla_cdom.pdf", height =9, width=8)
+plot_grid(bc, dc, ac, bcd, dcd, acd, nrow=2, ncol=3,
+          labels = c('a', 'b', 'c', 'd', 'e', 'f'), align = "h", scale=.8, greed=T, axis="r")
+dev.off()
+
+### adding letter after the fact
+
+
+mtext("My Multiplot Title", side = 3, line = - 2,outer = TRUE)
+
+
+
+```
+
+## newplots
+```{r}
+# oce::plotProfile(t, xtype = "oxygen", ytype="depth", ylim=c(175,0),xlim=c(5,250), lty = 0, col="blue", mar=c(0,3.1,3.1,0.2)) # hack for x lab
+# oce::plotProfile(t, xtype = "oxygenAdjusted", ytype="depth", ylim=c(175,0),xlim=c(5,250), lty = "dashed", col="blue", add=T)
+
+plot(olaf.sec, which="oxygenAdjusted", ztype="image", xtype="time",ylim=c(0, 175))
+
+```
+
+
+
+
+# new plots for chapter 3
+Make a,bc,
+
+```{r}
+library(cowplot)
+
+xlim <- c(-175, -85.0)
+ylim <- c(2.5,36.75 )
+
+#a
+all_tc_profiles<-as.data.frame(do.call(rbind, list.500$tc))%>%st_as_sf(.)
+
+m.map<-m.coast+geom_sf(data=h.pts, col="cadetblue", size =0.075)
+m.map_a<-m.map+geom_sf(data=all_tc_profiles, size=.075)+coord_sf(xlim = xlim, ylim = ylim)+ggtitle("All Tropical Cyclones, with Oxygen BGC-Argo profiles interacting within 500km")
+
+#b
+hu_200<-as.data.frame(do.call(rbind, list.200$hu))%>%st_as_sf(.)
+key<-unique(hu_200$Key)
+tracks_hu_200<-filter(h.tracks, Key%in%key)
+
+m.map<-m.coast+geom_sf(data=tracks_hu_200, col="cadetblue", size =0.075)
+m.map_b<-m.map+geom_sf(data=hu_200, size=.075)+coord_sf(xlim = xlim, ylim = ylim)+ggtitle("Hurricane tracks and Oxygen BGC-Argo profiles interacting within 200km")
+
+
+#c
+shu_100<-as.data.frame(do.call(rbind, list.100$strong_hu))%>%st_as_sf(.)
+key<-unique(shu_100$Key)
+tracks_shu_100<-filter(h.tracks, Key%in%key)
+
+m.map<-m.coast+geom_sf(data=tracks_shu_100, col="cadetblue", size =0.075)
+m.map_c<-m.map+geom_sf(data=shu_100, size=.075)+coord_sf(xlim = xlim, ylim = ylim)+ggtitle("Major Hurricane tracks and Oxygen BGC-Argo profiles interacting within 100km")
+
+
+
+
+
+
+```
+
+```{r}
+m.map
+```
+
+##save plot
+```{r}
+setwd(wd)
+setwd(fig)
+
+
+pdf("tc_argo_match_up.pdf", height=12, width=8)
+plot_grid(m.map_a, m.map_b, m.map_c, nrow=3, ncol=1,
+          labels ="auto", align = "h", scale=1, greed=T, axis="r")
+dev.off()
+
+```
+
+
+
+
+# ggplot defaults
+
+```{r}
+t=0
+# r=0
+r=0.5
+l=0
+b=.25
+
+width=1
+height=14
+
+marks.textsize=2
+title.textsize=8
+lp<-"right"
+
+n<-30
+custom_color<-cmocean('matter', version="2.0")(n)
+title_two<-expression(textstyle("Wind m s"^-1*""))
+
+l1<-scale_fill_gradientn(colors = custom_color ,  na.value=NA, name=waiver()) 
+l2<-guides(fill=guide_colourbar(title=title_two, barheight = height, 
+                                barwidth = width, title.position = "top",  
+                                # title.hjust = 0.5,
+                                title.theme = element_text(size=title.textsize)), 
+                                legend.text=element_text(size=marks.textsize))
+
+th1<-theme(text=element_text(family="Helvetica"))+ theme(legend.position=lp, plot.background = element_blank(),panel.grid.major = element_blank(), panel.grid.minor = element_blank(), axis.title.x=element_blank(), axis.title.y=element_blank(), plot.title = element_text(hjust = 0.5), plot.margin = unit(c(t, r, b, l), "cm"), legend.box.margin=margin(-15,-10,-10,-10))
+
+
+```
+
+
+
+
+# pre Nora
+
+
+```{r}
+key_id<-"EP142021"
+tc.pts<-f.single_storm_h.pts(key_id = key_id, h.pts)
+conv<-1.94384 # convert to m/s
+tc.pts$max_sustained_wind_m_s<-tc.pts$Wind/conv
+tc.track<-filter(h.tracks, Key == key_id)
+tc.p<-list.500$tc$EP142021 # can make a function
+
+
+tc_wind<-geom_sf(aes(fill=max_sustained_wind_m_s), data=tc.pts,  shape=21, size=3, color="white")
+
+
+
+cut_off<-coord_sf(xlim = c(-113, -105.5), ylim = c(17, 24))
+tc.p.sf<-st_as_sf(tc.p)
+p_labels<-geom_sf_text(aes(label = day_difference), data=tc.p.sf , size = 3,  vjust=1.5, hjust =1.5)
+storm_title<-paste(unique(tc.pts$Name), date(min(tc.pts$DateTime)), "-", date(max(tc.pts$DateTime)))
+
+m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
+m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off+ggtitle(storm_title)
+```
+
+```{r}
+setwd(wd)
+setwd(fig)
+pdf("nora_profiles.pdf", height=8, width=8)
+m.map1
+dev.off()
+
+
+```
+
+
+# olaf ggplots
+
+```{r}
+key_id<-"EP152021"
+tc.pts<-f.single_storm_h.pts(key_id = key_id, h.pts)
+conv<-1.94384 # convert to m/s
+tc.pts$max_sustained_wind_m_s<-tc.pts$Wind/conv
+tc.track<-filter(h.tracks, Key == key_id)
+tc.p<-list.500$tc$EP152021 # can make a function
+
+
+tc_wind<-geom_sf(aes(fill=max_sustained_wind_m_s), data=tc.pts,  shape=21, size=3, color="white")
+
+
+
+cut_off<-coord_sf(xlim = c(-113, -105.5), ylim = c(17, 24))
+tc.p.sf<-st_as_sf(tc.p)
+p_labels<-geom_sf_text(aes(label = day_difference), data=tc.p.sf , size = 3,  vjust=1.5, hjust =1.5)
+storm_title<-paste(unique(tc.pts$Name), date(min(tc.pts$DateTime)), "-", date(max(tc.pts$DateTime)))
+
+m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
+m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off+ggtitle(storm_title)
+```
+
+
+```{r}
+setwd(wd)
+setwd(fig)
+pdf("olaf_profiles.pdf", height=8, width=8)
+m.map1
+dev.off()
+```
+
+
+# genieve ggplots
+
+```{r}
+key_id<-"EP122020"
+tc.pts<-f.single_storm_h.pts(key_id = key_id, h.pts)
+conv<-1.94384 # convert to m/s
+tc.pts$max_sustained_wind_m_s<-tc.pts$Wind/conv
+tc.track<-filter(h.tracks, Key == key_id)
+
+
+tc.p<-list.500$tc$EP122020 # can make a function
+
+tc.p.sf<-st_as_sf(tc.p)
+p_labels<-geom_sf_text(aes(label = day_difference), data=tc.p.sf , size = 3,  vjust=1.5, hjust =1.5)
+
+
+# c3a<-coord_sf(xlim = c(-116, -105), ylim = c(16, 26))
+tc_wind<-geom_sf(aes(fill=max_sustained_wind_m_s), data=tc.pts,  shape=21, size=3, color="white")
+cut_off<-coord_sf(xlim = c(-113, -105.5), ylim = c(14, 19))
+storm_title<-paste(unique(tc.pts$Name), date(min(tc.pts$DateTime)), "-", date(max(tc.pts$DateTime)))
+
+
+m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
+m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off+ggtitle(storm_title)
+
+```
+
+
+
+# IVETTE
+```{r}
+key_id<-"EP102022"
+tc.pts<-f.single_storm_h.pts(key_id = key_id, h.pts)
+conv<-1.94384 # convert to m/s
+tc.pts$max_sustained_wind_m_s<-tc.pts$Wind/conv
+tc.track<-filter(h.tracks, Key == key_id)
+tc.p<-list.500$tc$EP102022 # can make a function
+
+
+tc.p.sf<-st_as_sf(tc.p)
+p_labels<-geom_sf_text(aes(label = day_difference), data=tc.p.sf , size = 3,  vjust=1.5, hjust =1.5)
+
+
+# c3a<-coord_sf(xlim = c(-116, -105), ylim = c(16, 26))
+tc_wind<-geom_sf(aes(fill=max_sustained_wind_m_s), data=tc.pts,  shape=21, size=3, color="white")
+cut_off<-coord_sf(xlim = c(-113, -105.5), ylim = c(14, 19))
+
+l1<-scale_fill_gradientn(colors = custom_color ,  na.value=NA, name=waiver()) 
+l2<-guides(fill=guide_colourbar(title=title_two, barheight = height, 
+                                barwidth = width, title.position = "top",  
+                                # title.hjust = 0.5,
+                                title.theme = element_text(size=title.textsize)), 
+                                legend.text=element_text(size=marks.textsize))
+
+storm_title<-paste(unique(tc.pts$Name), date(min(tc.pts$DateTime)), "-", date(max(tc.pts$DateTime)))
+
+cut_off<-coord_sf(xlim = c(-128, -99), ylim = c(9, 35))
+
+m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
+m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off+ggtitle(storm_title)
+
+
+```
+
+
+
+# ivette float 5906484 
+```{r}
+
+```
+
+
+# Javier
+```{r}
+key_id<-"EP112022"
+tc.pts<-f.single_storm_h.pts(key_id = key_id, h.pts)
+conv<-1.94384 # convert to m/s
+tc.pts$max_sustained_wind_m_s<-tc.pts$Wind/conv
+tc.track<-filter(h.tracks, Key == key_id)
+tc.p<-list.500$tc$EP122022 # can make a function
+
+
+tc.p.sf<-st_as_sf(tc.p)
+p_labels<-geom_sf_text(aes(label = day_difference), data=tc.p.sf , size = 3,  vjust=1.5, hjust =1.5)
+
+
+# c3a<-coord_sf(xlim = c(-116, -105), ylim = c(16, 26))
+tc_wind<-geom_sf(aes(fill=max_sustained_wind_m_s), data=tc.pts,  shape=21, size=3, color="white")
+cut_off<-coord_sf(xlim = c(-113, -105.5), ylim = c(14, 19))
+
+l1<-scale_fill_gradientn(colors = custom_color ,  na.value=NA, name=waiver()) 
+l2<-guides(fill=guide_colourbar(title=title_two, barheight = height, 
+                                barwidth = width, title.position = "top",  
+                                # title.hjust = 0.5,
+                                title.theme = element_text(size=title.textsize)), 
+                                legend.text=element_text(size=marks.textsize))
+
+
+
+cut_off<-coord_sf(xlim = c(-128, -99), ylim = c(9, 35))
+
+storm_title<-paste(unique(tc.pts$Name), date(min(tc.pts$DateTime)), "-", date(max(tc.pts$DateTime)))
+
+m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
+m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off+ggtitle(storm_title)
+
+
+```
+## Javier float: 6903093
+## avier float: 5906484 
+# kay
+KAy all
+```{r}
+key_id<-"EP122022"
+tc.pts<-f.single_storm_h.pts(key_id = key_id, h.pts)
+conv<-1.94384 # convert to m/s
+tc.pts$max_sustained_wind_m_s<-tc.pts$Wind/conv
+tc.track<-filter(h.tracks, Key == key_id)
+tc.p<-list.500$tc$EP122022 # can make a function
+
+
+tc.p.sf<-st_as_sf(tc.p)
+p_labels<-geom_sf_text(aes(label = day_difference), data=tc.p.sf , size = 3,  vjust=1.5, hjust =1.5)
+
+
+# c3a<-coord_sf(xlim = c(-116, -105), ylim = c(16, 26))
+tc_wind<-geom_sf(aes(fill=max_sustained_wind_m_s), data=tc.pts,  shape=21, size=3, color="white")
+cut_off<-coord_sf(xlim = c(-113, -105.5), ylim = c(14, 19))
+
+l1<-scale_fill_gradientn(colors = custom_color ,  na.value=NA, name=waiver()) 
+l2<-guides(fill=guide_colourbar(title=title_two, barheight = height, 
+                                barwidth = width, title.position = "top",  
+                                # title.hjust = 0.5,
+                                title.theme = element_text(size=title.textsize)), 
+                                legend.text=element_text(size=marks.textsize))
+
+
+
+cut_off<-coord_sf(xlim = c(-128, -99), ylim = c(9, 35))
+storm_title<-paste(unique(tc.pts$Name), date(min(tc.pts$DateTime)), "-", date(max(tc.pts$DateTime)))
+
+m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
+m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off+ggtitle(storm_title)
+
+
+```
+
+## Kay float: 6903093 centre strong TC
+
+float: 6903093
+
+```{r}
+key_id<-"EP122022"
+tc.pts<-f.single_storm_h.pts(key_id = key_id, h.pts)
+conv<-1.94384 # convert to m/s
+tc.pts$max_sustained_wind_m_s<-tc.pts$Wind/conv
+tc.track<-filter(h.tracks, Key == key_id)
+tc.p<-list.100$hu$EP122022 # can make a function
+
+
+
+tc.p.sf<-st_as_sf(tc.p)
+p_labels<-geom_sf_text(aes(label = day_difference), data=tc.p.sf , size = 3,  vjust=1.5, hjust =1)
+
+
+# c3a<-coord_sf(xlim = c(-116, -105), ylim = c(16, 26))
+tc_wind<-geom_sf(aes(fill=max_sustained_wind_m_s), data=tc.pts,  shape=21, size=3, color="white")
+cut_off<-coord_sf(xlim = c(-113, -105.5), ylim = c(14, 19))
+
+l1<-scale_fill_gradientn(colors = custom_color ,  na.value=NA, name=waiver()) 
+l2<-guides(fill=guide_colourbar(title=title_two, barheight = height, 
+                                barwidth = width, title.position = "top",  
+                                # title.hjust = 0.5,
+                                title.theme = element_text(size=title.textsize)), 
+                                legend.text=element_text(size=marks.textsize))
+
+
+
+cut_off<-coord_sf(xlim = c(-113, -111), ylim = c(18.5, 20.8))
+
+storm_title<-paste(unique(tc.pts$Name), date(min(tc.pts$DateTime)), "-", date(max(tc.pts$DateTime)))
+
+m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
+m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off+ggtitle(storm_title)
+
+
+```
+
+
+
+
+
+
+
+
+## Kay float: 5906484 2nd float
+
+
+
+```{r}
+# float_id<-"4903026"
+# float_id<-"5906294"
+# float_id<-"5906295"
+# float_id<-"5906477"
+float_id<-"5906484"
+key_id<-"EP122022"
+tc.pts<-f.single_storm_h.pts(key_id = key_id, h.pts)
+conv<-1.94384 # convert to m/s
+tc.pts$max_sustained_wind_m_s<-tc.pts$Wind/conv
+tc.track<-filter(h.tracks, Key == key_id)
+tc.p<-list.500$tc$EP122022 # can make a function
+tc.p<-filter(tc.p, float==float_id)
+
+
+tc.p.sf<-st_as_sf(tc.p)
+
+
+
+# c3a<-coord_sf(xlim = c(-116, -105), ylim = c(16, 26))
+tc_wind<-geom_sf(aes(fill=max_sustained_wind_m_s), data=tc.pts,  shape=21, size=3, color="white")
+cut_off<-coord_sf(xlim = c(-113, -105.5), ylim = c(14, 19))
+
+l1<-scale_fill_gradientn(colors = custom_color ,  na.value=NA, name=waiver()) 
+l2<-guides(fill=guide_colourbar(title=title_two, barheight = height, 
+                                barwidth = width, title.position = "top",  
+                                # title.hjust = 0.5,
+                                title.theme = element_text(size=title.textsize)), 
+                                legend.text=element_text(size=marks.textsize))
+
+
+cut_off<-coord_sf(xlim = c(-110, -105), ylim = c(15, 20))
+p_labels<-geom_sf_text(aes(label = day_difference), data=tc.p.sf , size = 3,  vjust=.95, hjust =1.75)
+m.map<-m.coast+geom_sf(data=tc.track)+tc_wind+th1+l1+l2+cut_off
+storm_title<-paste(unique(tc.pts$Name), date(min(tc.pts$DateTime)), "-", date(max(tc.pts$DateTime)))
+m.map1<-m.map+geom_sf(data=tc.p.sf)+p_labels+cut_off+ggtitle(storm_title)
+
+m.map1
+
+```
+
+
+
+# convert nc's 
+```{r}
+
+```
+
+
+
+
+# slect indviudla tc
+
+- TC 1 FLECIA EP082009
+- TC  Norma "EP172017"
+- TC "GENEVIEVE" "EP122020"
+- TC Darby EP052022
+- Tc Elida EP092020
+-TC Howard? EP092022
+
+```{r}
+key_id<-"EP122020"
+p<-f.select_name(x=list.500, key_id)
+tc<-filter(h, Key == key_id )
+print(tc$Name[1])
+
+
+```
+
+prof
+
+```{r}
+p1<-show_profiles(float_ids = p$EP082009$float[1], float_profs = p$EP082009$profile[1])
+p2<-show_profiles(float_ids = p$EP082009$float[1], float_profs = p$EP082009$profile[2])
+p3<-show_profiles(float_ids = p$EP082009$float[1], float_profs = p$EP082009$profile[3])
+p4<-show_profiles(float_ids = p$EP082009$float[1], float_profs = p$EP082009$profile[4])
+p5<-show_profiles(float_ids = p$EP082009$float[1], float_profs = p$EP082009$profile[5])
+
+
+```
+
+```{r}
+show_sections(float_ids = as.numeric(p$EP082009$float[1]))
+```
+
+
+```{r}
+show_sections()
+```
+
