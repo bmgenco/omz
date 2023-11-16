@@ -91,6 +91,17 @@ coastline<-st_read("./ne_50m_land/ne_50m_land.shp")
 cl<-st_crop(coastline, xmin=-170, ymin=-20, xmax=-80, ymax=40)
 m.coast <-ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+theme_bw()+ theme(text = element_text(size =12))
 ```
+# get olafprofiles from syntheitic data:
+
+```{r}
+
+olaf.p<-filter(list.500$hu$EP152021, float==6903093)
+
+
+
+```
+
+
 
 
 # Olaf profiles
@@ -101,20 +112,26 @@ setwd(cor_d)
 files<-list.files()
 
 # plot
-t<-read.argo(files[4])
-u<-read.argo(files[5])
-v<-read.argo(files[6])
-w<-read.argo(files[7])
-x<-read.argo(files[8])
-y<-read.argo(files[9])
-z<-read.argo(files[10])
-a<-read.argo(files[11])
+
+t<-read.argo(files[1])
+u<-read.argo(files[2])
+v<-read.argo(files[3])
+w<-read.argo(files[4])
+x<-read.argo(files[5])
+y<-read.argo(files[6])
+z<-read.argo(files[7])
+a<-read.argo(files[8])
 
 olaf.sec<-as.section(list(t,u,v,w,x,y,z,a))
 
 
 ```
 
+
+#renaming variables
+```{r}
+test<-as.ctd(t)
+```
 
 
 ```{r}
@@ -287,7 +304,7 @@ mtext("My Multiplot Title", side = 3, line = - 2,outer = TRUE)
 # oce::plotProfile(t, xtype = "oxygen", ytype="depth", ylim=c(175,0),xlim=c(5,250), lty = 0, col="blue", mar=c(0,3.1,3.1,0.2)) # hack for x lab
 # oce::plotProfile(t, xtype = "oxygenAdjusted", ytype="depth", ylim=c(175,0),xlim=c(5,250), lty = "dashed", col="blue", add=T)
 
-plot(olaf.sec, which="oxygenAdjusted", ztype="image", xtype="time",ylim=c(0, 175))
+plot(olaf.sec, which="temperature", ztype="image", xtype="time")
 
 ```
 

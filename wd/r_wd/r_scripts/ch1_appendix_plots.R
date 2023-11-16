@@ -35,6 +35,20 @@ d4<-d.sec$st4
 
 d3<-d.sec$st3
 
+###  par casts station 3
+
+c1<-d3@data$station[[1]]
+
+c2<-d3@data$station[[2]]
+c3<-d3@data$station[[3]]
+c4<-d3@data$station[[4]]
+
+par(mfrow = c(2, 2))
+plotProfile(c10, xtype="oxygen2",ylim=c(160,125), col="blue", ytype= "depth")
+plotProfile(c10, xtype="par",ylim=c(160,125), col="purple", ytype= "depth")
+plotProfile(c10, xtype="fluorescence",ylim=c(160,125), col="green", ytype= "depth")
+plotProfile(c10, xtype="beamAttenuation",ylim=c(160,125), col="black", ytype= "depth")
+
 
 ### multiple casts station 3 ####
 c1<-d3@data$station[[1]]
