@@ -19,6 +19,7 @@ setwd(wd)
 
 source(paste0(my_functions, "ch2_functions.R"))
 source(paste0(my_functions, "ch2_header.R"))
+f.ipak(packages)
 
 ### data 1 ####
 data<-readRDS("r_objects/ch2_seq_1_data.R")
@@ -36,6 +37,11 @@ list.500<-data$tc_search_radi_profiles$km_500
 profile.pts<-data$selected_zone_float_metadata$df.profile_points
 
 rm(data)
+
+#### data 2 olaf ####
+setwd(wd)
+olaf.match<-readRDS("r_objects/olaf_match.R")
+
 
 ### Olaf Profiles  ####
 
@@ -63,6 +69,132 @@ olaf.sec<-as.section(list(t,u,v,w,x,y,z,a))
 plot(olaf.sec, which="BBP700", ztype="image", xtype="time", ylim=c(80, 0))
 
 
+p1<-filter(olaf.match$profiles, CYCLE_NUMBER ==51)%>%as.ctd()
+p2<-filter(olaf.match$profiles, CYCLE_NUMBER ==52)%>%as.ctd()
+p3<-filter(olaf.match$profiles, CYCLE_NUMBER ==53)%>%as.ctd()
+p4<-filter(olaf.match$profiles, CYCLE_NUMBER ==54)%>%as.ctd()
+p5<-filter(olaf.match$profiles, CYCLE_NUMBER ==55)%>%as.ctd()
+p6<-filter(olaf.match$profiles, CYCLE_NUMBER ==56)%>%as.ctd()
+p7<-filter(olaf.match$profiles, CYCLE_NUMBER ==57)%>%as.ctd()
+p8<-filter(olaf.match$profiles, CYCLE_NUMBER ==58)%>%as.ctd()
+sec<-as.section(c(p1,p2,p3,p4,p5,p6,p7,p8))
+
+
+### plotting ###
+### density
+
+# doxy
+v<-"DOXY_ADJUSTED" 
+c<-"blue"
+
+
+dev.off()
+par(mfrow=c(1,1), cex=.75)
+oce::plotProfile(p1, xtype = "DOXY", ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = 0, mar=c(0,3.1,3.1,0.2)) # hack for x lab
+oce::plotProfile(p1, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "dashed", add=T)
+oce::plotProfile(p2, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "dotted", add=T)
+oce::plotProfile(p3, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "solid", add=T)
+bo<-recordPlot()                 
+
+dev.off()
+par(mfrow=c(1,1), cex=.75)
+
+oce::plotProfile(p4, xtype = "DOXY", ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = 0, mar=c(0,3.1,3.1,0.2)) # hack for x lab
+oce::plotProfile(p4, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "dotted", add=T)
+oce::plotProfile(p5, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "solid", add=T)
+do<-recordPlot()                 
+
+dev.off()
+par(mfrow=c(1,1), cex=.75)
+oce::plotProfile(p6, xtype = "DOXY", ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = 0, mar=c(0,3.1,3.1,0.2)) # hack for x lab
+oce::plotProfile(p6, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "dashed", add=T)
+oce::plotProfile(p7, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "dotted", add=T)
+oce::plotProfile(p8, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "solid", add=T)
+ao<-recordPlot()
+
+
+dev.off()
+par(mfrow=c(1,1), cex=.75)
+c<-"green"
+v<-"CHLA_ADJUSTED" 
+
+oce::plotProfile(p1, xtype = "CHLA", ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = 0, mar=c(0,3.1,3.1,0.2)) # hack for x lab
+oce::plotProfile(p1, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "dashed", add=T)
+oce::plotProfile(p2, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "dotted", add=T)
+oce::plotProfile(p3, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "solid", add=T)
+bc<-recordPlot()                 
+
+dev.off()
+par(mfrow=c(1,1), cex=.75)
+
+oce::plotProfile(p4, xtype = "CHLA", ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = 0, mar=c(0,3.1,3.1,0.2)) # hack for x lab
+oce::plotProfile(p4, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "dotted", add=T)
+oce::plotProfile(p5, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "solid", add=T)
+dc<-recordPlot()                 
+
+dev.off()
+par(mfrow=c(1,1), cex=.75)
+oce::plotProfile(p6, xtype = "CHLA", ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = 0, mar=c(0,3.1,3.1,0.2)) # hack for x lab
+oce::plotProfile(p6, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "dashed", add=T)
+oce::plotProfile(p7, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "dotted", add=T)
+oce::plotProfile(p8, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "solid", add=T)
+ac<-recordPlot()
+
+
+
+
+library(cowplot)
+
+setwd(wd)
+setwd(fig)
+dev.off()
+pdf("olaf_density_profiles_v2.pdf", height =9, width=8)
+plot_grid(bo, do, ao, bc, dc, ac, nrow=2, ncol=3,
+          labels = c('a', 'b', 'c', 'd', 'e', 'f'), align = "h", scale=.8, greed=T, axis="r")
+
+dev.off()
+
+
+## dneist and orgnaic matter
+
+
+v<-"CP660" 
+c<-"black"
+
+dev.off()
+par(mfrow=c(1,1), cex=.75)
+# oce::plotProfile(p1, xtype = "CP660", ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = 0, mar=c(0,3.1,3.1,0.2)) # hack for x lab
+oce::plotProfile(p1, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "dashed",  xlim = c(.35, .7) ) 
+oce::plotProfile(p2, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "dotted", add=T)
+oce::plotProfile(p3, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "solid", add=T)
+
+bcp<-recordPlot()                 
+
+dev.off()
+par(mfrow=c(1,1), cex=.75)
+
+oce::plotProfile(p4, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "dotted",  xlim = c(.35, .7))
+oce::plotProfile(p5, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "solid", add=T)
+dcp<-recordPlot()                 
+
+dev.off()
+par(mfrow=c(1,1), cex=.75)
+
+oce::plotProfile(p6, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "dashed", xlim = c(.35, .7))
+oce::plotProfile(p7, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "dotted", add=T)
+oce::plotProfile(p8, xtype = v, ylim=c(27,24), col=c, ytype= "sigmaTheta", lty = "solid", add=T)
+acp<-recordPlot()
+
+
+setwd(wd)
+setwd(fig)
+dev.off()
+pdf("olaf_density_profiles_cp660.pdf", height =4.5, width=8.5)
+plot_grid(bcp, dcp, acp, nrow=1, ncol=3,
+          labels = c('a', 'b', 'c'), align = "h", scale=.85, greed=T, axis="r")
+dev.off()
+
+
 ### ploting   old plots: ####
 dev.off()
 par(mfrow=c(1,1), cex=.75)
@@ -73,7 +205,6 @@ oce::plotProfile(t, xtype = "oxygenAdjusted", ytype="depth", ylim=c(175,0),xlim=
 oce::plotProfile(u, xtype = "oxygenAdjusted", ytype="depth", ylim=c(175,0),xlim=c(5,250), lty = "dotted", col="blue", add=T)
 oce::plotProfile(v, xtype = "oxygenAdjusted", ytype="depth", ylim=c(175,0),xlim=c(5,250), lty = "solid", col="blue", add=T)
 bo<-recordPlot()
-
 
 dev.off()
 par(mfrow=c(1,1), cex=.75)

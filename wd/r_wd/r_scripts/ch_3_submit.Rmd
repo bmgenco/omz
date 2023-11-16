@@ -103,8 +103,17 @@ y<-load_float_data(float_ids= x$float, format = 'dataframe')
 y<-filter(y, CYCLE_NUMBER %in% x$profile)
 # ad loop function here
 
-olaf_interse
+olaf.match<-list(x,y)
+names(olaf.match)<-c("tc_info", "profiles")
 
+
+
+```
+
+## save olaf
+```{r}
+setwd(wd)
+saveRDS(olaf.match, "r_objects/olaf_match.R")
 
 ```
 
