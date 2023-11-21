@@ -53,6 +53,8 @@ knitr::opts_chunk$set(echo =FALSE)
 ```{r}
 source(paste0(my_functions, "ch2_functions.R"))
 source(paste0(my_functions, "ch2_header.R"))
+source(paste0(my_functions, "final_functions.R"))
+
 
 f.ipak(packages)
 ## get metadata ##
@@ -60,7 +62,7 @@ f.ipak(packages)
 
 ```
 
-# data
+# data 1
 ```{r}
 data<-readRDS("r_objects/ch2_seq_1_data.R")
 
@@ -78,6 +80,65 @@ list.500<-data$tc_search_radi_profiles$km_500
 
 rm(data)
 ```
+
+
+# data 2
+
+#split_lists
+```{r}
+
+data<-readRDS("r_objects/ch2_seq_1_data.R")
+all<-data$tc_search_radi_profiles$km_500$tc
+rm(data)
+
+
+x<-lapply(all, f.remove)
+x<-purrr::list_flatten(x)
+rm(all)
+
+```
+
+
+
+
+```{r}
+test<-list(x[[1]],x[[2]])
+# 
+# z<-f.get_profiles(x)
+
+y<-lapply(test, f.final_match)
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ## natural earth coastlines
@@ -110,12 +171,51 @@ names(olaf.match)<-c("tc_info", "profiles")
 
 ```
 
-## save olaf
+## save/load olaf
 ```{r}
+# setwd(wd)
+# saveRDS(olaf.match, "r_objects/olaf_match.R")
 setwd(wd)
-saveRDS(olaf.match, "r_objects/olaf_match.R")
+olaf.match<-readRDS("r_objects/olaf_match.R")
+x<-olaf.match
+
+f.pressure_of_omz<-function(x){
+
+    f.find_omz<-function(f){
+    if(all(is.na(f$DOXY_ADJUSTED))==T) {o<-min(which(f$DOXY <=20))} else {o<-min(which(f$DOXY_ADJUSTED <=20))}
+    if(all(is.na(f$PRES_ADJUSTED))==T) {p<-f$PRES[o]} else {p<-f$PRES_ADJUSTED[o]} 
+  }
+  
+  y<-x$tc_info
+  x<-x$profiles
+  c<-unique(x$CYCLE_NUMBER)
+  z<-vector(mode="list", length=length(c))  
+  
+  for(i in 1:length(c)){
+    f<-filter(x, CYCLE_NUMBER==c[i])
+    p<-f.find_omz(f)
+    z[[i]]<-p}
+  
+   y$omz_p<-unlist(z)
+  return(y)
+}
+
+y<-f.pressure_of_omz(x)
+
+
+
+y<-f.omz_change_stats(y)
+
 
 ```
+
+testing
+```{r}
+
+te
+```
+
+
 
 
 

@@ -1,0 +1,126 @@
+---
+title: "ch _3_submit"
+output: html_document
+date: '2023-11-14'
+---
+
+
+# Setup
+## Directories and defaults
+
+Ideally uses proj file for relative directories
+see: https://yihui.org/knitr/options/
+
+Directory structure  used in this analysis:
+
+~/omz/wd
+-- /output
+-- /data
+-- /figures
+-- /r_wd
+
+~/omz/wd/r_wd
+-- /Index
+-- /Profiles
+-- /r_objects
+-- /r_scripts
+
+```{r setup}
+rm(list=ls())
+
+r_scriptwd<-getwd()
+wd<-substring(r_scriptwd,1,nchar(r_scriptwd) -10) # hardcoding replace here
+knitr::opts_knit$set(root.dir = wd)
+# relative directories
+robj<-"r_objects"
+fig<-"../../figures"
+gis_data<-"../../data/gis_data"
+output<-"../../output"
+data_d<-"../../data"
+cor_d<-"../../data/argo/coriolis_dac"
+my_functions<-"r_scripts/submodules/BG_functions/"
+# ocean_color<-"../../data/ocean_color_bud"
+# bathy_d<-"../../data/bathy" # edit this
+# olaf_profiles
+
+
+
+knitr::opts_chunk$set(echo =FALSE)
+#knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+# source
+```{r}
+source(paste0(my_functions, "ch2_functions.R"))
+source(paste0(my_functions, "ch2_header.R"))
+source(paste0(my_functions, "final_functions.R"))
+
+
+f.ipak(packages)
+## get metadata ##
+# initialize_argo()
+
+```
+
+#data split_lists
+```{r}
+
+data<-readRDS("r_objects/ch2_seq_1_data.R")
+all<-data$tc_search_radi_profiles$km_500$tc
+rm(data)
+
+
+x<-lapply(all, f.remove)
+x<-purrr::list_flatten(x)
+rm(all)
+
+```
+
+
+
+```{r}
+Sys.time()
+print(Sys.time())
+selected_profiles_list<-lapply(x, f.get_profiles)
+# saveRDS(selected_profiles_list, "r_objects/olaf_match.R")
+Sys.time()
+print(Sys.time())
+```
+
+```{r}
+# saveRDS(selected_profiles_list, "r_objects/selected_profiles_list.R")
+test<-readRDS("r_objects/selected_profiles_list.R")
+
+```
+
+
+
+```{r}
+omz_change<-lapply(x, f.final_match)
+saveRDS(omz_change, "r_objects/olaf_match.R")
+Sys.time()
+print(Sys.time())
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

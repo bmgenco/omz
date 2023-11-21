@@ -74,10 +74,10 @@ print(paste0("Current Working Directory is ", getwd()))
 ## Functions
 
 ```{r}
-f.anomaly<-function(c){
-  m<-mean(c)
-  n<-c-m
-  return(n)
+
+y.p<-filter(y, day_difference <0)
+y.p<-filter(y, day_difference <0)
+
 }
 
 f.noise<-function(x, h.date, prior, post){

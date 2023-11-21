@@ -1,5 +1,5 @@
 # functions for ch2 scripts
-# need to proff read an clen this up. make function mor generic
+# need to proof read an clsen this up. make function more generic
 
 #### general functions ####
 
@@ -18,6 +18,10 @@ f.select_tc<-function(x, key_id){
   x<-x[which(names(x) == key_id)]
   return(x)
 }
+
+
+f.rm_empty<-function(x){x<-x[unlist(lapply(x, nrow) != 0)]
+return(x)}
 
 
 f.ipak <- function(pkg){
@@ -59,6 +63,18 @@ f.reformat_profiles_for_ONE_Argo<-function(tc.p){
   }
   return(s)}
 
+
+f.select_most_profiles<-function(x){
+  f.max_profiles<-function(x){
+    x$profile_number<-dim(x)[1]
+    
+  }
+  y<-lapply(x, f.max_profiles) %>% .[order(sapply(., max))] %>% .[rev(1:length(.))] %>% names(.)
+  y<-y[1]
+  x<-x[which(names(x) ==y)]
+  rm(y)
+  return(x)
+}
 
 # f.one_argo_to_oce<-function(x){
 #   
