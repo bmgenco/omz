@@ -69,9 +69,34 @@ data<-readRDS("r_objects/selected_profiles_list.R")
 
 ```
 
+```{r}
+z<-data[[87]]
+
+
+t87<-f.final_match(z)
+
+```
+
+
+
+
+
+```{r}
+
+t1<-vector(mode = "list", length=length(data))
+for(i in 1:length(data)){
+t1[[i]]<-f.final_match(data[[i]])
+  
+}
+
+
+```
+
+
 # try
 ```{r}
-omz_change<-lapply(data, f.final_match)
+omz_change_whole_day<-lapply(data, f.final_match)
+
 
 
 ```
