@@ -62,6 +62,26 @@ f.ipak(packages)
 
 ```
 
+# load need 
+
+```{r}
+data<-readRDS("r_objects/selected_profiles_list.R")
+
+```
+
+# try
+```{r}
+omz_change<-lapply(data, f.final_match)
+
+
+```
+
+
+
+
+
+
+
 #data split_lists
 ```{r}
 

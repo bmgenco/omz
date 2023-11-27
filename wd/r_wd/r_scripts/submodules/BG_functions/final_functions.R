@@ -26,12 +26,11 @@ return(z)
 # match functions:
 
 f.find_omz<-function(f){
-  if(all(is.na(f$DOXY_ADJUSTED))==T) {pick<-f$DOXY} else {pick<-f$DOXY_ADJUSTED}
+  if(all(is.na(f$DOXY_ADJUSTED))==T) {pick<-na.omit(f$DOXY)} else {pick<-na.omit(f$DOXY_ADJUSTED)}
   
+  if(is.na(pick)==T) {o<-NA} else if(any(min(na.omit(pick))>20)==T) {o<-min(na.omit(pick))} else {o<-min(which(pick <=20))} 
   
-  if(any(min(na.omit(pick))>20)==T) {o<-min(na.omit(pick))} else {o<-min(which(pick <=20))} 
-  
-  if(is.na(o)==T) {o<-1} else {o<-o}
+  if(is.na(o)==T) {o<-NA} else {o<-o}
   
   
   if(all(is.na(f$PRES_ADJUSTED))==T) {p<-f$PRES[o]} else {p<-f$PRES_ADJUSTED[o]}} 
@@ -46,7 +45,8 @@ f.get_profiles<-function(x){
 
 f.pressure_of_omz<-function(z){
   
-  
+  # add removal of profile here
+  # add min value of moz chossen
   
   
   y<-z$tc_info
@@ -85,15 +85,13 @@ f.omz_change_stats<-function(y){
 
 f.pressure_of_omz<-function(z){
   
-  
-  
-  
   y<-z$tc_info
   x<-z$profiles
   c<-unique(x$CYCLE_NUMBER)
   z<-vector(mode="list", length=length(c))  
   
   for(i in 1:length(c)){
+    i<-1
     f<-filter(x, CYCLE_NUMBER==c[i])
     p<-f.find_omz(f)
     z[[i]]<-p}
@@ -104,11 +102,19 @@ f.pressure_of_omz<-function(z){
 
 
 f.final_match<-function(x){
-z<-f.get_profiles(x)
-y<-f.pressure_of_omz(z)
+# z<-f.get_profiles(x)
+  
+y<-f.pressure_of_omz(x)
 y<-f.omz_change_stats(y)
-return(y)    
+
+z<-list(x$tc_info, y)
+names(z)<-c("tc_info", "omz_change")
+return(z)    
 }  
+
+
+
+
 
 
 
