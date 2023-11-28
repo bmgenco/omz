@@ -106,8 +106,8 @@ f.pressure_of_omz<-function(z){
 
 f.omz_change_stats<-function(y){
 
-  y$mean<-mean(y$omz_p)
-  y$median<-median(y$omz_p)
+  y$mean<-mean(y$omz_p, na.rm = TRUE)
+  y$median<-median(y$omz_p, na.rm = TRUE)
   y.p<-filter(y, day_difference < 0)
   y$prior_n<-length(y.p$omz_p)
   y$post_n<-length(y$omz_p)-y$prior_n
@@ -116,9 +116,9 @@ f.omz_change_stats<-function(y){
   y$change_prior<-NA
   for(i in 1:dim(y)[1]){
     y$change_prior[i]<-y$prior_mean[i]-y$omz_p[i]}
-  y$var<-var(y$omz_p)
-  y$max<-max(y$omz_p)
-  y$min<-min(y$omz_p)
+  y$var<-var(y$omz_p, na.rm = TRUE)
+  y$max<-max(y$omz_p, na.rm = TRUE)
+  y$min<-min(y$omz_p, na.rm = TRUE)
   y$range<-y$max-y$min
   return(y)  
 }
@@ -146,6 +146,147 @@ f.omz_change_stats<-function(y){
 #   y$omz_p<-unlist(z)
 #   return(y)
 # }
+
+
+
+
+f.find_omz_v2<-function(f){
+  
+  
+  if(all(is.na(f$DOXY_ADJUSTED))==T) {pick<-f$DOXY} else {pick<-f$DOXY_ADJUSTED}
+  
+  
+  # if(all(is.na(pick)==T)) {o<-NA} else if(min(na.omit(pick)>=20)==T) {o<-which.min(abs(pick-20))} else {o<-which.min(na.omit(pick[pick<=20]))}
+  if(all(is.na(pick)==T)) {o<-NA} else {o<-which.min(abs(pick-20))}
+
+  if(is.na(o)==T) {p<-NA} else if(all(is.na(f$PRES_ADJUSTED))==T) {p<-f$PRES[o]} else {p<-f$PRES_ADJUSTED[o]}
+  
+  omz_stats<-list()
+  
+  if(is.na(o)==T) {omz_stats$o<-NA} else {omz_stats$o<-pick[o]}
+  if(is.na(p)==T) {omz_stats$p<-NA} else {omz_stats$p<-p}
+  
+  
+  return(omz_stats)
+}
+
+
+
+
+f.pressure_of_omz_v2<-function(z){
+  
+  # add removal of profile here
+  # add min value of moz chossen
+  
+  
+  y<-z$tc_info
+  x<-z$profiles
+  origin <- lubridate::ymd_hms('1950-01-01 00:00:00')
+  if(is.null(x$JULD)==F) {x$date_jd_utc<-origin + x$JULD * 3600*24} else {x$date_jd_utc<-NA} 
+  
+  y_sf<-y%>%st_as_sf()
+  y$omz_p<-NA
+  # y$decimal_day_dif<-NA
+  y$omz_value<-NA
+  y$decimal_day_dif<-NA
+  
+  cyc<-unique(x$CYCLE_NUMBER)
+  
+  for(i in 1:length(cyc)){
+    
+    f<-filter(x, CYCLE_NUMBER==cyc[i])
+    
+    if((is.na(f$LATITUDE) && is.na(f$LATITUDE))==F) {temp<-st_as_sf(f, coords = c("LONGITUDE", "LATITUDE"))[1,] 
+    st_crs(temp)<-st_crs(y_sf)
+    ti<-st_filter(y_sf, temp)
+    rm(temp)
+    } else {ti<- data.frame(matrix(ncol = 2, nrow = 1))
+    names(ti)<-c("overpass_time", "day_difference")
+    ti$overpass_time<-NA
+    ti$day_difference<-NA
+      }
+    
+    if(any(is.na(f$date_jd_utc)==F)) {d<-as.numeric(unique(f$date_jd_utc)-ti$overpass_time)} else {d<-ti$day_difference} 
+    if(exists('d')==T) {d<-d} else {d<-NA}
+    if(is.na(d)==F) {y$decimal_day_dif[i]<-d} else {y$decimal_day_dif[i]<-NA}
+    
+    omz_stats<-f.find_omz_v2(f)
+    y$omz_value[i]<-omz_stats$o
+    y$omz_p[i]<-omz_stats$p
+    rm(f, ti, omz_stats,d)
+  }
+
+  
+  return(y)
+}
+
+# ti<-filter(y, profile==profile[i])
+
+
+# if(exists("date_jd_utc", f)==F) {d<-ti$day_difference} else {d<-as.numeric(unique(f$date_jd_utc)-ti$overpass_time)}
+# if(!exists(d)) {y$decimal_day_dif[i]<-NA} else {y$decimal_day_dif[i]<-d}
+
+# if(exists('d')==T) {d<-d} else {d<-NA}
+# if(!is.na(d)==T) {y$decimal_day_dif[i]<-d} else {y$decimal_day_dif[i]<-NA}
+
+
+
+f.pressure_of_omz_v3<-function(z){
+  
+  # add removal of profile here
+  # add min value of moz chossen
+  
+  
+  y<-z$tc_info
+  x<-z$profiles
+  
+  y$omz_p<-NA
+  y$omz_value<-NA
+  
+  
+  cyc<-unique(x$CYCLE_NUMBER)
+  
+  for(i in 1:length(cyc)){
+    
+    f<-filter(x, CYCLE_NUMBER==cyc[i])
+
+    
+    omz_stats<-f.find_omz_v2(f)
+    y$omz_value[i]<-omz_stats$o
+    y$omz_p[i]<-omz_stats$p
+    
+  }
+  
+  
+  return(y)
+}
+
+f.final_match_v2<-function(x){
+  # z<-f.get_profiles(x)
+  
+  y<-f.pressure_of_omz_v2(x)
+  y<-f.omz_change_stats(y)
+  
+  # z<-list(x$profiles, y)
+  # names(z)<-c("profiles", "omz_change")
+  # return(z)    
+  return(y)
+  rm(x,y,z,o,p,i)
+}  
+
+
+f.final_match_v3<-function(x){
+  # z<-f.get_profiles(x)
+  
+  y<-f.pressure_of_omz_v3(x)
+  y<-f.omz_change_stats(y)
+  
+  # z<-list(x$profiles, y)
+  # names(z)<-c("profiles", "omz_change")
+  # return(z)    
+  return(y)
+  rm(x,y,z,o,p,i)
+}  
 
 
 f.final_match<-function(x){

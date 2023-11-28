@@ -18,6 +18,7 @@ Directory structure  used in this analysis:
 -- /data
 -- /figures
 -- /r_wd
+st_crs(temp)<-st_crs(ti)
 
 ~/omz/wd/r_wd
 -- /Index
@@ -57,6 +58,7 @@ source(paste0(my_functions, "final_functions.R"))
 
 
 f.ipak(packages)
+rm(i)
 ## get metadata ##
 # initialize_argo()
 
@@ -73,11 +75,14 @@ data<-readRDS("r_objects/selected_profiles_list.R")
 z<-data[[87]]
 
 
-t87<-f.final_match(z)
+t87<-f.final_match_v3(z)
 
 ```
 
 
+```{r}
+rm(z, t87)
+```
 
 
 
@@ -85,7 +90,7 @@ t87<-f.final_match(z)
 
 t1<-vector(mode = "list", length=length(data))
 for(i in 1:length(data)){
-t1[[i]]<-f.final_match(data[[i]])
+t1[[i]]<-f.final_match_v2(data[[i]])
   
 }
 
@@ -95,13 +100,17 @@ t1[[i]]<-f.final_match(data[[i]])
 
 # try
 ```{r}
-omz_change_whole_day<-lapply(data, f.final_match)
-
+# omz_change_decimal_day<-lapply(data, f.final_match_v2)
+omz_change_whole_day<-lapply(data, f.final_match_v3)
 
 
 ```
 
 
+```{r}
+setwd(wd)
+saveRDS(omz_change_whole_day, "r_objects/omz_change_whole_day.R")
+```
 
 
 
