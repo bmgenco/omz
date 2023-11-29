@@ -25,7 +25,7 @@ return(z)
   
 }
 
-# match functions:
+#### match functions: ####
 
 f.find_omz<-function(f){
   # if(all(is.na(f$DOXY_ADJUSTED))==T) {pick<-na.omit(f$DOXY)} else {pick<-na.omit(f$DOXY_ADJUSTED)}
@@ -311,3 +311,9 @@ rm(x,y,z,o,p,i)
 
 #4 change
 
+
+#### plotting and stats functions ####
+
+f.after<-function(x){
+  x<-filter(x, )
+}

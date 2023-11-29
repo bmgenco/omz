@@ -63,8 +63,16 @@ rm(i)
 # initialize_argo()
 
 ```
+# load data for plottng final
 
-# load need 
+```{r}
+data<-readRDS("r_objects/omz_change_whole_day.R")
+```
+
+
+
+
+# load data for omz calcultion
 
 ```{r}
 data<-readRDS("r_objects/selected_profiles_list.R")
