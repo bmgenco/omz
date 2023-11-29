@@ -314,6 +314,31 @@ rm(x,y,z,o,p,i)
 
 #### plotting and stats functions ####
 
-f.after<-function(x){
-  x<-filter(x, )
-}
+# get tc info
+
+f.match_tc_omz_change<-function(h.pts, df){
+  x<-df
+  y<-h.pts
+  x$Wind<-NA
+  x$Status<-NA
+  
+  
+  for(i in 1:dim(x)[1]){
+    x.key<-x$Key[i]
+    x.time<-x$overpass_time[i]
+    z<-filter(y, Key ==x.key) %>% filter(., DateTime==x.time)
+    x$Wind[i]<-z$Wind
+    x$Status[i]<-z$Status}
+  return(x)
+  
+      
+    
+    
+    
+    
+  }
+  
+  
+
+
+

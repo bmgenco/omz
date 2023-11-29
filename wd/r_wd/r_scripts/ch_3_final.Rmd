@@ -67,7 +67,82 @@ rm(i)
 
 ```{r}
 data<-readRDS("r_objects/omz_change_whole_day.R")
+temp<-readRDS("r_objects/ch2_seq_1_data.R")
+h.pts<-temp$selected_zone_hurdat$h.pts
+rm(temp)
+
 ```
+
+```{r}
+df<-data%>%bind_rows(.id = "group")
+df<-f.match_tc_omz_change(h.pts, df)
+
+df<-filter(df, omz_value <= 500) # error or real?
+df.after<-filter(df, day_difference >=0)
+```
+
+# filter # 1
+
+```{r}
+x<-filter(df, distance_m <=200000)
+```
+
+
+## anova
+```{r}
+one.way_df<-aov(omz_p ~ day_difference, data = df)
+one.way_df.after<-aov(omz_p ~ day_difference, data =df.after)
+two.way_df<-aov(omz_p ~ day_difference + distance_m, data = df)
+two.way_df.after<-aov(omz_p ~ day_difference + distance_m, data = df.after)
+
+three.way_df<-aov(omz_p ~ day_difference + distance_m + Wind, data = df)
+three.way_df.after<-aov(omz_p ~ day_difference + distance_m + Wind, data = df.after)
+
+three.way_x<-aov(omz_p ~ day_difference + distance_m + Wind, data = x)
+
+y1<-sample_n(x, dim(x)[1]-100)
+y2<-sample_n(x, dim(x)[1]-200)
+y3<-sample_n(x, dim(x)[1]-500)
+
+three.way_y1<-aov(omz_p ~ day_difference + distance_m + Wind, data = x)
+three.way_y2<-aov(omz_p ~ day_difference + distance_m + Wind, data = x)
+three.way_y3<-aov(omz_p ~ day_difference + distance_m + Wind, data = x)
+
+four.way_df<-aov(omz_p ~ day_difference + distance_m + Wind +Key, data=df)
+four.way_df.after<-aov(omz_p ~ day_difference + distance_m + Wind +Key, data=df.after)
+
+
+five.way_df<-aov(omz_p ~ day_difference + distance_m + Wind +Key +Status, data=df)
+five.way_df.after<-aov(omz_p ~ day_difference + distance_m + Wind +Key+Status, data=df.after)
+
+
+```
+
+
+```{r}
+summary(three.way_x)
+summary(three.way_y1)
+summary(three.way_y2)
+summary(three.way_y3)
+
+summary(four.way_df)
+
+summary(four.way_df.after)
+
+```
+
+```{r}
+
+summary(five.way_df)
+
+summary(five.way_df.after)
+
+
+```
+
+
+
+
 
 
 
@@ -106,7 +181,7 @@ t1[[i]]<-f.final_match_v2(data[[i]])
 ```
 
 
-# try
+## try
 ```{r}
 # omz_change_decimal_day<-lapply(data, f.final_match_v2)
 omz_change_whole_day<-lapply(data, f.final_match_v3)
