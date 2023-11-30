@@ -75,11 +75,25 @@ rm(temp)
 
 ```{r}
 df<-data%>%bind_rows(.id = "group")
+df$y_day<-yday(df$overpass_time)+df$day_difference
 df<-f.match_tc_omz_change(h.pts, df)
+
+df <- df %>% st_as_sf() %>%
+  dplyr::mutate(lon = sf::st_coordinates(.)[,1],
+                lat = sf::st_coordinates(.)[,2])
 
 df<-filter(df, omz_value <= 500) # error or real?
 df.after<-filter(df, day_difference >=0)
+df.b4<-filter(df, day_difference <=-3)
 ```
+
+
+```{r}
+df <- df %>% st_as_sf() %>%
+  dplyr::mutate(lon = sf::st_coordinates(.)[,1],
+                lat = sf::st_coordinates(.)[,2])
+```
+
 
 # filter # 1
 
@@ -90,33 +104,178 @@ x<-filter(df, distance_m <=200000)
 
 ## anova
 ```{r}
-one.way_df<-aov(omz_p ~ day_difference, data = df)
-one.way_df.after<-aov(omz_p ~ day_difference, data =df.after)
-two.way_df<-aov(omz_p ~ day_difference + distance_m, data = df)
-two.way_df.after<-aov(omz_p ~ day_difference + distance_m, data = df.after)
+# one.way_df<-aov(omz_p ~ day_difference, data = df)
+# one.way_df.after<-aov(omz_p ~ day_difference, data =df.after)
+# two.way_df<-aov(omz_p ~ day_difference + distance_m, data = df)
+# two.way_df.after<-aov(omz_p ~ day_difference + distance_m, data = df.after)
+# 
+# three.way_df<-aov(omz_p ~ day_difference + distance_m + Wind, data = df)
+# three.way_df.after<-aov(omz_p ~ day_difference + distance_m + Wind, data = df.after)
+# 
+# three.way_x<-aov(omz_p ~ day_difference + distance_m + Wind, data = x)
+# 
+# y1<-sample_n(x, dim(x)[1]-100)
+# y2<-sample_n(x, dim(x)[1]-200)
+# y3<-sample_n(x, dim(x)[1]-500)
+# 
+# three.way_y1<-aov(omz_p ~ day_difference + distance_m + Wind, data = x)
+# three.way_y2<-aov(omz_p ~ day_difference + distance_m + Wind, data = x)
+# three.way_y3<-aov(omz_p ~ day_difference + distance_m + Wind, data = x)
+# 
+# four.way_df<-aov(omz_p ~ day_difference + distance_m + Wind +Key, data=df)
+# four.way_df.after<-aov(omz_p ~ day_difference + distance_m + Wind +Key, data=df.after)
+# 
+# 
+# five.way_df<-aov(omz_p ~ day_difference + distance_m + Wind +Key +Status, data=df)
+# five.way_df.after<-aov(omz_p ~ day_difference + distance_m + Wind +Key+Status, data=df.after)
+# 
+# seven.way_df<-aov(omz_p ~ day_difference + distance_m + Wind +Key +Status +lon +lat, data=df)
+# seven.way_df.after<-aov(omz_p ~ day_difference + distance_m + Wind +Key+Status +lon +lat, data=df.after)
+# 
+# 
+# seven.way_chng_df<-aov(change_prior ~ day_difference + distance_m + Wind +Key +Status +lon +lat, data=df)
+# seven.way_chng_df.after<-aov(change_prior ~ day_difference + distance_m + Wind +Key+Status +lon +lat, data=df.after)
 
-three.way_df<-aov(omz_p ~ day_difference + distance_m + Wind, data = df)
-three.way_df.after<-aov(omz_p ~ day_difference + distance_m + Wind, data = df.after)
 
-three.way_x<-aov(omz_p ~ day_difference + distance_m + Wind, data = x)
+multi.way_chng_df<-aov(change_prior ~ day_difference + distance_m + Wind +Key +Status +lon +lat + prior_min +var+prior_n + mean + median + range + max +y_day + omz_p, data=df)
 
-y1<-sample_n(x, dim(x)[1]-100)
-y2<-sample_n(x, dim(x)[1]-200)
-y3<-sample_n(x, dim(x)[1]-500)
+multi.way_chng_df.after<-aov(change_prior ~ day_difference + distance_m + Wind +Key +Status +lon +lat + prior_min +var+prior_n + mean + median + range + max + y_day + omz_p, data=df.after)
 
-three.way_y1<-aov(omz_p ~ day_difference + distance_m + Wind, data = x)
-three.way_y2<-aov(omz_p ~ day_difference + distance_m + Wind, data = x)
-three.way_y3<-aov(omz_p ~ day_difference + distance_m + Wind, data = x)
-
-four.way_df<-aov(omz_p ~ day_difference + distance_m + Wind +Key, data=df)
-four.way_df.after<-aov(omz_p ~ day_difference + distance_m + Wind +Key, data=df.after)
+multi.way_chng_df.b4<-aov(change_prior ~ day_difference + distance_m + Wind +Key +Status +lon +lat + prior_min +var+prior_n + mean + median + range + max + y_day + omz_p, data=df.b4)
 
 
-five.way_df<-aov(omz_p ~ day_difference + distance_m + Wind +Key +Status, data=df)
-five.way_df.after<-aov(omz_p ~ day_difference + distance_m + Wind +Key+Status, data=df.after)
+multi.way_depth_df<-aov(omz_p ~ day_difference + distance_m + Wind +Key +Status +lon +lat + prior_min +var+prior_n + mean + median + range + max +y_day, data=na.omit(df))
+
+# multi.way_depth_df.after<-aov(omz_p ~ day_difference + distance_m + Wind +Key +Status +lon +lat + prior_min +var+prior_n + mean + median + range + max + y_day, data=na.omit(df.after))
+
+# multi.way_depth_df.b4<-aov(omz_p ~ day_difference + distance_m + Wind +Key +Status +lon +lat + prior_min +var + y_day, data=df.b4)
+
+df.b4<-filter(df, day_difference <=-3)
+multi.way_depth_df.b4<-aov(omz_p ~ day_difference + distance_m + Wind  +lon +lat + prior_min +var + y_day, data=df.b4)
+y1<-sample_n(df.b4, dim(df.b4)[1]-100)
+y2<-sample_n(df.b4, dim(df.b4)[1]-200)
+y3<-sample_n(df.b4, dim(df.b4)[1]-500)
+y1.a<-aov(omz_p ~ day_difference + distance_m + Wind  +lon +lat + prior_min +var + y_day, data=y1)
+y2.a<-aov(omz_p ~ day_difference + distance_m +  Wind  +lon +lat + prior_min +var + y_day, data=y2)
+y3.a<-aov(omz_p ~ day_difference + distance_m + Wind  +lon +lat + prior_min +var + y_day, data=y3)
+
 
 
 ```
+
+```{r}
+df.b4<-filter(df, day_difference <=-1)
+multi.way_depth_df.b4<-aov(omz_p ~ day_difference + distance_m + Wind  +lon +lat + prior_min +var + y_day, data=df.b4)
+y1<-sample_n(df.b4, dim(df.b4)[1]-200)
+y2<-sample_n(df.b4, dim(df.b4)[1]-200)
+y3<-sample_n(df.b4, dim(df.b4)[1]-200)
+y1.a<-aov(omz_p ~ day_difference + distance_m + Wind  +lon +lat + prior_min +var + y_day, data=y1)
+y2.a<-aov(omz_p ~ day_difference + distance_m +  Wind  +lon +lat + prior_min +var + y_day, data=y2)
+y3.a<-aov(omz_p ~ day_difference + distance_m + Wind  +lon +lat + prior_min +var + y_day, data=y3)
+
+
+print(dim(df.b4)[1])
+
+print("anova depth b4")
+summary(multi.way_depth_df.b4)
+
+print("anova depth b4 y1")
+summary(y1.a)
+print("anova depth b4 y2")
+summary(y2.a)
+
+print("anova depth b4 y3")
+summary(y3.a)
+
+
+# random smapling n-200 makesa diffrence
+```
+
+
+
+## manova
+```{r}
+
+m.df<-cbind(df$omz_p, df$change_prior)
+man.df<-manova(m.df ~ day_difference + distance_m + Wind +Key +Status +lon +lat + prior_min +var+prior_n + mean + median + range + max +y_day, data=df)
+rm(m.df)
+
+
+m.df.after<-cbind(df.after$omz_p, df.after$change_prior)
+man.after<-aov(m.df.after ~ day_difference + distance_m + Wind +Key +Status +lon +lat + prior_min +var+prior_n + mean + median + range + max + y_day, data=df.after)
+rm(m.df.after)
+
+m.df.b4<-cbind(df.b4$omz_p, df.b4$change_prior)
+man.b4<-aov(change_prior ~ day_difference + distance_m + Wind +Key +Status +lon +lat + prior_min +var+prior_n + mean + median + range + max + y_day, data=df.b4)
+rm(m.df.b4)
+
+
+
+```
+
+
+### manova sensitivty
+```{r}
+
+m.df.after<-cbind(df.after$omz_p, df.after$change_prior)
+man.after<-aov(m.df.after ~ day_difference + distance_m + Wind +Key +Status +lon +lat + prior_min +var+prior_n + mean + median + range + max + y_day, data=df.after)
+rm(m.df.after)
+
+
+y1<-sample_n(df.after, dim(df.after)[1]-200)
+y2<-sample_n(df.after, dim(df.after)[1]-200)
+y3<-sample_n(df.after, dim(df.after)[1]-200)
+
+y1.m<-cbind(y1$omz_p, y1$change_prior )
+y1.m<-aov(y1.m ~ day_difference + distance_m + Wind +Key +Status +lon +lat + prior_min +var+prior_n + mean + median + range + max + y_day, data=y1)
+
+y2.m<-cbind(y2$omz_p, y2$change_prior )
+y2.m<-aov(y2.m ~ day_difference + distance_m + Wind +Key +Status +lon +lat + prior_min +var+prior_n + mean + median + range + max + y_day, data=y2)
+
+y3.m<-cbind(y3$omz_p, y3$change_prior )
+y3.m<-aov(y3.m ~ day_difference + distance_m + Wind +Key +Status +lon +lat + prior_min +var+prior_n + mean + median + range + max + y_day, data=y3)
+
+```
+
+
+```{r}
+
+
+print(dim(df.b4)[1])
+
+print("manova after")
+summary(man.after)
+
+print("manova depth b4 y1")
+summary(y1.m)
+print("manova depth b4 y2")
+summary(y2.m)
+
+print("manova depth b4 y3")
+summary(y3.m)
+
+```
+
+
+
+# use me
+```{r}
+# print("manova all")
+# summary(man.df)
+
+# print("manova b4")
+# summary(man.b4)
+
+print("anova depth b4")
+summary(multi.way_depth_df.b4)
+
+
+print("manova after")
+summary(man.after)
+
+
+```
+
 
 
 ```{r}
@@ -133,9 +292,26 @@ summary(four.way_df.after)
 
 ```{r}
 
-summary(five.way_df)
+# summary(seven.way_df)
+# 
+# summary(seven.way_df.after)
 
-summary(five.way_df.after)
+# summary(seven.way_chng_df)
+
+# summary(seven.way_chng_df.after)
+print("depth all")
+summary(multi.way_depth_df)
+print("depth b4")
+summary(multi.way_depth_df.b4)
+print("depth after ")
+summary(multi.way_depth_df.after)
+
+print("change all")
+summary(multi.way_chng_df)
+print("change b4")
+summary(multi.way_chng_df.b4)
+print("change after")
+summary(multi.way_chng_df.after)
 
 
 ```
