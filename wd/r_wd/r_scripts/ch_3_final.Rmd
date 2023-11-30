@@ -66,7 +66,8 @@ rm(i)
 # load data for plottng final
 
 ```{r}
-data<-readRDS("r_objects/omz_change_whole_day.R")
+# data<-readRDS("r_objects/omz_change_whole_day.R")
+data<-readRDS("r_objects/omz_change_juld_day.R")
 temp<-readRDS("r_objects/ch2_seq_1_data.R")
 h.pts<-temp$selected_zone_hurdat$h.pts
 rm(temp)
@@ -75,7 +76,32 @@ rm(temp)
 
 ```{r}
 df<-data%>%bind_rows(.id = "group")
-df$y_day<-yday(df$overpass_time)+df$day_difference
+origin <- lubridate::ymd_hms('1950-01-01 00:00:00')
+df$profile_date<-(origin + df$profile_JULD * 3600*24)
+# df$decimal_day_dif<-round_date(df$overpass_time, unit="hour")+round_date(df$profile_date, unit="hour")
+
+# x<-interval(round_date(df$overpass_time, unit="hour"),round_date(df$profile_date, unit="hour"))%>%as.period(., unit="hours") %>%as.numeric(., "hours")/24
+
+
+x<-interval(round_date(df$overpass_time, unit="hour"),round_date(df$profile_date, unit="hour"))%>%as.period(., unit="days")%>%as.numeric(., "days")
+# creates some erronous dates..
+
+df$decimal_day_dif<-NA
+
+z<-abs(abs(df$day_difference)-abs(x))
+
+for(i in 1:dim(df)[1]){
+ 
+ if(is.na(z[i])==F){
+  if(z[i]<=3) {df$decimal_day_dif[i]<-x[i]} else {df$decimal_day_dif[i]<-df$day_difference[i]}
+  if(is.na(df$decimal_day_dif[i])==F) {df$decimal_day_dif[i]<-df$decimal_day_dif[i]} else{df$decimal_day_dif[i]<-df$day_difference[i]}}
+  else{df$decimal_day_dif[i]<-df$day_difference[i]}
+  
+}
+
+
+
+# df$y_day<-yday(df$overpass_time)+df$day_difference
 df<-f.match_tc_omz_change(h.pts, df)
 
 df <- df %>% st_as_sf() %>%
@@ -328,13 +354,42 @@ summary(multi.way_chng_df.after)
 ```{r}
 data<-readRDS("r_objects/selected_profiles_list.R")
 
+f.rm_new<-function(x){
+x<-x[sapply(x, function(y) dim(y)[1]) > 0]
+return(x)}
+f.rm_one<-function(x){
+  if(length(x)==2){x<-x} else {x<-NULL}
+  return(x)
+}
+
+#remove empties
+data<-lapply(data, f.rm_new)
+data<-lapply(data, f.rm_one)
+data<-compact(data)
+
 ```
 
 ```{r}
-z<-data[[87]]
+z<-data[[261]]
+
+y<-f.pressure_of_omz_v3(z)
 
 
-t87<-f.final_match_v3(z)
+t261<-f.final_match_v3(z)
+
+f.rm_new<-function(x){
+x<-x[sapply(x, function(y) dim(y)[1]) > 0]
+return(x)}
+
+data_new<-lapply(data, f.rm_new)
+
+f.rm_one<-function(x){
+  if(length(x)==2){x<-x} else {x<-NULL}
+  return(x)
+}
+
+date_newer<-lapply(data_new, f.rm_one)
+
 
 ```
 
@@ -349,7 +404,7 @@ rm(z, t87)
 
 t1<-vector(mode = "list", length=length(data))
 for(i in 1:length(data)){
-t1[[i]]<-f.final_match_v2(data[[i]])
+t1[[i]]<-f.final_match_v3(data[[i]])
   
 }
 
@@ -360,7 +415,9 @@ t1[[i]]<-f.final_match_v2(data[[i]])
 ## try
 ```{r}
 # omz_change_decimal_day<-lapply(data, f.final_match_v2)
-omz_change_whole_day<-lapply(data, f.final_match_v3)
+# omz_change_whole_day<-lapply(data, f.final_match_v3)
+
+omz_change_juld_day<-lapply(data, f.final_match_v3)
 
 
 ```
@@ -368,7 +425,7 @@ omz_change_whole_day<-lapply(data, f.final_match_v3)
 
 ```{r}
 setwd(wd)
-saveRDS(omz_change_whole_day, "r_objects/omz_change_whole_day.R")
+saveRDS(omz_change_juld_day, "r_objects/omz_change_juld_day.R")
 ```
 
 

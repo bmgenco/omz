@@ -237,25 +237,50 @@ f.pressure_of_omz_v3<-function(z){
   # add min value of moz chossen
   
   
+  
+  
   y<-z$tc_info
   x<-z$profiles
   
+  if(!dim(x)[1]==0){
+  
+  x$date_jd_utc<-NA
+  # origin <- lubridate::ymd_hms('1950-01-01 00:00:00')
+  # if(is.null(x$JULD)==F) {x$date_jd_utc<-x$JULD} else {x$date_jd_utc<-1} 
+  
+  # if(is.null(x$JULD)==F) {x$date_jd_utc<-x$JULD} else {x$date_jd_utc<-NA} 
+  
   y$omz_p<-NA
   y$omz_value<-NA
-  
+  y$profile_JULD<-NA
+
   
   cyc<-unique(x$CYCLE_NUMBER)
   
   for(i in 1:length(cyc)){
     
     f<-filter(x, CYCLE_NUMBER==cyc[i])
-
+    
+    if(is.null(f$JULD)==F) {f$date_jd_utc<-f$JULD} else {f$date_jd_utc<-1}
+    
+    # if(any(is.na(f$date_jd_utc)==F)) {d<-unique(f$date_jd_utc)[1]} else {d<-NA}
+    # 
+    # if(is.null(d)==F) {dc<-origin +d * 3600*24} else {d<-NA} 
+    
+    # if(is.null(f$JULD)==F) {f$date_jd_utc<-origin + x$JULD * 3600*24} else {f$date_jd_utc<-NA} 
+    
     
     omz_stats<-f.find_omz_v2(f)
     y$omz_value[i]<-omz_stats$o
     y$omz_p[i]<-omz_stats$p
     
+    if(any(is.na(f$date_jd_utc)==F)) {y$profile_JULD[i]<-f$date_jd_utc[1]} else {y$profile_JULD[i]<-1}
+   
+    
   }
+  
+  } else {y<-NULL}
+
   
   
   return(y)
