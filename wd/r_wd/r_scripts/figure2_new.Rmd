@@ -12,6 +12,10 @@ output: html_document
 ```{r setup}
 rm(list=ls())
 # relative directories
+r_scriptwd<-getwd()
+wd<-substring(r_scriptwd,1,nchar(r_scriptwd) -10) # hardcoding replace here
+knitr::opts_knit$set(root.dir = wd)
+
 robj<-"r_objects"
 fig<-"../../figures"
 gis_data<-"../../data/gis_data"
@@ -30,7 +34,7 @@ viirs_directory<-"../../data/ocean_color_bud/terra"
 drop_img<-"/home/brandon/Dropbox/MERCED/dissertation/presentations/images"
 
 knitr::opts_chunk$set(echo =FALSE)
-knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+#knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file()) # looks forr project file. None on Callisto
 ```
 
 ## Load Packages
@@ -50,9 +54,12 @@ f.ipak <- function(pkg){
     install.packages(new.pkg, dependencies = TRUE, quiet=T, verbose = F)
   sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
 }
-packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "patchwork", "RColorBrewer", "marmap", "extrafont", "oce", "ncdf4", "raster", "RStoolbox", "cmocean", "metR",  "ggimage", "scales")  # set packages here
+packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "patchwork", "RColorBrewer", "marmap", "extrafont", "oce", "ncdf4", "raster", "RStoolbox", "cmocean", "metR",  "ggimage", "scales")  # set packages here
+
 
 # " grImport2",
+# newer ubuntu 24. does not have "rgdal",  "rgeos", - so removed will need to see if this breaks other scripts or if sf and terra are all I need
+
 
 f.ipak(packages)
 rm(packages, f.ipak)
@@ -610,7 +617,10 @@ plots<-vector(mode='list', length = length(combined))
 
 cuts<-c(0, 0.01, 0.02, 0.04,  0.08,  0.1,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2,3,4, 5)
 n<-length(cuts)+1
-custom_color<-rev(rainbow(n))
+custom_color<- oce::oceColorsPalette(n=100, name="viridis")
+
+# custom_color<-rev(rainbow(n))
+
 cuts<-rescale(cuts)
 title_two<-expression(atop(textstyle("Chl a"), textstyle("mg m"^-3*"")))
 labs<-c(0.1, .5, 1, 2 , 2.5, 5)
@@ -769,7 +779,8 @@ legend_n<-f.fig2_legend_eyes(offset_1=.06, x_space=80, plot_x=3014, plot_y=252, 
 setwd(wd)
 setwd(fig)
 
-pdf("figure_two_2nd_legend.pdf", width =5, height=.46)
+# pdf("figure_two_2nd_legend.pdf", width =5, height=.46)
+pdf("figure_two_2nd_legend_SA.pdf", width =5, height=.46)
 legend_n
 dev.off()
 
@@ -783,12 +794,14 @@ dev.off()
 setwd(wd)
 setwd(fig)
 
-pdf("figure_two_no_2nd_legend.pdf", height=11 , width =8.5)
+# pdf("figure_two_no_2nd_legend.pdf", height=11 , width =8.5)
+pdf("figure_two_no_2nd_legend_SA.pdf", height=11 , width =8.5)
 plot_grid(p, legend, ncol=2, rel_widths=c(14,1), align="h")
 dev.off()
 
 
-pdf("figure_s5_no_2nd_legend.pdf", height=11 , width =8.5)
+# pdf("figure_s5_no_2nd_legend.pdf", height=11 , width =8.5)
+pdf("figure_s5_no_2nd_legend_SA.pdf", height=11 , width =8.5)
 plot_grid(s.p, legend, ncol=2, rel_widths=c(14,1), align="h")
 dev.off()
 # 
