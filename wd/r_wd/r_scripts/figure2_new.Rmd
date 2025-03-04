@@ -28,7 +28,9 @@ bathy_d<-"../../data/bathy" # edit this
 # old NC files
 aqua_directory<-"../../data/ocean_color_bud/aqua"
 terra_directory<-"../../data/ocean_color_bud/terra"
-viirs_directory<-"../../data/ocean_color_bud/terra"
+# viirs_directory<-"../../data/ocean_color_bud/terra" this might have been worng for figures
+
+viirs_directory<-"../../data/ocean_color_bud/viirs"
 
 #absolute directory
 drop_img<-"/home/brandon/Dropbox/MERCED/dissertation/presentations/images"
@@ -43,7 +45,7 @@ knitr::opts_chunk$set(echo =FALSE)
 * to do trim uneeded package
 
 ```{r}
-wd<-getwd()
+# wd<-getwd()
 f.ipak <- function(pkg){
   
   # loads packages, quietly, given by a vector of package names e.g., pkg<-c("ggplot", "tidyverse")
@@ -116,8 +118,9 @@ f.tmp2<-function(x){
 }
 
 # aqua 
+directory<-aqua_directory
 setwd(wd)
-setwd(aqua_directory)
+setwd(directory)
 files<-list.files()
 
 a<-lapply(files, f.tmp1)
@@ -126,8 +129,9 @@ names(a)<-as.character(dates)
 rm(files, directory, dates)
 
 #terra
+directory<-terra_directory
 setwd(wd)
-setwd(terra_directory)
+setwd(directory)
 files<-list.files()
 
 t<-lapply(files, f.tmp1)
@@ -141,7 +145,8 @@ lat<-as.numeric(colnames(a[[1]]))
 
 #viirs
 setwd(wd)
-setwd(viirs_directory)
+directory<-viirs_directory
+setwd(directory)
 files<-list.files()
 
 v<-lapply(files, f.tmp1)
@@ -617,7 +622,7 @@ plots<-vector(mode='list', length = length(combined))
 
 cuts<-c(0, 0.01, 0.02, 0.04,  0.08,  0.1,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2,3,4, 5)
 n<-length(cuts)+1
-custom_color<- oce::oceColorsPalette(n=100, name="viridis")
+custom_color<-oce::oceColorsViridis(100)
 
 # custom_color<-rev(rainbow(n))
 
