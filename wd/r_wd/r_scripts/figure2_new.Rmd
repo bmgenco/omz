@@ -97,7 +97,9 @@ f.tmp2<-function(x){
   end<-ncatt_get(y, attname = 'time_coverage_end', varid = 0, verbose=F)
   end<-end$value
   end<-ymd_hms(end)
-  end<-with_tz(end, tz="US/Mountain")
+  # end<-with_tz(end, tz="US/Mountain") The 'US/Mountain' format is deprecated in newer versions of the time zone database that lubridate uses.
+  end<-with_tz(end, tzone = "America/Denver")
+  
   # time<-c(start, end, (end-start))
   day<-day(end)
   nc_close(y)
