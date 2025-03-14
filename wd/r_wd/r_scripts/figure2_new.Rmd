@@ -56,10 +56,10 @@ f.ipak <- function(pkg){
     install.packages(new.pkg, dependencies = TRUE, quiet=T, verbose = F)
   sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
 }
-packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "patchwork", "RColorBrewer", "marmap", "extrafont", "oce", "ncdf4", "raster", "RStoolbox", "cmocean", "metR",  "ggimage", "scales")  # set packages here
+packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "patchwork", "RColorBrewer", "marmap", "extrafont", "oce", "ncdf4", "raster", "RStoolbox", "cmocean", "metR",  "ggimage", "scales", "gtable")  # set packages here
 
 
-# " grImport2",
+# " grImport2"
 # newer ubuntu 24. does not have "rgdal",  "rgeos", - so removed will need to see if this breaks other scripts or if sf and terra are all I need
 
 
@@ -344,7 +344,8 @@ if (length(eye.b$geometry)>0) {
     guides(fill=guide_colourbar(title=bquote(title_two), barheight = 8)) +
     theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
     theme(text=element_text(family="Helvetica")) + theme(legend.position = "none") +
-    geom_sf(data = circle, color = circle_color, alpha = 0, inherit.aes = FALSE)+
+    # geom_sf(data = circle, color = circle_color, alpha = 0, inherit.aes = FALSE)+
+    circle_geom+
     geom_sf(data=eye.a, inherit.aes = FALSE, shape =aletta_symbol, col=aletta_color,  fill=aletta_color, size=aletta_size)+
     # geom_image(aes(x=lon, y=lat, image=image), data=eye.b, inherit.aes = FALSE, col=bud_color, size=bud_size,  by="width")+
     geom_image(aes(x=lon, y=lat, image=image), data=eye.b, inherit.aes = FALSE)+
@@ -365,7 +366,8 @@ if (length(eye.b$geometry)>0) {
     guides(fill=guide_colourbar(title=bquote(title_two), barheight = 8)) +
     theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
     theme(text=element_text(family="Helvetica")) + theme(legend.position = "none") +
-    geom_sf(data = circle, color = circle_color, alpha = 0, inherit.aes = FALSE)+
+    # geom_sf(data = circle, color = circle_color, alpha = 0, inherit.aes = FALSE)+
+    circle_geom+
     geom_sf(data=eye.a, inherit.aes = FALSE, shape =aletta_symbol, col=aletta_color,  fill=aletta_color, size=aletta_size)+
     coord_sf(xlim = c(left,right), ylim = c(bottom, top))
   
@@ -454,7 +456,8 @@ f.fig2_no_y<-function(combined, v_rgb, i, t, l){
     theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
     theme(text=element_text(family="Helvetica")) + theme(legend.position = "none") +
     theme(axis.text.y=element_blank(), axis.ticks.y=element_blank())+
-    geom_sf(data = circle, color = circle_color, alpha = 0, inherit.aes = FALSE)+
+    # geom_sf(data = circle, color = circle_color, alpha = 0, inherit.aes = FALSE)+
+    circle_geom+
     geom_sf(data=eye.a, inherit.aes = FALSE, shape =aletta_symbol, col=aletta_color,  fill=aletta_color, size=aletta_size)+
     # geom_image(aes(x=lon, y=lat, image=image), data=eye.b, inherit.aes = FALSE, col=bud_color, size=bud_size, by="width")+
     geom_image(aes(x=lon, y=lat, image=image), data=eye.b, inherit.aes = FALSE)+
@@ -476,7 +479,8 @@ f.fig2_no_y<-function(combined, v_rgb, i, t, l){
     theme(legend.title =element_text(size=8), legend.text=element_text(size=6)) + 
     theme(text=element_text(family="Helvetica")) + theme(legend.position = "none") +
     theme(axis.text.y=element_blank(), axis.ticks.y=element_blank())+
-    geom_sf(data = circle, color = circle_color, alpha = 0, inherit.aes = FALSE)+
+    # geom_sf(data = circle, color = circle_color, alpha = 0, inherit.aes = FALSE)+
+    circle_geom+
     geom_sf(data=eye.a, inherit.aes = FALSE, shape =aletta_symbol, col=aletta_color, fill=aletta_color, size=aletta_size)+
     coord_sf(xlim = c(left,right), ylim = c(bottom, top))
   }
@@ -546,50 +550,52 @@ f.fig2_legend<-function(combined, v_rgb, height, width, t,b,r,l, title.textsize,
   return(legend)
   
 } # l = legend margin left, b=barhieght (in cm ) of legend
-
-f.fig2_legend_eyes<-function(offset_1, x_space, plot_x, plot_y, text_size){
-
-  circle_size<-x_space
-  
-  x1<-round((offset_1 * plot_x), 1)
-  x_equal<-(plot_x-x1)/3
-  x2<-x1+x_space
-  x3<-x1+x_equal
-  x4<-x3+x_space
-  x5<-x3+x_equal
-  x6<-x5+(x_space *3)
-  y1<-plot_y/2
-  
-  new_eye.b<-data.frame(x=x1, y=y1, image=b$image) 
-  new_eye.a<-data.frame(x=x3, y=y1)%>%st_as_sf(., coords=c("x", "y"))
-  center<-c((x5+circle_size), y1)
-  circle<-st_point(x=, center, dim="XY")%>%sf::st_buffer(., dist=circle_size)
-  empty<-data.frame(x=c(0, 0, plot_x, plot_x), y=c(c(plot_y, 0, plot_y, 0)))
-  
-text1<-"TC Bud Eye"
- text2<-"TC Aletta Eye"
- # text3<-"Station 3.5 - 100km radius"
-  
- 
- text3<-"200km Diameter\nStation 3.5 "
-
-   
- p<-ggplot()+
-    geom_sf(data = circle, color = circle_color, alpha = 0)+
-    geom_sf(data=new_eye.a, shape =aletta_symbol, col=aletta_color,  fill=aletta_color, size=aletta_size)+
-    geom_image(data=new_eye.b, aes(x, y, image = image), asp = 10)+ scale_size_identity()+
-    annotate("text", x=x2, y=y1, label= text1, hjust = 0)+
-    annotate("text", x=x4, y=y1, label= text2, hjust = 0)+
-    annotate("text", x=x6, y=y1, label= text3, hjust = 0)+
-    theme(text = element_text(size = text_size))+   
-    theme_void()+
-    coord_sf(xlim = c(0,plot_x), ylim = c(0, plot_y))
-  
- # np<-p+coord_flip(ylim=c(0, plot_y))
- # rm(p)
- return(p)
- 
-}
+# 
+# f.fig2_legend_eyes<-function(offset_1, x_space, plot_x, plot_y, text_size){
+# 
+#   circle_size<-x_space
+#   
+#   x1<-round((offset_1 * plot_x), 1)
+#   x_equal<-(plot_x-x1)/3
+#   x2<-x1+x_space
+#   x3<-x1+x_equal
+#   x4<-x3+x_space
+#   x5<-x3+x_equal
+#   x6<-x5+(x_space *3)
+#   y1<-plot_y/2
+#   
+#   new_eye.b<-data.frame(x=x1, y=y1, image=b$image) 
+#   new_eye.a<-data.frame(x=x3, y=y1)%>%st_as_sf(., coords=c("x", "y"))
+#   center<-c((x5+circle_size), y1)
+#   circle<-st_point(x=, center, dim="XY")%>%sf::st_buffer(., dist=circle_size)
+#   empty<-data.frame(x=c(0, 0, plot_x, plot_x), y=c(c(plot_y, 0, plot_y, 0)))
+#   
+# text1<-"TC Bud Eye"
+# text2<-"TC Aletta Eye"
+#  # text3<-"Station 3.5 - 100km radius"
+#   
+#  
+#  text3<-"200km Diameter\nStation 3.5 "
+# 
+#    
+#  p<-ggplot()+
+#     geom_sf(data = circle, color = circle_color, alpha = 0)+
+#     geom_sf(data=new_eye.a, shape =aletta_symbol, col=aletta_color,  fill=aletta_color, size=aletta_size)+
+#     # circle_geom+
+#     geom_image(data=new_eye.b, aes(x, y, image = image), asp = 10)+ scale_size_identity()+
+#     annotate("text", x=x2, y=y1, label= text1, hjust = 0)+
+#     annotate("text", x=x4, y=y1, label= text2, hjust = 0)+
+#     annotate("text", x=x6, y=y1, label= text3, hjust = 0)+
+#     theme(text = element_text(size = text_size))+   
+#     theme_void()+
+#     coord_sf(xlim = c(0,plot_x), ylim = c(0, plot_y))
+#   
+#  # np<-p+coord_flip(ylim=c(0, plot_y))
+#  # rm(p)
+#  return(p)
+#  
+# 
+#  } #as of now does not work with circle_geom adddtion
 
 ```
 
@@ -622,9 +628,14 @@ rm(p, s.p)
 options(warn=-1)
 plots<-vector(mode='list', length = length(combined))
 
-cuts<-c(0, 0.01, 0.02, 0.04,  0.08,  0.1,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2,3,4, 5)
+# cuts<-c(0, 0.01, 0.02, 0.04,  0.08,  0.1,  0.15, 0.2, 0.35, 0.5, 0.8, 0.9, 1, 2,3,4, 5)
+# Refined breaks for better differentiation across the range les emphais an low avlues
+cuts <- c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5, 0.7, 0.9, 1.2, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0)
+n <- length(cuts) + 1
+custom_color <- oce::oceColorsViridis(n)
+cuts <- rescale(cuts)
 n<-length(cuts)+1
-custom_color<-oce::oceColorsViridis(100)
+custom_color<-oce::oceColorsViridis(n)
 
 # custom_color<-rev(rainbow(n))
 
@@ -635,7 +646,34 @@ labs<-c(0.1, .5, 1, 2 , 2.5, 5)
 bar_height<-22.70
 
 # plotting colors & symbols + size
-circle_color<-"#e41a1c"
+# "#FF7700", "#E67300", "#CD8500
+
+# complimentry: "#E65832"
+
+
+circle_color1<-"white"
+circle_color2<-"#E65832"
+base<-5.0
+outline<-1.5*base
+line1<-"solid"
+line2<-"dashed"
+
+circle_parameters <- c(
+  circle_color1 = circle_color1,  
+  circle_color2 = circle_color2,
+  base = base,
+  outline = outline,
+  line1 = line1,
+  line2 = line2
+)
+
+circle_geom <- list(
+  geom_sf(data = circle, color = circle_color1, linetype = line1, size = outline, alpha = 0, inherit.aes = FALSE),
+  geom_sf(data = circle, color = circle_color2, linetype = line2, size = base, alpha = 0, inherit.aes = FALSE)
+)
+
+# circle_geom<-circle_geom[[2]]
+
 # bud_color<-"#377eb8"
 # aletta_color<-"#4daf4a"
 
@@ -713,40 +751,40 @@ p<-(plots[[which(names(combined)==4)]]+ plots[[which(names(combined)==5)]]+plots
 
 ### supplements  ####
 
-right<--97.02084
-bottom<-5.520833
-
-zoom<-1
-lat_ticks<-seq(10,30, b=5)
-lon_ticks<-seq(-120, -100, b=10)
-
-
-i<-which(names(combined)==6)
-plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==13)
-plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==20)
-plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==25)
-plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==7)
-plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==8)
-plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==18)
-plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==19)
-plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==22)
-plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==24)
-plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==26)
-plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==27)
-plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-
-s.p<-(plots[[which(names(combined)==6)]]+ plots[[which(names(combined)==7)]]+plots[[which(names(combined)==8)]]+plots[[which(names(combined)==13)]]+plots[[which(names(combined)==18)]]+ plots[[which(names(combined)==19)]]+ plots[[which(names(combined)==20)]]+ plots[[which(names(combined)==22)]]+plots[[which(names(combined)==24)]]+plots[[which(names(combined)==25)]]+ plots[[which(names(combined)==26)]]+plots[[which(names(combined)==27)]]+plot_layout(ncol=3))
+# right<--97.02084
+# bottom<-5.520833
+# 
+# zoom<-1
+# lat_ticks<-seq(10,30, b=5)
+# lon_ticks<-seq(-120, -100, b=10)
+# 
+# 
+# i<-which(names(combined)==6)
+# plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==13)
+# plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==20)
+# plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==25)
+# plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==7)
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==8)
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==18)
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==19)
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==22)
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==24)
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==26)
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==27)
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# 
+# s.p<-(plots[[which(names(combined)==6)]]+ plots[[which(names(combined)==7)]]+plots[[which(names(combined)==8)]]+plots[[which(names(combined)==13)]]+plots[[which(names(combined)==18)]]+ plots[[which(names(combined)==19)]]+ plots[[which(names(combined)==20)]]+ plots[[which(names(combined)==22)]]+plots[[which(names(combined)==24)]]+plots[[which(names(combined)==25)]]+ plots[[which(names(combined)==26)]]+plots[[which(names(combined)==27)]]+plot_layout(ncol=3))
 rm(plots)
 
 
@@ -769,56 +807,938 @@ gc()
 
 ```
 
-## legends
+
+# new attempt
+
+1) update 2nd legend with circle_geom
+
+then:
+Save two separate PDFs:
+
+First PDF: Your original main figure with the color legend (exactly as you have it now)
+Second PDF: A properly sized eye legend on a mostly blank/transparent background, with the same dimensions as the main figure
+
+
+Then use a terminal command from within RStudio to combine these PDFs
+
+#
+## legends main figure
+
+### main
 ```{r}
-t<--390
 
-# t=5
-legend<-f.fig2_legend(combined, v_rgb, height=bar_height, width=1, t=t, b=0, r=0, l=-115,  title.textsize=10, marks.textsize=8)
-# 
+# original figure 2 lengend
+t <- -390
+legend <- f.fig2_legend(combined, v_rgb, height=bar_height, width=1, t=t, b=0, r=0, l=-115,
+                       title.textsize=10, marks.textsize=8)
 
-# legend_n<-f.fig2_legend_eyes(offset_1=.1, x_space=80, plot_x=3014, plot_y=252, text_size = 12)
-legend_n<-f.fig2_legend_eyes(offset_1=.06, x_space=80, plot_x=3014, plot_y=252, text_size = 6)
 ```
 
-### plot 2nd legneg for gimp
+This first code block defines all the functions needed for creating duplicate structure PDFs:
+
+```{r define_functions}
+# newe function that replaces "f.run_duplicate_structure_test()" for creating final figure
+
+
+
+# Function to create an overlay with duplicate structure that preserves axis text
+f.create_duplicate_structure_overlay <- function(
+  plot_obj, 
+  legend_obj, 
+  rel_widths = c(14, 1),
+  legend_xmin = NULL,  # Will be calculated if NULL
+  legend_xmax = 1,
+  legend_ymin = 0,
+  legend_ymax = 0.25,
+  preserve_axis_text = TRUE,  # New parameter to control axis text preservation
+  create_diagnostic = FALSE
+) {
+  # Helper function for null values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Calculate legend_xmin if not provided
+  legend_xmin <- legend_xmin %||% (1 - (rel_widths[2] / sum(rel_widths)))
+  
+  # Create a version of the main/supplement plot
+  # Selectively make elements transparent, potentially preserving axis text
+  invisible_plot <- plot_obj + 
+    theme(
+      panel.background = element_rect(fill = NA, color = NA),
+      plot.background = element_rect(fill = NA, color = NA),
+      panel.grid = element_blank(),
+      # Conditionally preserve axis text
+      axis.text = if (preserve_axis_text) element_text() else element_text(color = NA),
+      axis.title = element_text(color = NA),
+      axis.ticks = if (preserve_axis_text) element_line() else element_line(color = NA),
+      legend.position = "none",
+      plot.margin = margin(0, 0, 0, 0)
+    )
+  
+  # Create an empty placeholder for the top of the right column
+  # This is where the original color legend would be
+  empty_legend_top <- ggplot() + 
+    theme_void() +
+    theme(
+      panel.background = element_rect(fill = NA, color = NA),
+      plot.background = element_rect(fill = NA, color = NA)
+    )
+  
+  # Create the main structure with invisible plot and empty top legend
+  overlay_structure <- plot_grid(
+    invisible_plot, 
+    empty_legend_top,
+    ncol = 2, 
+    rel_widths = rel_widths, 
+    align = "h"
+  )
+  
+  # If diagnostic mode is requested, create a grid overlay instead
+  if (create_diagnostic) {
+    # Create a grid overlay to visualize coordinate space
+    grid_plot <- ggplot() +
+      # Add vertical lines at 0.1 intervals
+      geom_vline(xintercept = seq(0, 1, by = 0.1), color = "blue", alpha = 0.5) +
+      # Add horizontal lines at 0.1 intervals
+      geom_hline(yintercept = seq(0, 1, by = 0.1), color = "red", alpha = 0.5) +
+      # Add text labels for coordinates
+      annotate("text", x = seq(0, 1, by = 0.1), y = 0.02, 
+               label = paste0(seq(0, 1, by = 0.1)), 
+               color = "blue", angle = 90, hjust = 0) +
+      annotate("text", x = 0.02, y = seq(0, 1, by = 0.1), 
+               label = paste0(seq(0, 1, by = 0.1)), 
+               color = "red", hjust = 0) +
+      # Highlight the legend position rectangle
+      annotate("rect", 
+               xmin = legend_xmin, xmax = legend_xmax,
+               ymin = legend_ymin, ymax = legend_ymax,
+               alpha = 0.2, fill = "green") +
+      # Add a note about the highlighted area
+      annotate("text", x = (legend_xmin + legend_xmax)/2, y = (legend_ymin + legend_ymax)/2,
+               label = "Legend\nPosition", color = "darkgreen") +
+      # Clean theme with labels
+      theme_minimal() +
+      labs(title = "Coordinate Grid Overlay",
+           subtitle = paste0("Legend position: xmin=", legend_xmin, 
+                            ", xmax=", legend_xmax,
+                            ", ymin=", legend_ymin,
+                            ", ymax=", legend_ymax))
+    
+    # Create a version of the overlay with grid lines for diagnostic purposes
+    diagnostic_overlay <- overlay_structure + 
+      annotation_custom(
+        grob = ggplotGrob(grid_plot),
+        xmin = 0, xmax = 1, ymin = 0, ymax = 1
+      )
+    
+    return(diagnostic_overlay)
+  }
+  
+  # Add the legend at the specified position
+  final_overlay <- overlay_structure + 
+    annotation_custom(
+      grob = legend_obj,  # Use provided legend object
+      xmin = legend_xmin,
+      xmax = legend_xmax,
+      ymin = legend_ymin,
+      ymax = legend_ymax
+    )
+  
+  return(final_overlay)
+}
+
+# Function to save PDFs with duplicate structure
+f.save_duplicate_structure_pdfs <- function(
+  plot_obj,
+  legend_obj,
+  plot_type = "main",
+  main_pdf_name = NULL,
+  overlay_pdf_name = NULL,
+  combined_pdf_name = NULL,
+  main_width = 8.5,
+  main_height = 11,
+  rel_widths = c(14, 1),
+  legend_xmin = NULL,
+  legend_xmax = 1,
+  legend_ymin = 0,
+  legend_ymax = 0.25,
+  preserve_axis_text = TRUE,  # Added parameter for axis text preservation
+  create_diagnostic = FALSE
+) {
+  # Helper function for null values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Set default filenames based on plot_type
+  main_pdf_name <- main_pdf_name %||% paste0("figure_", plot_type, "_main.pdf")
+  overlay_pdf_name <- overlay_pdf_name %||% paste0("figure_", plot_type, "_overlay.pdf")
+  combined_pdf_name <- combined_pdf_name %||% paste0("figure_", plot_type, "_combined.pdf")
+  
+  # If diagnostic mode, modify overlay filename
+  if (create_diagnostic) {
+    overlay_pdf_name <- sub("\\.pdf$", "_diagnostic.pdf", overlay_pdf_name)
+  }
+  
+  # 1. Save main figure with color legend
+  pdf(main_pdf_name, height = main_height, width = main_width)
+  main_plot <- plot_grid(plot_obj, legend_obj, ncol = 2, rel_widths = rel_widths, align = "h")
+  print(main_plot)
+  dev.off()
+  
+  # 2. Create and save overlay with duplicate structure
+  overlay_plot <- f.create_duplicate_structure_overlay(
+    plot_obj = plot_obj,
+    legend_obj = legend_obj,
+    rel_widths = rel_widths,
+    legend_xmin = legend_xmin,
+    legend_xmax = legend_xmax,
+    legend_ymin = legend_ymin,
+    legend_ymax = legend_ymax,
+    preserve_axis_text = preserve_axis_text,  # Pass axis text preservation parameter
+    create_diagnostic = create_diagnostic
+  )
+  
+  pdf(overlay_pdf_name, height = main_height, width = main_width)
+  par(bg = "transparent")  # Set transparent background
+  print(overlay_plot)
+  dev.off()
+  
+  message(paste0(plot_type, " PDFs created successfully."))
+  
+  # Return file paths
+  result <- list(
+    main = main_pdf_name,
+    overlay = overlay_pdf_name,
+    combined = combined_pdf_name
+  )
+  
+  # Add the diagnostic file path if created
+  if (create_diagnostic) {
+    result$diagnostic <- overlay_pdf_name
+  }
+  
+  return(result)
+}
+
+# Function to combine PDFs with error handling and multiple methods
+f.combine_duplicate_pdfs <- function(
+  files,
+  pdftk_options = NULL,
+  gs_options = NULL
+) {
+  # Helper function for null values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Default options for pdftk and gs if not provided
+  pdftk_options <- pdftk_options %||% ""  # No extra options by default
+  gs_options <- gs_options %||% ""  # No extra options by default
+  
+  # Check if pdftk is available
+  has_pdftk <- system("which pdftk", ignore.stdout = TRUE, ignore.stderr = TRUE) == 0
+  
+  # Check if ghostscript is available
+  has_gs <- system("which gs", ignore.stdout = TRUE, ignore.stderr = TRUE) == 0
+  
+  success <- FALSE
+  
+  # Combine PDFs using available tool
+  if (has_pdftk) {
+    # Try stamp mode with optional parameters
+    cmd <- sprintf("pdftk %s stamp %s %s output %s", 
+                   files$main, files$overlay, pdftk_options, files$combined)
+    result <- system(cmd)
+    
+    if (result == 0) {
+      message("PDFs combined using pdftk stamp mode")
+      success <- TRUE
+    } else {
+      # Try alternative modes if stamp fails
+      alt_modes <- list(
+        list(name = "background", cmd = sprintf("pdftk %s background %s %s output %s", 
+                                               files$main, files$overlay, pdftk_options, files$combined)),
+        list(name = "multistamp", cmd = sprintf("pdftk %s multistamp %s %s output %s", 
+                                               files$main, files$overlay, pdftk_options, files$combined))
+      )
+      
+      for (mode in alt_modes) {
+        result <- system(mode$cmd)
+        if (result == 0) {
+          message(paste0("PDFs combined using pdftk ", mode$name, " mode"))
+          success <- TRUE
+          break
+        }
+      }
+      
+      if (!success) {
+        message("All pdftk modes failed")
+      }
+    }
+  } else if (has_gs) {
+    # Use ghostscript as fallback with optional parameters
+    cmd <- sprintf("gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite %s -sOutputFile=%s %s %s", 
+                   gs_options, files$combined, files$main, files$overlay)
+    result <- system(cmd)
+    
+    if (result == 0) {
+      message("PDFs combined using Ghostscript")
+      success <- TRUE
+    } else {
+      message("Ghostscript command failed")
+    }
+  } else {
+    message("Neither pdftk nor Ghostscript found. Please install one of these tools.")
+  }
+  
+  # Verify the combined file exists
+  if (success && file.exists(files$combined)) {
+    message("Combined PDF created successfully: ", files$combined)
+    return(TRUE)
+  } else {
+    message("Error: Combined PDF was not created successfully.")
+    return(FALSE)
+  }
+}
+
+# Function to optimize/compress PDF after combining with high-quality settings
+f.optimize_pdf <- function(
+  input_pdf,
+  output_pdf = NULL,
+  quality = "prepress",   # Options: screen, ebook, printer, prepress
+  compatibility = "1.5",  # PDF compatibility level
+  embed_fonts = TRUE,
+  compress_images = TRUE
+) {
+  # Helper function for null values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Use input filename with _optimized suffix if no output name provided
+  if (is.null(output_pdf)) {
+    output_pdf <- sub("\\.pdf$", "_optimized.pdf", input_pdf)
+  }
+  
+  # Check if ghostscript is available
+  has_gs <- system("which gs", ignore.stdout = TRUE, ignore.stderr = TRUE) == 0
+  
+  if (!has_gs) {
+    message("Ghostscript not found. Cannot optimize PDF.")
+    return(FALSE)
+  }
+  
+  # Build options for Ghostscript
+  gs_options <- c(
+    sprintf("-dPDFSETTINGS=/%s", quality),
+    sprintf("-dCompatibilityLevel=%s", compatibility),
+    "-dPrinted=false"  # Optimize for screen viewing
+  )
+  
+  # Add font embedding if requested
+  if (embed_fonts) {
+    gs_options <- c(gs_options,
+                    "-dEmbedAllFonts=true",
+                    "-dSubsetFonts=true",
+                    "-dMaxSubsetPct=100")
+  }
+  
+  # Add image compression if requested
+  if (compress_images) {
+    gs_options <- c(gs_options,
+                    "-dColorImageDownsampleType=/Bicubic",
+                    "-dGrayImageDownsampleType=/Bicubic",
+                    "-dMonoImageDownsampleType=/Bicubic")
+  }
+  
+  # Combine options into a single string
+  gs_options_str <- paste(gs_options, collapse = " ")
+  
+  # Ghostscript command for optimization
+  cmd <- sprintf("gs -sDEVICE=pdfwrite -dNOPAUSE -dQUIET -dBATCH %s -sOutputFile=%s %s",
+                gs_options_str, output_pdf, input_pdf)
+  
+  result <- system(cmd)
+  
+  if (result == 0) {
+    message("PDF optimized successfully: ", output_pdf)
+    
+    # Get file sizes for reporting
+    original_size <- file.size(input_pdf) / (1024 * 1024)  # Convert to MB
+    optimized_size <- file.size(output_pdf) / (1024 * 1024)
+    reduction <- (1 - optimized_size/original_size) * 100
+    
+    message(sprintf("File size reduced from %.2f MB to %.2f MB (%.1f%% reduction)",
+                   original_size, optimized_size, reduction))
+    
+    return(TRUE)
+  } else {
+    message("PDF optimization failed")
+    return(FALSE)
+  }
+}
+
+# Main function to run the duplicate structure test
+# With fully parameterized options
+f.run_duplicate_structure_test <- function(
+  # Required parameters
+  plot_obj,
+  legend_obj,
+  
+  # Identification parameters
+  plot_type = "two",
+  
+  # File parameters
+  main_pdf_name = NULL,
+  overlay_pdf_name = NULL,
+  combined_pdf_name = NULL,
+  optimized_pdf_name = NULL,
+  
+  # Dimension parameters
+  main_width = 8.5,
+  main_height = 11,
+  rel_widths = c(14, 1),
+  
+  # Legend positioning parameters
+  legend_xmin = NULL,
+  legend_xmax = 1,
+  legend_ymin = 0,
+  legend_ymax = 0.25,
+  
+  # Display parameters
+  preserve_axis_text = TRUE,  # Added parameter for axis text preservation
+  
+  # PDF combination parameters
+  pdftk_options = NULL,
+  gs_options = NULL,
+  
+  # Optimization parameters
+  optimize_pdf = TRUE,
+  quality = "prepress",    # Options: screen, ebook, printer, prepress
+  compatibility = "1.5",   # PDF compatibility level
+  embed_fonts = TRUE,
+  compress_images = TRUE,
+  
+  # Diagnostic parameters
+  create_diagnostic = FALSE,
+  
+  # Cleanup parameters
+  delete_intermediate = FALSE
+) {
+  # Helper function for null values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Set default filenames based on plot_type
+  combined_pdf_name <- combined_pdf_name %||% paste0("figure_", plot_type, "_combined.pdf")
+  optimized_pdf_name <- optimized_pdf_name %||% paste0("figure_", plot_type, "_optimized.pdf")
+  
+  # Create PDFs with duplicate structure
+  files <- f.save_duplicate_structure_pdfs(
+    plot_obj = plot_obj,
+    legend_obj = legend_obj,
+    plot_type = plot_type,
+    main_pdf_name = main_pdf_name,
+    overlay_pdf_name = overlay_pdf_name,
+    combined_pdf_name = combined_pdf_name,
+    main_width = main_width,
+    main_height = main_height,
+    rel_widths = rel_widths,
+    legend_xmin = legend_xmin,
+    legend_xmax = legend_xmax,
+    legend_ymin = legend_ymin,
+    legend_ymax = legend_ymax,
+    preserve_axis_text = preserve_axis_text,  # Pass axis text preservation parameter
+    create_diagnostic = create_diagnostic
+  )
+  
+  # Skip PDF combination if only creating diagnostic
+  if (create_diagnostic) {
+    message("Diagnostic overlay created. Skipping PDF combination.")
+    message("To see coordinate grid, check: ", files$diagnostic)
+    return(TRUE)
+  }
+  
+  # Combine PDFs
+  success <- f.combine_duplicate_pdfs(
+    files = files,
+    pdftk_options = pdftk_options,
+    gs_options = gs_options
+  )
+  
+  # Optimize the combined PDF if requested
+  if (success && optimize_pdf) {
+    f.optimize_pdf(
+      input_pdf = files$combined, 
+      output_pdf = optimized_pdf_name,
+      quality = quality,
+      compatibility = compatibility,
+      embed_fonts = embed_fonts,
+      compress_images = compress_images
+    )
+    # Update the combined PDF reference to the optimized version
+    files$final <- optimized_pdf_name
+  } else {
+    files$final <- files$combined
+  }
+  
+  # Delete intermediate files if requested
+  if (success && delete_intermediate) {
+    file.remove(files$main)
+    file.remove(files$overlay)
+    if (optimize_pdf) {
+      file.remove(files$combined)  # Remove the unoptimized combined file
+    }
+    message("Intermediate files deleted.")
+  }
+  
+  if (success) {
+    message(paste0(plot_type, " figure completed successfully! Check: ", files$final))
+  } else {
+    message(paste0(plot_type, " figure encountered issues."))
+  }
+  
+  return(success)
+}
+```
+
+# new functions
+
+## vertical legend function
 ```{r}
+# Function to create a horizontal or vertical eye legend - Version 7
+# Dynamically adjusts dimensions based on orientation
+f.eye_legend_horiz_to_vert_v7 <- function(
+  # Basic dimensions with dynamic orientation handling
+  long_side_dimension = 800,   # Longer side of the plot
+  short_side_dimension = 100,  # Shorter side of the plot
+  is_vertical = FALSE,         # Control orientation
+  
+  # Spacing parameters
+  left_margin = 40,         # Space at left edge
+  right_margin = 40,        # Space at right edge
+  icon_text_gap = 20,       # Space between icon and its text
+  element_gap = 60,         # Space between text and next icon
+  
+  # Flexible spacing ratios
+  margin_ratio = NULL,      # Optional ratio-based margin calculation
+  inter_element_ratio = NULL, # Optional ratio-based element spacing
+  
+  # Sizing parameters
+  text_size = 10,           # Base text size
+  circle_size = 20,         # Radius of the station circle
+  aletta_scale = 2.5,       # Scale factor for Aletta symbol
+  bud_scale = 0.18,         # Scale factor for Bud hurricane image
+  icon_scale_factor = 1,    # Global scaling for all icons
+  
+  # Circle styling parameters
+  circle_parameters = NULL, # Circle styling parameters
+  orange_circle_dash_length = 1  # Parameter to control dash spacing
+) {
+  # Helper function for null values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Dynamically set plot dimensions based on orientation
+  if (is_vertical) {
+    plot_width <- short_side_dimension
+    plot_height <- long_side_dimension
+  } else {
+    plot_width <- long_side_dimension
+    plot_height <- short_side_dimension
+  }
+  
+  # Calculate margins using ratio if provided
+  if (!is.null(margin_ratio)) {
+    total_margin_width <- plot_width * margin_ratio
+    left_margin <- total_margin_width / 2
+    right_margin <- total_margin_width / 2
+  }
+  
+  # Calculate element gap using ratio if provided
+  if (!is.null(inter_element_ratio)) {
+    element_gap <- plot_width * inter_element_ratio
+  }
+  
+  # Adjust scaling for icons
+  adjusted_circle_size <- circle_size * icon_scale_factor
+  adjusted_aletta_scale <- aletta_scale * icon_scale_factor
+  adjusted_bud_scale <- bud_scale * icon_scale_factor
+  
+  # Calculate usable width (accounting for margins)
+  usable_width <- plot_width - left_margin - right_margin
+  
+  # Determine orientation-specific parameters
+  if (!is_vertical) {
+    # Horizontal layout
+    x_bud <- left_margin
+    x_bud_text <- x_bud + icon_text_gap
+    x_aletta <- x_bud_text + element_gap
+    x_aletta_text <- x_aletta + icon_text_gap
+    x_station <- x_aletta_text + element_gap
+    x_station_text <- x_station + icon_text_gap
+    y_center <- plot_height / 2
+  } else {
+    # Vertical layout
+    y_bud <- plot_height - left_margin
+    y_bud_text <- y_bud - icon_text_gap
+    y_aletta <- y_bud_text - element_gap
+    y_aletta_text <- y_aletta - icon_text_gap
+    y_station <- y_aletta_text - element_gap
+    y_station_text <- y_station - icon_text_gap
+    x_center <- plot_width / 2
+  }
+  
+  # Extract styling from circle_parameters
+  if (!is.null(circle_parameters)) {
+    circle_color1 <- circle_parameters["circle_color1"] %||% "white"
+    circle_color2 <- circle_parameters["circle_color2"] %||% "#E65832"
+    base <- as.numeric(circle_parameters["base"] %||% "5.0")
+    outline <- as.numeric(circle_parameters["outline"] %||% "7.5")
+  } else {
+    # Default values if circle_parameters is NULL
+    circle_color1 <- "white"
+    circle_color2 <- "#E65832"
+    base <- 5.0
+    outline <- 7.5
+  }
+  
+  # Set line thicknesses for legend
+  legend_outline <- outline * 0.5
+  legend_base <- base * 0.5
+  
+  # Text labels
+  text1 <- "TC Bud Eye"
+  text2 <- "TC Aletta Eye"
+  text3 <- "200km Diameter\nStation 3.5"
+  
+  # Create base plot
+  p <- ggplot() +
+    # Clean theme with minimal margins
+    theme_void() +
+    theme(
+      plot.margin = margin(0, 0, 0, 0),
+      panel.border = element_blank(),
+      panel.spacing = unit(0, "mm")
+    ) +
+    coord_cartesian(xlim = c(0, plot_width), ylim = c(0, plot_height), expand = FALSE)
+  
+  # Add elements based on orientation
+  if (!is_vertical) {
+    # Horizontal layout
+    p <- p +
+      # Station circle data using simple coordinates
+      geom_path(data = data.frame(
+        x = x_station + adjusted_circle_size * cos(seq(0, 2*pi, length.out = 100)),
+        y = y_center + adjusted_circle_size * sin(seq(0, 2*pi, length.out = 100))
+      ), aes(x, y), color = circle_color1, linewidth = legend_outline, 
+        linetype = "solid", alpha = 1, inherit.aes = FALSE) +
+      
+      # Orange dashed circle
+      geom_path(data = data.frame(
+        x = x_station + adjusted_circle_size * cos(seq(0, 2*pi, length.out = 100)),
+        y = y_center + adjusted_circle_size * sin(seq(0, 2*pi, length.out = 100))
+      ), aes(x, y), color = circle_color2, linewidth = legend_base, 
+        linetype = orange_circle_dash_length, alpha = 1, inherit.aes = FALSE) +
+      
+      # Aletta eye
+      geom_point(data = data.frame(x = x_aletta, y = y_center), 
+                 aes(x, y), shape = aletta_symbol, color = aletta_color, 
+                 fill = aletta_color, size = aletta_size * adjusted_aletta_scale) +
+      
+      # Bud eye
+      geom_image(data = data.frame(x = x_bud, y = y_center, 
+                                   image = b$image[1]), 
+                 aes(x, y, image = image), size = adjusted_bud_scale) +
+      
+      # Text labels
+      annotate("text", x = x_bud_text, y = y_center, label = text1, 
+               hjust = 0, size = text_size/2.5) +
+      annotate("text", x = x_aletta_text, y = y_center, label = text2, 
+               hjust = 0, size = text_size/2.5) +
+      annotate("text", x = x_station_text, y = y_center, label = text3, 
+               hjust = 0, size = text_size/2.5)
+  } else {
+    # Vertical layout
+    p <- p +
+      # Station circle data using simple coordinates
+      geom_path(data = data.frame(
+        x = x_center + adjusted_circle_size * cos(seq(0, 2*pi, length.out = 100)),
+        y = y_station + adjusted_circle_size * sin(seq(0, 2*pi, length.out = 100))
+      ), aes(x, y), color = circle_color1, linewidth = legend_outline, 
+        linetype = "solid", alpha = 1, inherit.aes = FALSE) +
+      
+      # Orange dashed circle
+      geom_path(data = data.frame(
+        x = x_center + adjusted_circle_size * cos(seq(0, 2*pi, length.out = 100)),
+        y = y_station + adjusted_circle_size * sin(seq(0, 2*pi, length.out = 100))
+      ), aes(x, y), color = circle_color2, linewidth = legend_base, 
+        linetype = orange_circle_dash_length, alpha = 1, inherit.aes = FALSE) +
+      
+      # Aletta eye
+      geom_point(data = data.frame(x = x_center, y = y_aletta), 
+                 aes(x, y), shape = aletta_symbol, color = aletta_color, 
+                 fill = aletta_color, size = aletta_size * adjusted_aletta_scale) +
+      
+      # Bud eye
+      geom_image(data = data.frame(x = x_center, y = y_bud, 
+                                   image = b$image[1]), 
+                 aes(x, y, image = image), size = adjusted_bud_scale) +
+      
+      # Text labels
+      annotate("text", x = x_center, y = y_bud_text, label = text1, 
+               hjust = 1, angle = 90, size = text_size/2.5) +
+      annotate("text", x = x_center, y = y_aletta_text, label = text2, 
+               hjust = 1, angle = 90, size = text_size/2.5) +
+      annotate("text", x = x_center, y = y_station_text, label = text3, 
+               hjust = 1, angle = 90, size = text_size/2.5)
+  }
+  
+  return(p)
+}
+```
+## main figure function
+
+```{r}
+f.create_dual_legend_main_figure <- function(
+  # Required parameters
+  plot_obj,
+  legend_obj,
+  
+  # Identification parameters
+  plot_type = "two",
+  
+  # File parameters
+  main_pdf_name = NULL,
+  overlay_pdf_name = NULL,
+  combined_pdf_name = NULL,
+  optimized_pdf_name = NULL,
+  
+  # Dimension parameters
+  main_width = 8.5,
+  main_height = 11,
+  rel_widths = c(14, 1),
+  
+  # Legend positioning parameters
+  legend_xmin = NULL,
+  legend_xmax = 1,
+  legend_ymin = 0,
+  legend_ymax = 0.25,
+  
+  # New additional parameters for dual legends
+  color_legend_obj = NULL,
+  eye_legend_obj = NULL,
+  color_legend_xmin = NULL,
+  color_legend_xmax = 1,
+  color_legend_ymin = 0,
+  color_legend_ymax = 0.25,
+  eye_legend_xmin = NULL,
+  eye_legend_xmax = 1,
+  eye_legend_ymin = 0,
+  eye_legend_ymax = 0.15,
+  
+  # PDF combination parameters
+  pdftk_options = NULL,
+  gs_options = NULL,
+  
+  # Optimization parameters
+  optimize_pdf = TRUE,
+  quality = "prepress",
+  compatibility = "1.5",
+  embed_fonts = TRUE,
+  compress_images = TRUE,
+  
+  # Other parameters
+  preserve_axis_text = TRUE,
+  create_diagnostic = FALSE,
+  delete_intermediate = FALSE
+) {
+  # Helper function for null values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Set default filenames based on plot_type
+  main_pdf_name <- main_pdf_name %||% paste0("figure_", plot_type, "_main.pdf")
+  overlay_pdf_name <- overlay_pdf_name %||% paste0("figure_", plot_type, "_overlay.pdf")
+  combined_pdf_name <- combined_pdf_name %||% paste0("figure_", plot_type, "_combined.pdf")
+  optimized_pdf_name <- optimized_pdf_name %||% paste0("figure_", plot_type, "_optimized.pdf")
+  
+  # 1. Save main figure with color legend
+  pdf(main_pdf_name, height = main_height, width = main_width)
+  main_plot <- plot_grid(plot_obj, color_legend_obj %||% legend_obj, ncol = 2, rel_widths = rel_widths, align = "h")
+  print(main_plot)
+  dev.off()
+  
+  # 2. Create overlay plot with transparent background
+  overlay_plot <- plot_obj + 
+    theme(
+      panel.background = element_rect(fill = NA, color = NA),
+      plot.background = element_rect(fill = NA, color = NA),
+      panel.grid = element_blank(),
+      axis.text = if (preserve_axis_text) element_text() else element_text(color = NA),
+      axis.title = element_text(color = NA),
+      axis.ticks = if (preserve_axis_text) element_line() else element_line(color = NA),
+      legend.position = "none",
+      plot.margin = margin(0, 0, 0, 0)
+    )
+  
+  # 3. Create overlay structure
+  overlay_structure <- plot_grid(
+    overlay_plot, 
+    ggplot() + theme_void(),  # Empty top legend space
+    ncol = 2, 
+    rel_widths = rel_widths, 
+    align = "h"
+  )
+  
+  # 4. Add legends to overlay
+  final_overlay <- overlay_structure + 
+    annotation_custom(
+      grob = if(is.ggplot(eye_legend_obj)) ggplotGrob(eye_legend_obj) else eye_legend_obj,
+      xmin = eye_legend_xmin %||% (1 - (rel_widths[2] / sum(rel_widths))),
+      xmax = eye_legend_xmax,
+      ymin = eye_legend_ymin,
+      ymax = eye_legend_ymax
+    )
+  
+  # 5. Save overlay PDF
+  pdf(overlay_pdf_name, height = main_height, width = main_width)
+  print(final_overlay)
+  dev.off()
+  
+  # 6. Combine PDFs
+  files <- list(
+    main = main_pdf_name,
+    overlay = overlay_pdf_name,
+    combined = combined_pdf_name
+  )
+  
+  success <- f.combine_duplicate_pdfs(
+    files = files,
+    pdftk_options = pdftk_options,
+    gs_options = gs_options
+  )
+  
+  # 7. Optimize PDF if requested
+  if (success && optimize_pdf) {
+    f.optimize_pdf(
+      input_pdf = files$combined, 
+      output_pdf = optimized_pdf_name,
+      quality = quality,
+      compatibility = compatibility,
+      embed_fonts = embed_fonts,
+      compress_images = compress_images
+    )
+    files$final <- optimized_pdf_name
+  } else {
+    files$final <- files$combined
+  }
+  
+  # 8. Delete intermediate files if requested
+  if (success && delete_intermediate) {
+    file.remove(files$main)
+    file.remove(files$overlay)
+    if (optimize_pdf) {
+      file.remove(files$combined)
+    }
+    message("Intermediate files deleted.")
+  }
+  
+  # Return files for reference
+  return(files)
+}
+```
+
+
+
+
+vertical legend
+```{r}
+# Create the vertical eye legend
+legend_vertical <- f.eye_legend_horiz_to_vert_v7(
+  long_side_dimension = 800,
+  short_side_dimension = 100,
+  is_vertical = TRUE,
+  left_margin = 80,       # Increased margin
+  right_margin = 80,      # Increased margin
+  icon_text_gap = 30,     # Increased icon-text gap
+  element_gap = 100,      # Increased element spacing
+  margin_ratio = 0.15,    # Adjusted margin ratio
+  inter_element_ratio = 0.17, # Adjusted inter-element ratio
+  text_size = 10,
+  circle_size = 22,
+  aletta_scale = 3.0,
+  bud_scale = 0.22,
+  icon_scale_factor = 1.2,
+  orange_circle_dash_length = 1  # Default dash length
+)
+```
+
+
+
+# final plotiing
+```{r}
+
+# Generate the dual legend figure
+# Set the working directory to the figures folder
 setwd(wd)
 setwd(fig)
 
-# pdf("figure_two_2nd_legend.pdf", width =5, height=.46)
-pdf("figure_two_2nd_legend_SA.pdf", width =5, height=.46)
-legend_n
-dev.off()
 
 
-
+# Generate the dual legend figure
+f.create_dual_legend_main_figure(
+  plot_obj = p,
+  color_legend_obj = legend,  # Color bar legend from original code
+  eye_legend_obj = legend_vertical,
+  
+  # Plot type identifier (optional)
+  plot_type = "two",
+  
+  # Optional custom PDF filenames (if not provided, defaults will be used)
+  main_pdf_name = "figure_two_main.pdf",
+  overlay_pdf_name = "figure_two_eye_overlay.pdf",
+  combined_pdf_name = "figure_two_both_legends.pdf",
+  optimized_pdf_name = "figure_two_both_legends_optimized.pdf",
+  
+  # Dimensions and layout
+  main_width = 8.5,
+  main_height = 11,
+  rel_widths = c(14, 1),
+  
+  # Positioning for color legend
+  color_legend_xmin = 0.75,   # Right side of the figure 
+  color_legend_xmax = 0.99,   # Not quite to the edge
+  color_legend_ymin = 0,      # Bottom of the figure
+  color_legend_ymax = 0.25,   # About 1/4 of the way up
+  
+  # Positioning for eye legend
+  eye_legend_xmin = 0.75,     # Right side of the figure 
+  eye_legend_xmax = 0.99,     # Not quite to the edge
+  eye_legend_ymin = -0.1,     # Position slightly below the plot
+  eye_legend_ymax = 0.15,     # About 1/4 of the way up
+  
+  # New optional PDF combination parameters
+  pdftk_options = NULL,       # Additional options for pdftk PDF tool
+  gs_options = NULL,          # Additional options for Ghostscript
+  
+  # PDF optimization parameters
+  optimize_pdf = TRUE,        # Whether to optimize the final PDF
+  quality = "prepress",       # Optimization quality level
+  compatibility = "1.5",      # PDF compatibility version
+  embed_fonts = TRUE,         # Embed fonts in the PDF
+  compress_images = TRUE,     # Compress images in the PDF
+  
+  # Other options
+  preserve_axis_text = TRUE,  # Keep axis text visible in overlay
+  create_diagnostic = FALSE,  # Create diagnostic overlay (if supported)
+  delete_intermediate = FALSE # Delete intermediate PDF files
+)
 ```
 
-# save plots
 
-```{r}
-setwd(wd)
-setwd(fig)
-
-# pdf("figure_two_no_2nd_legend.pdf", height=11 , width =8.5)
-pdf("figure_two_no_2nd_legend_SA.pdf", height=11 , width =8.5)
-plot_grid(p, legend, ncol=2, rel_widths=c(14,1), align="h")
-dev.off()
-
-
-# pdf("figure_s5_no_2nd_legend.pdf", height=11 , width =8.5)
-pdf("figure_s5_no_2nd_legend_SA.pdf", height=11 , width =8.5)
-plot_grid(s.p, legend, ncol=2, rel_widths=c(14,1), align="h")
-dev.off()
-# 
-# legends<-plot_grid(legend, legend_n, ncol=1)
-# pdf("figure_two_test_plot_legend_flipped_correctly.pdf", height=11 , width =8.5)
-# plot_grid(p, legends, ncol=2, rel_widths=c(14,1), align="h")
-# dev.off()
-# 
-# dev.off()
-# gc()
-
-
-```
