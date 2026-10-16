@@ -1,0 +1,2403 @@
+#
+
+# new functions
+
+```{r}
+
+# Fixed version with circle_geom as input parameter. may be an issue see new vertical legend code.
+f.fig2_legend_eyes_fixed <- function(offset_1, x_space, plot_x, plot_y, text_size, circle_geom) {
+  # Extract styling from circle_geom
+  circle_color1 <- circle_geom[[1]]$aes_params$color
+  circle_color2 <- circle_geom[[2]]$aes_params$color
+  outline <- circle_geom[[1]]$aes_params$size
+  base <- circle_geom[[2]]$aes_params$size
+  linetype1 <- circle_geom[[1]]$aes_params$linetype
+  linetype2 <- circle_geom[[2]]$aes_params$linetype
+  
+  # Same parameters as original
+  circle_size <- x_space
+  
+  # Horizontal positioning - same as original
+  x1 <- round((offset_1 * plot_x), 1)
+  x_equal <- (plot_x-x1)/3
+  x2 <- x1+x_space
+  x3 <- x1+x_equal
+  x4 <- x3+x_space
+  x5 <- x3+x_equal
+  x6 <- x5+(x_space *3)
+  y1 <- plot_y/2
+  
+  # Create objects for elements - same as original but fixed
+  new_eye.b <- data.frame(x=x1, y=y1, image=b$image[1]) 
+  
+  # Create Aletta eye as sf object
+  new_eye.a <- data.frame(x=x3, y=y1) %>% st_as_sf(., coords=c("x", "y"))
+  st_crs(new_eye.a) <- st_crs(a)
+  
+  # Fixed circle creation - proper syntax for st_point
+  center_point <- st_point(c(x5, y1))
+  center_sf <- st_sf(geometry = st_sfc(center_point))
+  st_crs(center_sf) <- st_crs(a)
+  new_circle <- st_buffer(center_sf, dist=circle_size)
+  
+  # Empty dataframe - same as original
+  empty <- data.frame(x=c(0, 0, plot_x, plot_x), y=c(plot_y, 0, plot_y, 0))
+  
+  # Text labels - same as original
+  text1 <- "TC Bud Eye"
+  text2 <- "TC Aletta Eye"
+  text3 <- "200km Diameter\nStation 3.5"
+  
+  # Create plot with styling extracted from circle_geom
+  p <- ggplot() +
+    # Apply circle styling from circle_geom parameters
+    geom_sf(data = new_circle, color = circle_color1, linetype = linetype1, size = outline, alpha = 0, inherit.aes = FALSE) +
+    geom_sf(data = new_circle, color = circle_color2, linetype = linetype2, size = base, alpha = 0, inherit.aes = FALSE) +
+    
+    # Add Aletta eye - same as original
+    geom_sf(data=new_eye.a, shape=aletta_symbol, col=aletta_color, fill=aletta_color, size=aletta_size) +
+    
+    # Add Bud eye - same as original
+    geom_image(data=new_eye.b, aes(x, y, image=image), asp=10) + 
+    scale_size_identity() +
+    
+    # Add text labels - same as original
+    annotate("text", x=x2, y=y1, label=text1, hjust=0) +
+    annotate("text", x=x4, y=y1, label=text2, hjust=0) +
+    annotate("text", x=x6, y=y1, label=text3, hjust=0) +
+    
+    # Use same theme as original
+    theme(text = element_text(size=text_size)) +   
+    theme_void() +
+    
+    # Use coord_sf with fixed aspect ratio to ensure circle stays round
+    coord_sf(xlim=c(0, plot_x), ylim=c(0, plot_y), expand=FALSE)
+  
+  return(p)
+}
+
+# Fixed version with circle_geom as input parameter. may be an issue see new vertical legend code.
+f.fig2_legend_eyes_fixed <- function(offset_1, x_space, plot_x, plot_y, text_size, circle_geom) {
+  # Extract styling from circle_geom
+  circle_color1 <- circle_geom[[1]]$aes_params$color
+  circle_color2 <- circle_geom[[2]]$aes_params$color
+  outline <- circle_geom[[1]]$aes_params$size
+  base <- circle_geom[[2]]$aes_params$size
+  linetype1 <- circle_geom[[1]]$aes_params$linetype
+  linetype2 <- circle_geom[[2]]$aes_params$linetype
+  
+  # Same parameters as original
+  circle_size <- x_space
+  
+  # Horizontal positioning - same as original
+  x1 <- round((offset_1 * plot_x), 1)
+  x_equal <- (plot_x-x1)/3
+  x2 <- x1+x_space
+  x3 <- x1+x_equal
+  x4 <- x3+x_space
+  x5 <- x3+x_equal
+  x6 <- x5+(x_space *3)
+  y1 <- plot_y/2
+  
+  # Create objects for elements - same as original but fixed
+  new_eye.b <- data.frame(x=x1, y=y1, image=b$image[1]) 
+  
+  # Create Aletta eye as sf object
+  new_eye.a <- data.frame(x=x3, y=y1) %>% st_as_sf(., coords=c("x", "y"))
+  st_crs(new_eye.a) <- st_crs(a)
+  
+  # Fixed circle creation - proper syntax for st_point
+  center_point <- st_point(c(x5, y1))
+  center_sf <- st_sf(geometry = st_sfc(center_point))
+  st_crs(center_sf) <- st_crs(a)
+  new_circle <- st_buffer(center_sf, dist=circle_size)
+  
+  # Empty dataframe - same as original
+  empty <- data.frame(x=c(0, 0, plot_x, plot_x), y=c(plot_y, 0, plot_y, 0))
+  
+  # Text labels - same as original
+  text1 <- "TC Bud Eye"
+  text2 <- "TC Aletta Eye"
+  text3 <- "200km Diameter\nStation 3.5"
+  
+  # Create plot with styling extracted from circle_geom
+  p <- ggplot() +
+    # Apply circle styling from circle_geom parameters
+    geom_sf(data = new_circle, color = circle_color1, linetype = linetype1, size = outline, alpha = 0, inherit.aes = FALSE) +
+    geom_sf(data = new_circle, color = circle_color2, linetype = linetype2, size = base, alpha = 0, inherit.aes = FALSE) +
+    
+    # Add Aletta eye - same as original
+    geom_sf(data=new_eye.a, shape=aletta_symbol, col=aletta_color, fill=aletta_color, size=aletta_size) +
+    
+    # Add Bud eye - same as original
+    geom_image(data=new_eye.b, aes(x, y, image=image), asp=10) + 
+    scale_size_identity() +
+    
+    # Add text labels - same as original
+    annotate("text", x=x2, y=y1, label=text1, hjust=0) +
+    annotate("text", x=x4, y=y1, label=text2, hjust=0) +
+    annotate("text", x=x6, y=y1, label=text3, hjust=0) +
+    
+    # Use same theme as original
+    theme(text = element_text(size=text_size)) +   
+    theme_void() +
+    
+    # Use coord_sf with fixed aspect ratio to ensure circle stays round
+    coord_sf(xlim=c(0, plot_x), ylim=c(0, plot_y), expand=FALSE)
+  
+  return(p)
+}
+
+# Updated vertical eye legend function to use circle_parameters
+f.fig2_legend_eyes_vertical <- function(offset_1, x_space, plot_x, plot_y, text_size, circle_parameters) {
+  # Same circle size calculation
+  circle_size <- x_space
+  
+  # Set up vertical positioning
+  x1 <- round((offset_1 * plot_x), 1)  # Position for symbols
+  x2 <- x1 + x_space                   # Position for text
+  
+  # Vertical spacing for elements
+  y_top <- plot_y * 0.75               # Position for Bud eye
+  y_middle <- plot_y * 0.5             # Position for Aletta eye
+  y_bottom <- plot_y * 0.25            # Position for Station circle
+  
+  # Create data objects
+  # Bud eye
+  new_eye.b <- data.frame(x=x1, y=y_top, image=b$image[1])
+  
+  # Aletta eye
+  new_eye.a <- data.frame(x=x1, y=y_middle) %>% 
+    st_as_sf(., coords=c("x", "y"))
+  st_crs(new_eye.a) <- st_crs(a)
+  
+  # Station circle with proper creation
+  center_point <- st_point(c(x1, y_bottom))
+  center_sf <- st_sf(geometry = st_sfc(center_point))
+  st_crs(center_sf) <- st_crs(a)
+  new_circle <- st_buffer(center_sf, dist=circle_size)
+  
+  # Extract styling from circle_parameters
+  circle_color1 <- circle_parameters["circle_color1"]
+  circle_color2 <- circle_parameters["circle_color2"]
+  base <- as.numeric(circle_parameters["base"])
+  outline <- as.numeric(circle_parameters["outline"])
+  line1 <- circle_parameters["line1"]
+  line2 <- circle_parameters["line2"]
+  
+  # Adjust line thickness for legend if needed
+  # Use larger values to make lines more visible in legend
+  legend_base <- base * 0.8    # Still visible but not too thick
+  legend_outline <- outline * 0.8
+  
+  # Text labels
+  text1 <- "TC Bud Eye"
+  text2 <- "TC Aletta Eye"
+  text3 <- "200km Diameter\nStation 3.5"
+  
+  # Create vertical legend with styling from circle_parameters
+  p <- ggplot() +
+    # Apply white outline circle with adjusted size - CHANGED size TO linewidth
+    geom_sf(data = new_circle, color = circle_color1, linetype = line1, linewidth = legend_outline, alpha = 0, inherit.aes = FALSE) +
+    # Apply orange dashed circle with adjusted size - CHANGED size TO linewidth
+    geom_sf(data = new_circle, color = circle_color2, linetype = line2, linewidth = legend_base, alpha = 0, inherit.aes = FALSE) +
+    
+    # Add Aletta eye
+    geom_sf(data=new_eye.a, shape=aletta_symbol, col=aletta_color, fill=aletta_color, size=aletta_size) +
+    
+    # Add Bud eye with larger size (doubled from original)
+    geom_image(data=new_eye.b, aes(x, y, image=image), size=0.2) + 
+    scale_size_identity() +
+    
+    # Add text labels
+    annotate("text", x=x2, y=y_top, label=text1, hjust=0) +
+    annotate("text", x=x2, y=y_middle, label=text2, hjust=0) +
+    annotate("text", x=x2, y=y_bottom, label=text3, hjust=0) +
+    
+    # Use same theme
+    theme(text = element_text(size=text_size)) +   
+    theme_void() +
+    
+    # Use coord_sf with fixed aspect ratio to ensure circle stays round
+    coord_sf(xlim=c(0, plot_x), ylim=c(0, plot_y), expand=FALSE, datum=NA)
+  
+  return(p)
+}
+
+f.save_separate_pdfs <- function(params) {
+  # Helper function for default values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Extract parameters with defaults
+  main_pdf_name <- params$main_pdf_name %||% "figure_two_main.pdf"
+  overlay_pdf_name <- params$overlay_pdf_name %||% "figure_two_overlay.pdf"
+  test_pdf_name <- params$test_pdf_name %||% "figure_two_vertical_eye_legend.pdf"
+  
+  main_width <- params$main_width %||% 8.5
+  main_height <- params$main_height %||% 11
+  test_width <- params$test_width %||% 3
+  test_height <- params$test_height %||% 4
+  
+  rel_widths <- params$rel_widths %||% c(14, 1)
+  
+  # Eye legend parameters
+  eye_offset <- params$eye_offset %||% 0.9
+  eye_x_space <- params$eye_x_space %||% 40
+  eye_plot_x <- params$eye_plot_x %||% 800
+  eye_plot_y <- params$eye_plot_y %||% 600
+  eye_text_size <- params$eye_text_size %||% 8
+  
+  # Overlay positioning
+  overlay_xmin <- params$overlay_xmin %||% (main_width * 0.75)
+  overlay_xmax <- params$overlay_xmax %||% main_width
+  overlay_ymin <- params$overlay_ymin %||% 0
+  overlay_ymax <- params$overlay_ymax %||% (main_height * 0.25)
+  
+  # Circle styling parameters (use circle_parameters if provided)
+  circle_parameters <- params$circle_parameters
+  
+  # 1. Save main figure with color legend
+  pdf(main_pdf_name, height=main_height, width=main_width)
+  main_plot <- plot_grid(p, legend, ncol=2, rel_widths=rel_widths, align="h")
+  print(main_plot)
+  dev.off()
+  
+  # 2. Save overlay with eye legend on blank background
+  pdf(overlay_pdf_name, height=main_height, width=main_width)
+  
+  # Create a blank canvas
+  overlay_p <- ggplot() +
+    theme_void() +
+    theme(
+      plot.background = element_blank(),
+      panel.background = element_blank()
+    ) +
+    xlim(0, main_width) + ylim(0, main_height)
+  
+  # Create the vertical eye legend
+  legend_n_vertical <- f.fig2_legend_eyes_vertical(
+    offset_1 = eye_offset,
+    x_space = eye_x_space,
+    plot_x = eye_plot_x,
+    plot_y = eye_plot_y,
+    text_size = eye_text_size,
+    circle_parameters = circle_parameters
+  )
+  
+  # Position on blank canvas
+  legend_grob <- ggplotGrob(legend_n_vertical)
+  
+  # Combine
+  overlay_plot <- overlay_p + annotation_custom(
+    grob = legend_grob,
+    xmin = overlay_xmin,
+    xmax = overlay_xmax,
+    ymin = overlay_ymin,
+    ymax = overlay_ymax
+  )
+  
+  print(overlay_plot)
+  dev.off()
+  
+  # 3. Save eye legend separately for testing/reference
+  pdf(test_pdf_name, width=test_width, height=test_height)
+  print(legend_n_vertical)
+  dev.off()
+  
+  message("PDFs created successfully. Now run the terminal command to combine them.")
+}
+
+# Modified function to create eye legend overlay
+f.create_eye_legend_overlay <- function(main_width, main_height, circle_parameters) {
+  # Create a blank canvas with same dimensions as main figure
+  p <- ggplot() +
+    theme_void() +
+    theme(
+      plot.background = element_blank(),
+      panel.background = element_blank()
+    ) +
+    xlim(0, main_width) + ylim(0, main_height)
+  
+  # Create a vertical eye legend with circle_parameters passed through
+  legend_n_vertical <- f.fig2_legend_eyes_vertical(
+    offset_1 = 0.9,      # Position far to the right
+    x_space = 40,        # Spacing between symbol and text
+    plot_x = 800,        # Width of the legend
+    plot_y = 600,        # Height of the legend
+    text_size = 8,       # Text size
+    circle_parameters = circle_parameters  # Pass circle_parameters
+  )
+  
+  # Position the legend at the bottom right of the blank canvas
+  legend_grob <- ggplotGrob(legend_n_vertical)
+  
+  # Combine blank canvas with positioned legend
+  final_p <- p + annotation_custom(
+    grob = legend_grob,
+    xmin = main_width * 0.75,   # Position in right quarter
+    xmax = main_width,
+    ymin = 0,                   # Position at bottom
+    ymax = main_height * 0.25   # Take up bottom quarter
+  )
+  
+  return(final_p)
+}
+
+f.save_supplementary_pdfs <- function(params) {
+  # Helper function for default values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # First check if s.p exists
+  if (!exists("s.p", inherits = FALSE)) {
+    message("Supplementary figure 's.p' not found. Please create it first.")
+    return()
+  }
+  
+  # Extract parameters with defaults
+  main_pdf_name <- params$main_pdf_name %||% "figure_s5_main.pdf"
+  overlay_pdf_name <- params$overlay_pdf_name %||% "figure_s5_overlay.pdf"
+  
+  main_width <- params$main_width %||% 8.5
+  main_height <- params$main_height %||% 11
+  
+  rel_widths <- params$rel_widths %||% c(14, 1)
+  
+  # Use the same eye legend parameters as for the main figure
+  circle_parameters <- params$circle_parameters
+  eye_offset <- params$eye_offset %||% 0.9
+  eye_x_space <- params$eye_x_space %||% 40
+  eye_plot_x <- params$eye_plot_x %||% 800
+  eye_plot_y <- params$eye_plot_y %||% 600
+  eye_text_size <- params$eye_text_size %||% 8
+  
+  # Overlay positioning
+  overlay_xmin <- params$overlay_xmin %||% (main_width * 0.75)
+  overlay_xmax <- params$overlay_xmax %||% main_width
+  overlay_ymin <- params$overlay_ymin %||% 0
+  overlay_ymax <- params$overlay_ymax %||% (main_height * 0.25)
+  
+  # 1. Save supplementary figure with color legend
+  pdf(main_pdf_name, height=main_height, width=main_width)
+  main_plot <- plot_grid(s.p, legend, ncol=2, rel_widths=rel_widths, align="h")
+  print(main_plot)
+  dev.off()
+  
+  # 2. Save overlay with eye legend on blank background
+  pdf(overlay_pdf_name, height=main_height, width=main_width)
+  
+  # Create blank canvas
+  overlay_p <- ggplot() +
+    theme_void() +
+    theme(
+      plot.background = element_blank(),
+      panel.background = element_blank()
+    ) +
+    xlim(0, main_width) + ylim(0, main_height)
+  
+  # Create vertical eye legend
+  legend_n_vertical <- f.fig2_legend_eyes_vertical(
+    offset_1 = eye_offset,
+    x_space = eye_x_space,
+    plot_x = eye_plot_x,
+    plot_y = eye_plot_y,
+    text_size = eye_text_size,
+    circle_parameters = circle_parameters
+  )
+  
+  # Position on blank canvas
+  legend_grob <- ggplotGrob(legend_n_vertical)
+  
+  # Combine
+  overlay_plot <- overlay_p + annotation_custom(
+    grob = legend_grob,
+    xmin = overlay_xmin,
+    xmax = overlay_xmax,
+    ymin = overlay_ymin,
+    ymax = overlay_ymax
+  )
+  
+  print(overlay_plot)
+  dev.off()
+  
+  message("Supplementary PDFs created. Now run the terminal command to combine them.")
+}
+
+# Function to display the terminal command
+f.show_terminal_command <- function() {
+  # Create a formatted message with the commands
+  command_text <- "
+# For Figure 2:
+# Using pdftk (if installed):
+pdftk figure_two_main.pdf stamp figure_two_overlay.pdf output figure_two_combined.pdf
+
+# OR using Ghostscript (if installed):
+gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=figure_two_combined.pdf figure_two_main.pdf figure_two_overlay.pdf
+
+# For Supplementary Figure (if created):
+# Using pdftk:
+pdftk figure_s5_main.pdf stamp figure_s5_overlay.pdf output figure_s5_combined.pdf
+
+# OR using Ghostscript:
+gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=figure_s5_combined.pdf figure_s5_main.pdf figure_s5_overlay.pdf
+"
+  
+  # Print the message in a code block format
+  cat("\nTerminal Commands for Combining PDFs:\n")
+  cat("--------------------------------------\n")
+  cat(command_text)
+  cat("--------------------------------------\n")
+  cat("Note: Run these commands in the Terminal pane of RStudio or in your system's terminal.\n")
+}
+
+# Function to run the terminal command directly from R (no working directory setting inside)
+f.combine_pdfs <- function() {
+  # Check if pdftk is available
+  has_pdftk <- system("which pdftk", ignore.stdout = TRUE, ignore.stderr = TRUE) == 0
+  
+  # Check if ghostscript is available
+  has_gs <- system("which gs", ignore.stdout = TRUE, ignore.stderr = TRUE) == 0
+  
+  # Combine PDFs using available tool
+  if (has_pdftk) {
+    result <- system("pdftk figure_two_main.pdf stamp figure_two_overlay.pdf output figure_two_combined.pdf", intern = TRUE)
+    message("PDFs combined using pdftk")
+  } else if (has_gs) {
+    result <- system("gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=figure_two_combined.pdf figure_two_main.pdf figure_two_overlay.pdf", intern = TRUE)
+    message("PDFs combined using Ghostscript")
+  } else {
+    message("Neither pdftk nor Ghostscript found. Please install one of these tools or run the command manually:")
+    f.show_terminal_command()
+    return(FALSE)
+  }
+  
+  # Check if successful
+  if (file.exists("figure_two_combined.pdf")) {
+    message("Combined PDF created successfully: figure_two_combined.pdf")
+    return(TRUE)
+  } else {
+    message("Error: Combined PDF was not created. Check terminal output for errors.")
+    return(FALSE)
+  }
+}
+
+
+```
+
+
+
+
+### For supplementary figure (if needed)
+```{r, eval=FALSE}
+# Concise parameter list for supplementary figure
+figure_s5_params <- list(
+  main_pdf_name = "figure_s5_main.pdf", overlay_pdf_name = "figure_s5_overlay.pdf",
+  main_width = 8.5, main_height = 11, rel_widths = c(14, 1),
+  eye_offset = 0.9, eye_x_space = 40, eye_plot_x = 800, eye_plot_y = 600, eye_text_size = 8,
+  overlay_xmin = 0.75, overlay_xmax = 1.0, overlay_ymin = 0.0, overlay_ymax = 0.25,
+  circle_parameters = circle_parameters  # Corrected to use circle_parameters
+)
+
+# Create PDFs for supplementary figure
+# f.save_supplementary_pdfs(figure_s5_params)
+
+# Test individual components (keeping for archival purposes)
+# Test the fixed horizontal eye legend
+```
+
+## Test individual components
+```{r}
+# Test individual components (keeping for archival purposes)
+# Test the fixed horizontal eye legend
+legend_n_fixed <- f.fig2_legend_eyes_fixed(
+  offset_1=.06, x_space=80, plot_x=3014, plot_y=252, text_size=6, circle_geom=circle_geom
+)
+
+# Save for reference
+setwd(wd)
+setwd(fig)
+pdf("figure_two_horizontal_eye_legend_fixed.pdf", width=5, height=0.46)
+print(legend_n_fixed)
+dev.off()
+```
+
+## New main figure
+-note parameters
+
+```{r}
+setwd(wd)
+setwd(fig)
+
+```
+
+# old code
+
+orignail legends
+
+```{r}
+
+# t<--390
+# 
+# # t=5
+# legend<-f.fig2_legend(combined, v_rgb, height=bar_height, width=1, t=t, b=0, r=0, l=-115,  title.textsize=10, marks.textsize=8)
+# # 
+# 
+# # legend_n<-f.fig2_legend_eyes(offset_1=.1, x_space=80, plot_x=3014, plot_y=252, text_size = 12)
+# legend_n<-f.fig2_legend_eyes(offset_1=.06, x_space=80, plot_x=3014, plot_y=252, text_size = 6)
+```
+
+```
+
+
+### plot 2nd legneg for gimp
+```{r}
+# setwd(wd)
+# setwd(fig)
+# 
+# # pdf("figure_two_2nd_legend.pdf", width =5, height=.46)
+# # pdf("figure_two_2nd_legend_SA.pdf", width =5, height=.46)
+# pdf("figure_two_2nd_legend_testing_new_circle.pdf", width =5, height=.46)
+# legend_n
+# dev.off()
+
+
+
+```
+
+# save plots
+
+```{r}
+# setwd(wd)
+# setwd(fig)
+# 
+# # pdf("figure_two_no_2nd_legend.pdf", height=11 , width =8.5)
+# pdf("figure_two_no_2nd_legend_SA_new_cuts_circle_white_ornage_complimentary.pdf", height=11 , width =8.5)
+# plot_grid(p, legend, ncol=2, rel_widths=c(14,1), align="h")
+# dev.off()
+
+
+# pdf("figure_s5_no_2nd_legend.pdf", height=11 , width =8.5)
+# pdf("figure_s5_no_2nd_legend_SA.pdf", height=11 , width =8.5)
+# plot_grid(s.p, legend, ncol=2, rel_widths=c(14,1), align="h")
+# dev.off()
+# 
+# legends<-plot_grid(legend, legend_n, ncol=1)
+# pdf("figure_two_test_plot_legend_flipped_correctly.pdf", height=11 , width =8.5)
+# plot_grid(p, legends, ncol=2, rel_widths=c(14,1), align="h")
+# dev.off()
+# 
+# dev.off()
+# gc()
+
+
+```
+#  stable function
+
+```{r}
+f.combine_pdfs <- function(files = NULL) {
+  # Default files if not provided
+  if (is.null(files)) {
+    files <- list(
+      main = "figure_two_main.pdf",
+      overlay = "figure_two_overlay.pdf",
+      combined = "figure_two_combined.pdf"
+    )
+  }
+  
+  # Check if pdftk is available
+  has_pdftk <- system("which pdftk", ignore.stdout = TRUE, ignore.stderr = TRUE) == 0
+  
+  # Check if ghostscript is available
+  has_gs <- system("which gs", ignore.stdout = TRUE, ignore.stderr = TRUE) == 0
+  
+  # Combine PDFs using available tool
+  if (has_pdftk) {
+    # Use stamp mode for proper overlay
+    cmd <- sprintf("pdftk %s stamp %s output %s", 
+                   files$main, files$overlay, files$combined)
+    result <- system(cmd)
+    if (result == 0) {
+      message("PDFs combined using pdftk stamp mode")
+    } else {
+      # Fallback to different pdftk command if stamp fails
+      cmd <- sprintf("pdftk %s background %s output %s", 
+                     files$overlay, files$main, files$combined)
+      result <- system(cmd)
+      if (result == 0) {
+        message("PDFs combined using pdftk background mode")
+      } else {
+        message("pdftk commands failed, trying alternative method")
+        return(FALSE)
+      }
+    }
+  } else if (has_gs) {
+    # Use ghostscript to overlay PDFs
+    cmd <- sprintf("gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=%s %s %s", 
+                   files$combined, files$main, files$overlay)
+    result <- system(cmd)
+    if (result == 0) {
+      message("PDFs combined using Ghostscript")
+    } else {
+      message("Ghostscript command failed")
+      return(FALSE)
+    }
+  } else {
+    message("Neither pdftk nor Ghostscript found. Install one of these tools for PDF combining")
+    return(FALSE)
+  }
+  
+  # Check if successful
+  if (file.exists(files$combined)) {
+    message("Combined PDF created successfully: ", files$combined)
+    return(TRUE)
+  } else {
+    message("Error: Combined PDF was not created. Check terminal output for errors.")
+    return(FALSE)
+  }
+}
+```
+
+
+
+#1 
+```{r}
+# Function to create a duplicate of the color legend at a different position
+f.create_duplicate_legend_overlay <- function(main_width, main_height, rel_widths) {
+  # Get the original color legend
+  # Assuming 'legend' is your existing color legend object
+  duplicate_legend <- legend
+  
+  # Calculate the right column width based on rel_widths
+  total_width <- sum(rel_widths)
+  right_col_prop <- rel_widths[2] / total_width
+  
+  # Create an empty plot with transparent background
+  empty_p <- ggplot() +
+    theme_void() +
+    theme(
+      plot.background = element_rect(fill = NA, color = NA),
+      panel.background = element_rect(fill = NA, color = NA)
+    ) +
+    xlim(0, main_width) + ylim(0, main_height)
+  
+  # Convert legend to grob
+  legend_grob <- ggplotGrob(duplicate_legend)
+  
+  # Position the duplicate legend where the eye legend should be
+  # (at bottom right, assuming that's where you want it)
+  overlay_p <- empty_p + annotation_custom(
+    grob = legend_grob,
+    xmin = main_width * 0.75,  # Adjust these values to position the legend
+    xmax = main_width,
+    ymin = 0,
+    ymax = main_height * 0.3
+  )
+  
+  return(overlay_p)
+}
+
+# Function to save the test PDFs
+f.save_test_pdfs <- function() {
+  # Set parameters
+  main_width <- 8.5
+  main_height <- 11
+  rel_widths <- c(14, 1)
+  
+  # Define file names
+  main_pdf_name <- "test_main.pdf"
+  overlay_pdf_name <- "test_overlay.pdf"
+  combined_pdf_name <- "test_combined.pdf"
+  
+  # 1. Save main figure with color legend
+  pdf(main_pdf_name, height = main_height, width = main_width)
+  main_plot <- plot_grid(p, legend, ncol = 2, rel_widths = rel_widths, align = "h")
+  print(main_plot)
+  dev.off()
+  
+  # 2. Save overlay with duplicate color legend
+  overlay_plot <- f.create_duplicate_legend_overlay(
+    main_width = main_width,
+    main_height = main_height,
+    rel_widths = rel_widths
+  )
+  
+  pdf(overlay_pdf_name, height = main_height, width = main_width)
+  par(bg = "transparent")  # Set transparent background
+  print(overlay_plot)
+  dev.off()
+  
+  message("Test PDFs created successfully.")
+  
+  # Return file paths for use with combine function
+  return(list(
+    main = main_pdf_name,
+    overlay = overlay_pdf_name,
+    combined = combined_pdf_name
+  ))
+}
+
+# Function to run the complete test
+f.run_legend_duplication_test <- function() {
+  # Create the test PDFs
+  files <- f.save_test_pdfs()
+  
+  # Combine PDFs using existing function
+  success <- f.combine_pdfs(files)
+  
+  if (success) {
+    message("Test completed successfully! Check the test_combined.pdf file.")
+  } else {
+    message("Test encountered issues with PDF combination.")
+  }
+  
+  return(success)
+}
+
+# Example usage:
+
+setwd(wd)
+setwd(fig)
+f.run_legend_duplication_test()
+```
+
+#2
+```{r}
+# Function to create a basic overlay with duplicate legend
+f.create_simple_overlay <- function(main_width, main_height) {
+  # Create an empty plot with transparent background
+  p <- ggplot() +
+    theme_void() +
+    theme(
+      plot.background = element_rect(fill = NA, color = NA),
+      panel.background = element_rect(fill = NA, color = NA),
+      plot.margin = margin(0, 0, 0, 0)
+    ) +
+    xlim(0, main_width) + ylim(0, main_height)
+  
+  # Assuming 'legend' is your existing legend grob
+  # Simply add it to the blank plot using annotation_custom
+  # No need to convert to grob since it's already a grob
+  overlay_p <- p + annotation_custom(
+    grob = legend,  # Use legend grob directly
+    xmin = main_width * 0.75,
+    xmax = main_width,
+    ymin = 0,
+    ymax = main_height * 0.3
+  )
+  
+  return(overlay_p)
+}
+
+# Simple function to save test PDFs
+f.save_simple_test_pdfs <- function() {
+  # Set parameters
+  main_width <- 8.5
+  main_height <- 11
+  rel_widths <- c(14, 1)
+  
+  # Define file names
+  main_pdf_name <- "test_main_simple.pdf"
+  overlay_pdf_name <- "test_overlay_simple.pdf"
+  combined_pdf_name <- "test_combined_simple.pdf"
+  
+  # 1. Save main figure with original color legend
+  pdf(main_pdf_name, height = main_height, width = main_width)
+  main_plot <- plot_grid(p, legend, ncol = 2, rel_widths = rel_widths, align = "h")
+  print(main_plot)
+  dev.off()
+  
+  # 2. Create and save simple overlay
+  overlay_plot <- f.create_simple_overlay(
+    main_width = main_width,
+    main_height = main_height
+  )
+  
+  pdf(overlay_pdf_name, height = main_height, width = main_width)
+  par(bg = "transparent")
+  print(overlay_plot)
+  dev.off()
+  
+  message("Simple test PDFs created successfully.")
+  
+  # Return file paths for combining
+  return(list(
+    main = main_pdf_name,
+    overlay = overlay_pdf_name,
+    combined = combined_pdf_name
+  ))
+}
+
+# Run the simple test
+f.run_simple_test <- function() {
+  # Create the test PDFs
+  files <- f.save_simple_test_pdfs()
+  
+  # Combine PDFs
+  success <- f.combine_pdfs(files)
+  
+  if (success) {
+    message("Simple test completed successfully! Check test_combined_simple.pdf")
+  } else {
+    message("Simple test encountered issues with PDF combination.")
+  }
+  
+  return(success)
+}
+
+
+#
+f.combine_pdfs <- function(files = NULL) {
+  # Default files if not provided
+  if (is.null(files)) {
+    files <- list(
+      main = "figure_two_main.pdf",
+      overlay = "figure_two_overlay.pdf",
+      combined = "figure_two_combined.pdf"
+    )
+  }
+  
+  # Check if pdftk is available
+  has_pdftk <- system("which pdftk", ignore.stdout = TRUE, ignore.stderr = TRUE) == 0
+  
+  # Check if ghostscript is available
+  has_gs <- system("which gs", ignore.stdout = TRUE, ignore.stderr = TRUE) == 0
+  
+  # Combine PDFs using available tool
+  if (has_pdftk) {
+    # Use stamp mode for proper overlay
+    cmd <- sprintf("pdftk %s stamp %s output %s", 
+                   files$main, files$overlay, files$combined)
+    result <- system(cmd)
+    if (result == 0) {
+      message("PDFs combined using pdftk stamp mode")
+    } else {
+      # Fallback to different pdftk command if stamp fails
+      cmd <- sprintf("pdftk %s background %s output %s", 
+                     files$overlay, files$main, files$combined)
+      result <- system(cmd)
+      if (result == 0) {
+        message("PDFs combined using pdftk background mode")
+      } else {
+        message("pdftk commands failed, trying alternative method")
+        return(FALSE)
+      }
+    }
+  } else if (has_gs) {
+    # Use ghostscript to overlay PDFs
+    cmd <- sprintf("gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=%s %s %s", 
+                   files$combined, files$main, files$overlay)
+    result <- system(cmd)
+    if (result == 0) {
+      message("PDFs combined using Ghostscript")
+    } else {
+      message("Ghostscript command failed")
+      return(FALSE)
+    }
+  } else {
+    message("Neither pdftk nor Ghostscript found. Install one of these tools for PDF combining")
+    return(FALSE)
+  }
+  
+  # Check if successful
+  if (file.exists(files$combined)) {
+    message("Combined PDF created successfully: ", files$combined)
+    return(TRUE)
+  } else {
+    message("Error: Combined PDF was not created. Check terminal output for errors.")
+    return(FALSE)
+  }
+}
+# Example usage:
+setwd(wd)
+setwd(fig)
+f.run_simple_test()
+```
+
+#3
+```{r}
+# Function to create an overlay with duplicated color legend
+f.create_overlay_with_duplicate_legend <- function(main_width, main_height, rel_widths) {
+  # Calculate the column widths
+  total_width <- sum(rel_widths)
+  left_col_width <- rel_widths[1] / total_width
+  right_col_width <- rel_widths[2] / total_width
+  
+  # Create an empty plot with transparent background
+  empty_plot <- ggplot() + 
+    theme_void() + 
+    theme(
+      plot.background = element_rect(fill = NA, color = NA),
+      panel.background = element_rect(fill = NA, color = NA)
+    ) +
+    xlim(0, 1) + ylim(0, 1)
+  
+  # Create the overlay by adding the legend (as is) positioned to the bottom right
+  overlay_plot <- empty_plot + 
+    annotation_custom(
+      grob = legend,
+      xmin = 1 - right_col_width,  # Start at the beginning of right column
+      xmax = 1,                    # End at right edge
+      ymin = 0,                    # Start at bottom
+      ymax = 0.4                   # Take up bottom 40% of the page
+    )
+  
+  return(overlay_plot)
+}
+
+# Function to save test PDFs with duplicated legend
+f.save_test_pdfs <- function() {
+  # Set parameters
+  main_width <- 8.5
+  main_height <- 11
+  rel_widths <- c(14, 1)
+  
+  # Define file names
+  main_pdf_name <- "test_main.pdf"
+  overlay_pdf_name <- "test_overlay.pdf"
+  combined_pdf_name <- "test_combined.pdf"
+  
+  # 1. Save main figure with color legend
+  pdf(main_pdf_name, height = main_height, width = main_width)
+  main_plot <- plot_grid(p, legend, ncol = 2, rel_widths = rel_widths, align = "h")
+  print(main_plot)
+  dev.off()
+  
+  # 2. Create and save overlay with duplicated legend
+  overlay_plot <- f.create_overlay_with_duplicate_legend(
+    main_width = main_width,
+    main_height = main_height,
+    rel_widths = rel_widths
+  )
+  
+  pdf(overlay_pdf_name, height = main_height, width = main_width)
+  par(bg = "transparent")
+  print(overlay_plot)
+  dev.off()
+  
+  message("Test PDFs created successfully.")
+  
+  # Return file paths for use with combine function
+  return(list(
+    main = main_pdf_name,
+    overlay = overlay_pdf_name,
+    combined = combined_pdf_name
+  ))
+}
+
+# Function to run the legend positioning test
+f.run_legend_position_test <- function() {
+  # Create test PDFs
+  files <- f.save_test_pdfs()
+  
+  # Combine PDFs
+  success <- f.combine_pdfs(files)
+  
+  if (success) {
+    message("Test completed successfully! Check test_combined.pdf")
+  } else {
+    message("Test encountered issues with PDF combination.")
+  }
+  
+  return(success)
+}
+
+# An alternative approach using grid layout for more precise positioning
+f.create_overlay_with_grid <- function(main_width, main_height, rel_widths) {
+  # Convert the main plot to a grob to extract layout information
+  main_plot <- plot_grid(p, legend, ncol = 2, rel_widths = rel_widths, align = "h")
+  main_grob <- ggplotGrob(main_plot)
+  
+  # Create a completely empty gtable with the same dimensions as the main plot
+  gt <- gtable_col("overlay", 
+                  grobs = list(
+                    rectGrob(gp = gpar(fill = NA)),
+                    legend
+                  ),
+                  widths = unit(rel_widths, "null"))
+  
+  # Position the legend at the bottom of the right column
+  gt$layout$t[2] <- 0.6 * gt$height  # Start at 60% down the page
+  gt$layout$b[2] <- gt$height        # Extend to the bottom
+  
+  return(gt)
+}
+
+# Function to save test PDFs using grid layout
+f.save_grid_test_pdfs <- function() {
+  # Set parameters
+  main_width <- 8.5
+  main_height <- 11
+  rel_widths <- c(14, 1)
+  
+  # Define file names
+  main_pdf_name <- "test_grid_main.pdf"
+  overlay_pdf_name <- "test_grid_overlay.pdf"
+  combined_pdf_name <- "test_grid_combined.pdf"
+  
+  # 1. Save main figure with color legend
+  pdf(main_pdf_name, height = main_height, width = main_width)
+  main_plot <- plot_grid(p, legend, ncol = 2, rel_widths = rel_widths, align = "h")
+  print(main_plot)
+  dev.off()
+  
+  # 2. Create and save overlay with grid layout
+  overlay_grid <- f.create_overlay_with_grid(
+    main_width = main_width,
+    main_height = main_height,
+    rel_widths = rel_widths
+  )
+  
+  pdf(overlay_pdf_name, height = main_height, width = main_width)
+  grid.newpage()
+  grid.draw(overlay_grid)
+  dev.off()
+  
+  message("Grid test PDFs created successfully.")
+  
+  # Return file paths for use with combine function
+  return(list(
+    main = main_pdf_name,
+    overlay = overlay_pdf_name,
+    combined = combined_pdf_name
+  ))
+}
+
+# Function to run the grid layout test
+f.run_grid_position_test <- function() {
+  # Create test PDFs
+  files <- f.save_grid_test_pdfs()
+  
+  # Combine PDFs
+  success <- f.combine_pdfs(files)
+  
+  if (success) {
+    message("Grid test completed successfully! Check test_grid_combined.pdf")
+  } else {
+    message("Grid test encountered issues with PDF combination.")
+  }
+  
+  return(success)
+}
+
+# Run both tests to compare results
+
+setwd(wd)
+setwd(fig)
+f.run_legend_position_test()
+f.run_grid_position_test()
+```
+
+
+
+#last adpative test
+```{r}
+# Function to create an overlay with more precise positioning
+f.create_precise_overlay <- function() {
+  # First create the main figure exactly as you normally would
+  # This helps us capture the exact layout and dimensions
+  main_plot <- plot_grid(p, legend, ncol = 2, rel_widths = c(14, 1), align = "h")
+  
+  # Get information about the main plot's dimensions
+  main_width <- 8.5  # PDF width in inches
+  main_height <- 11  # PDF height in inches
+  
+  # Calculate the column widths based on rel_widths
+  total_rel_width <- 14 + 1
+  left_col_percent <- 14 / total_rel_width
+  right_col_percent <- 1 / total_rel_width
+  
+  # Calculate the right column's starting position (in normalized coordinates)
+  right_col_start <- left_col_percent
+  
+  # Create a completely empty plot for the overlay
+  # Use a larger-than-needed plotting area to ensure coverage
+  empty_plot <- ggplot() +
+    theme_void() +
+    theme(
+      plot.background = element_rect(fill = NA, color = NA),
+      panel.background = element_rect(fill = NA, color = NA),
+      plot.margin = margin(0, 0, 0, 0)
+    ) +
+    xlim(0, 1) + ylim(0, 1)
+  
+  # Add the legend to bottom part of right column
+  # Position it precisely where we want the overlay to appear
+  overlay_plot <- empty_plot +
+    annotation_custom(
+      grob = legend,  # Use existing legend grob
+      xmin = right_col_start,      # Start exactly where right column begins
+      xmax = 1,                    # End at right edge
+      ymin = 0,                    # Start at bottom
+      ymax = 0.4                   # Take up 40% of height from bottom
+    )
+  
+  return(overlay_plot)
+}
+
+# Function to save PDFs with precise positioning
+f.save_precise_pdfs <- function() {
+  # Define file names
+  main_pdf_name <- "test_precise_main.pdf"
+  overlay_pdf_name <- "test_precise_overlay.pdf"
+  combined_pdf_name <- "test_precise_combined.pdf"
+  
+  # PDF dimensions
+  main_width <- 8.5
+  main_height <- 11
+  
+  # 1. Save main figure with color legend
+  pdf(main_pdf_name, height = main_height, width = main_width)
+  main_plot <- plot_grid(p, legend, ncol = 2, rel_widths = c(14, 1), align = "h")
+  print(main_plot)
+  dev.off()
+  
+  # 2. Create and save precise overlay
+  overlay_plot <- f.create_precise_overlay()
+  
+  pdf(overlay_pdf_name, height = main_height, width = main_width)
+  par(bg = "transparent")
+  print(overlay_plot)
+  dev.off()
+  
+  message("Precise test PDFs created successfully.")
+  
+  # Return file paths for use with combine function
+  return(list(
+    main = main_pdf_name,
+    overlay = overlay_pdf_name,
+    combined = combined_pdf_name
+  ))
+}
+
+# Function to run the precise positioning test
+f.run_precise_test <- function() {
+  # Create precise test PDFs
+  files <- f.save_precise_pdfs()
+  
+  # Combine PDFs
+  success <- f.combine_pdfs(files)
+  
+  if (success) {
+    message("Precise test completed successfully! Check test_precise_combined.pdf")
+  } else {
+    message("Precise test encountered issues with PDF combination.")
+  }
+  
+  return(success)
+}
+
+# Alternative approach using direct calculation
+f.create_direct_calculation_overlay <- function() {
+  # Calculate the exact right column position
+  page_width <- 8.5  # inches
+  page_height <- 11  # inches
+  
+  # The right column takes up 1/15 of the page width
+  column_ratio <- 15  # total parts (14+1)
+  right_column_width <- page_width / column_ratio
+  right_column_start <- page_width - right_column_width
+  
+  # Convert to normalized coordinates (0-1)
+  right_col_norm_start <- right_column_start / page_width
+  
+  # Create empty canvas
+  empty_canvas <- ggplot() + 
+    theme_void() +
+    theme(
+      plot.background = element_rect(fill = NA, color = NA),
+      panel.background = element_rect(fill = NA, color = NA)
+    ) +
+    xlim(0, 1) + ylim(0, 1)
+  
+  # Add legend to precise location
+  overlay_plot <- empty_canvas +
+    annotation_custom(
+      grob = legend,
+      xmin = right_col_norm_start,  # Exact start of right column
+      xmax = 1,                    # Right edge of page
+      ymin = 0,                    # Bottom of page
+      ymax = 0.4                   # 40% up from bottom
+    )
+  
+  return(overlay_plot)
+}
+
+# Alternative function to save PDFs with direct calculation
+f.save_direct_calculation_pdfs <- function() {
+  # Define file names
+  main_pdf_name <- "test_direct_main.pdf"
+  overlay_pdf_name <- "test_direct_overlay.pdf"
+  combined_pdf_name <- "test_direct_combined.pdf"
+  
+  # PDF dimensions
+  main_width <- 8.5
+  main_height <- 11
+  
+  # 1. Save main figure with color legend
+  pdf(main_pdf_name, height = main_height, width = main_width)
+  main_plot <- plot_grid(p, legend, ncol = 2, rel_widths = c(14, 1), align = "h")
+  print(main_plot)
+  dev.off()
+  
+  # 2. Create and save direct calculation overlay
+  overlay_plot <- f.create_direct_calculation_overlay()
+  
+  pdf(overlay_pdf_name, height = main_height, width = main_width)
+  par(bg = "transparent")
+  print(overlay_plot)
+  dev.off()
+  
+  message("Direct calculation PDFs created successfully.")
+  
+  # Return file paths for use with combine function
+  return(list(
+    main = main_pdf_name,
+    overlay = overlay_pdf_name,
+    combined = combined_pdf_name
+  ))
+}
+
+# Function to run the direct calculation test
+f.run_direct_calculation_test <- function() {
+  # Create direct calculation PDFs
+  files <- f.save_direct_calculation_pdfs()
+  
+  # Combine PDFs
+  success <- f.combine_pdfs(files)
+  
+  if (success) {
+    message("Direct calculation test completed successfully! Check test_direct_combined.pdf")
+  } else {
+    message("Direct calculation test encountered issues with PDF combination.")
+  }
+  
+  return(success)
+}
+
+# Try both approaches
+
+setwd(wd)
+
+setwd(fig)
+
+f.run_precise_test()
+f.run_direct_calculation_test()
+```
+
+
+
+#5- duplicate plot apporaoch
+
+global variabe issue
+
+```{r}
+# Function to create an overlay with duplicate structure and color legend in bottom right
+f.create_duplicate_structure_overlay <- function(plot_type = "main", rel_widths = c(14, 1)) {
+  # Helper function for null values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Choose which plot to duplicate based on plot_type
+  if (plot_type == "main") {
+    if (!exists("p", inherits = FALSE)) {
+      stop("Main figure 'p' not found. Please create it first.")
+    }
+    main_plot <- p
+  } else if (plot_type == "supplement") {
+    if (!exists("s.p", inherits = FALSE)) {
+      stop("Supplementary figure 's.p' not found. Please create it first.")
+    }
+    main_plot <- s.p
+  } else {
+    stop("Invalid plot_type. Must be 'main' or 'supplement'")
+  }
+  
+  # Create an invisible version of the main/supplement plot
+  # Make everything transparent but keep exact structure
+  invisible_plot <- main_plot + 
+    theme(
+      panel.background = element_rect(fill = NA, color = NA),
+      plot.background = element_rect(fill = NA, color = NA),
+      panel.grid = element_blank(),
+      axis.text = element_text(color = NA),
+      axis.title = element_text(color = NA),
+      axis.ticks = element_line(color = NA),
+      legend.position = "none",
+      plot.margin = margin(0, 0, 0, 0)
+    )
+  
+  # Create an empty placeholder for the top of the right column
+  # This is where the original color legend would be
+  empty_legend_top <- ggplot() + 
+    theme_void() +
+    theme(
+      panel.background = element_rect(fill = NA, color = NA),
+      plot.background = element_rect(fill = NA, color = NA)
+    )
+  
+  # Create the main structure with invisible plot and empty top legend
+  overlay_structure <- plot_grid(
+    invisible_plot, 
+    empty_legend_top,
+    ncol = 2, 
+    rel_widths = rel_widths, 
+    align = "h"
+  )
+  
+  # Convert to grob for positioning
+  overlay_grob <- ggplotGrob(overlay_structure)
+  
+  # Now add the duplicate color legend at the bottom of the right column
+  # The legend is already a grob, so we can add it directly
+  final_overlay <- overlay_structure + 
+    annotation_custom(
+      grob = legend,  # Use existing color legend
+      xmin = 1 - (rel_widths[2] / sum(rel_widths)),  # Start at right column
+      xmax = 1,                                      # End at right edge
+      ymin = 0,                                      # Start at bottom
+      ymax = 0.5                                     # Take up bottom half
+    )
+  
+  return(final_overlay)
+}
+
+# Function to save PDFs with duplicate structure
+f.save_duplicate_structure_pdfs <- function(
+  plot_type = "main",
+  main_pdf_name = NULL,
+  overlay_pdf_name = NULL,
+  combined_pdf_name = NULL,
+  main_width = 8.5,
+  main_height = 11,
+  rel_widths = c(14, 1)
+) {
+  # Helper function for null values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Set default filenames based on plot_type
+  main_pdf_name <- main_pdf_name %||% paste0("figure_", plot_type, "_main.pdf")
+  overlay_pdf_name <- overlay_pdf_name %||% paste0("figure_", plot_type, "_overlay.pdf")
+  combined_pdf_name <- combined_pdf_name %||% paste0("figure_", plot_type, "_combined.pdf")
+  
+  # 1. Save main figure with color legend
+  pdf(main_pdf_name, height = main_height, width = main_width)
+  if (plot_type == "main") {
+    main_plot <- plot_grid(p, legend, ncol = 2, rel_widths = rel_widths, align = "h")
+  } else {
+    main_plot <- plot_grid(s.p, legend, ncol = 2, rel_widths = rel_widths, align = "h")
+  }
+  print(main_plot)
+  dev.off()
+  
+  # 2. Create and save overlay with duplicate structure
+  overlay_plot <- f.create_duplicate_structure_overlay(
+    plot_type = plot_type,
+    rel_widths = rel_widths
+  )
+  
+  pdf(overlay_pdf_name, height = main_height, width = main_width)
+  par(bg = "transparent")  # Set transparent background
+  print(overlay_plot)
+  dev.off()
+  
+  message(paste0(plot_type, " PDFs created successfully."))
+  
+  # Return file paths for use with combine function
+  return(list(
+    main = main_pdf_name,
+    overlay = overlay_pdf_name,
+    combined = combined_pdf_name
+  ))
+}
+
+# Function to combine PDFs with error handling
+f.combine_duplicate_pdfs <- function(files) {
+  # Check if pdftk is available
+  has_pdftk <- system("which pdftk", ignore.stdout = TRUE, ignore.stderr = TRUE) == 0
+  
+  # Check if ghostscript is available
+  has_gs <- system("which gs", ignore.stdout = TRUE, ignore.stderr = TRUE) == 0
+  
+  success <- FALSE
+  
+  # Combine PDFs using available tool
+  if (has_pdftk) {
+    # Try stamp mode
+    cmd <- sprintf("pdftk %s stamp %s output %s", 
+                   files$main, files$overlay, files$combined)
+    result <- system(cmd)
+    
+    if (result == 0) {
+      message("PDFs combined using pdftk stamp mode")
+      success <- TRUE
+    } else {
+      # Try alternative modes if stamp fails
+      alt_modes <- list(
+        list(name = "background", cmd = sprintf("pdftk %s background %s output %s", 
+                                               files$main, files$overlay, files$combined)),
+        list(name = "multistamp", cmd = sprintf("pdftk %s multistamp %s output %s", 
+                                               files$main, files$overlay, files$combined))
+      )
+      
+      for (mode in alt_modes) {
+        result <- system(mode$cmd)
+        if (result == 0) {
+          message(paste0("PDFs combined using pdftk ", mode$name, " mode"))
+          success <- TRUE
+          break
+        }
+      }
+      
+      if (!success) {
+        message("All pdftk modes failed")
+      }
+    }
+  } else if (has_gs) {
+    # Use ghostscript as fallback
+    cmd <- sprintf("gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=%s %s %s", 
+                   files$combined, files$main, files$overlay)
+    result <- system(cmd)
+    
+    if (result == 0) {
+      message("PDFs combined using Ghostscript")
+      success <- TRUE
+    } else {
+      message("Ghostscript command failed")
+    }
+  } else {
+    message("Neither pdftk nor Ghostscript found. Please install one of these tools.")
+  }
+  
+  # Verify the combined file exists
+  if (success && file.exists(files$combined)) {
+    message("Combined PDF created successfully: ", files$combined)
+    return(TRUE)
+  } else {
+    message("Error: Combined PDF was not created successfully.")
+    return(FALSE)
+  }
+}
+
+# Main function to run the duplicate structure test
+f.run_duplicate_structure_test <- function(
+  plot_type = "main",
+  main_pdf_name = NULL,
+  overlay_pdf_name = NULL,
+  combined_pdf_name = NULL,
+  main_width = 8.5,
+  main_height = 11,
+  rel_widths = c(14, 1),
+  delete_intermediate = FALSE
+) {
+  # Create PDFs with duplicate structure
+  files <- f.save_duplicate_structure_pdfs(
+    plot_type = plot_type,
+    main_pdf_name = main_pdf_name,
+    overlay_pdf_name = overlay_pdf_name,
+    combined_pdf_name = combined_pdf_name,
+    main_width = main_width,
+    main_height = main_height,
+    rel_widths = rel_widths
+  )
+  
+  # Combine PDFs
+  success <- f.combine_duplicate_pdfs(files)
+  
+  # Delete intermediate files if requested
+  if (success && delete_intermediate) {
+    file.remove(files$main)
+    file.remove(files$overlay)
+    message("Intermediate files deleted.")
+  }
+  
+  if (success) {
+    message(paste0(plot_type, " figure test completed successfully! Check: ", files$combined))
+  } else {
+    message(paste0(plot_type, " figure test encountered issues."))
+  }
+  
+  return(success)
+}
+
+# Usage examples:
+# 
+# # Test with main figure
+
+setwd(wd)
+setwd(fig)
+
+f.run_duplicate_structure_test(
+  plot_type = "main",
+  combined_pdf_name = "test_main_combined.pdf",
+  delete_intermediate = FALSE
+)
+# 
+# # Test with supplementary figure
+# f.run_duplicate_structure_test(
+#   plot_type = "supplement",
+#   combined_pdf_name = "test_supp_combined.pdf",
+#   delete_intermediate = FALSE
+# )
+```
+
+
+#6
+```{r}
+# Function to create an overlay with duplicate structure and color legend in bottom right
+# Now accepts plot and legend as explicit parameters
+f.create_duplicate_structure_overlay <- function(plot_obj, legend_obj, rel_widths = c(14, 1)) {
+  # Create an invisible version of the main/supplement plot
+  # Make everything transparent but keep exact structure
+  invisible_plot <- plot_obj + 
+    theme(
+      panel.background = element_rect(fill = NA, color = NA),
+      plot.background = element_rect(fill = NA, color = NA),
+      panel.grid = element_blank(),
+      axis.text = element_text(color = NA),
+      axis.title = element_text(color = NA),
+      axis.ticks = element_line(color = NA),
+      legend.position = "none",
+      plot.margin = margin(0, 0, 0, 0)
+    )
+  
+  # Create an empty placeholder for the top of the right column
+  # This is where the original color legend would be
+  empty_legend_top <- ggplot() + 
+    theme_void() +
+    theme(
+      panel.background = element_rect(fill = NA, color = NA),
+      plot.background = element_rect(fill = NA, color = NA)
+    )
+  
+  # Create the main structure with invisible plot and empty top legend
+  overlay_structure <- plot_grid(
+    invisible_plot, 
+    empty_legend_top,
+    ncol = 2, 
+    rel_widths = rel_widths, 
+    align = "h"
+  )
+  
+  # Convert to grob for positioning
+  overlay_grob <- ggplotGrob(overlay_structure)
+  
+  # Now add the duplicate color legend at the bottom of the right column
+  # The legend is already a grob, so we can add it directly
+  final_overlay <- overlay_structure + 
+    annotation_custom(
+      grob = legend_obj,  # Use provided legend object
+      xmin = 1 - (rel_widths[2] / sum(rel_widths)),  # Start at right column
+      xmax = 1,                                      # End at right edge
+      ymin = 0,                                      # Start at bottom
+      ymax = 0.5                                     # Take up bottom half
+    )
+  
+  return(final_overlay)
+}
+
+# Function to save PDFs with duplicate structure
+# Now accepts plot and legend as explicit parameters
+f.save_duplicate_structure_pdfs <- function(
+  plot_obj,
+  legend_obj,
+  plot_type = "main",
+  main_pdf_name = NULL,
+  overlay_pdf_name = NULL,
+  combined_pdf_name = NULL,
+  main_width = 8.5,
+  main_height = 11,
+  rel_widths = c(14, 1)
+) {
+  # Helper function for null values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Set default filenames based on plot_type
+  main_pdf_name <- main_pdf_name %||% paste0("figure_", plot_type, "_main.pdf")
+  overlay_pdf_name <- overlay_pdf_name %||% paste0("figure_", plot_type, "_overlay.pdf")
+  combined_pdf_name <- combined_pdf_name %||% paste0("figure_", plot_type, "_combined.pdf")
+  
+  # 1. Save main figure with color legend
+  pdf(main_pdf_name, height = main_height, width = main_width)
+  main_plot <- plot_grid(plot_obj, legend_obj, ncol = 2, rel_widths = rel_widths, align = "h")
+  print(main_plot)
+  dev.off()
+  
+  # 2. Create and save overlay with duplicate structure
+  overlay_plot <- f.create_duplicate_structure_overlay(
+    plot_obj = plot_obj,
+    legend_obj = legend_obj,
+    rel_widths = rel_widths
+  )
+  
+  pdf(overlay_pdf_name, height = main_height, width = main_width)
+  par(bg = "transparent")  # Set transparent background
+  print(overlay_plot)
+  dev.off()
+  
+  message(paste0(plot_type, " PDFs created successfully."))
+  
+  # Return file paths for use with combine function
+  return(list(
+    main = main_pdf_name,
+    overlay = overlay_pdf_name,
+    combined = combined_pdf_name
+  ))
+}
+
+# Function to combine PDFs with error handling
+f.combine_duplicate_pdfs <- function(files) {
+  # Check if pdftk is available
+  has_pdftk <- system("which pdftk", ignore.stdout = TRUE, ignore.stderr = TRUE) == 0
+  
+  # Check if ghostscript is available
+  has_gs <- system("which gs", ignore.stdout = TRUE, ignore.stderr = TRUE) == 0
+  
+  success <- FALSE
+  
+  # Combine PDFs using available tool
+  if (has_pdftk) {
+    # Try stamp mode
+    cmd <- sprintf("pdftk %s stamp %s output %s", 
+                   files$main, files$overlay, files$combined)
+    result <- system(cmd)
+    
+    if (result == 0) {
+      message("PDFs combined using pdftk stamp mode")
+      success <- TRUE
+    } else {
+      # Try alternative modes if stamp fails
+      alt_modes <- list(
+        list(name = "background", cmd = sprintf("pdftk %s background %s output %s", 
+                                               files$main, files$overlay, files$combined)),
+        list(name = "multistamp", cmd = sprintf("pdftk %s multistamp %s output %s", 
+                                               files$main, files$overlay, files$combined))
+      )
+      
+      for (mode in alt_modes) {
+        result <- system(mode$cmd)
+        if (result == 0) {
+          message(paste0("PDFs combined using pdftk ", mode$name, " mode"))
+          success <- TRUE
+          break
+        }
+      }
+      
+      if (!success) {
+        message("All pdftk modes failed")
+      }
+    }
+  } else if (has_gs) {
+    # Use ghostscript as fallback
+    cmd <- sprintf("gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=%s %s %s", 
+                   files$combined, files$main, files$overlay)
+    result <- system(cmd)
+    
+    if (result == 0) {
+      message("PDFs combined using Ghostscript")
+      success <- TRUE
+    } else {
+      message("Ghostscript command failed")
+    }
+  } else {
+    message("Neither pdftk nor Ghostscript found. Please install one of these tools.")
+  }
+  
+  # Verify the combined file exists
+  if (success && file.exists(files$combined)) {
+    message("Combined PDF created successfully: ", files$combined)
+    return(TRUE)
+  } else {
+    message("Error: Combined PDF was not created successfully.")
+    return(FALSE)
+  }
+}
+
+# Main function to run the duplicate structure test
+# Now accepts plot and legend as explicit parameters
+f.run_duplicate_structure_test <- function(
+  plot_obj,
+  legend_obj,
+  plot_type = "main",
+  main_pdf_name = NULL,
+  overlay_pdf_name = NULL,
+  combined_pdf_name = NULL,
+  main_width = 8.5,
+  main_height = 11,
+  rel_widths = c(14, 1),
+  delete_intermediate = FALSE
+) {
+  # Create PDFs with duplicate structure
+  files <- f.save_duplicate_structure_pdfs(
+    plot_obj = plot_obj,
+    legend_obj = legend_obj,
+    plot_type = plot_type,
+    main_pdf_name = main_pdf_name,
+    overlay_pdf_name = overlay_pdf_name,
+    combined_pdf_name = combined_pdf_name,
+    main_width = main_width,
+    main_height = main_height,
+    rel_widths = rel_widths
+  )
+  
+  # Combine PDFs
+  success <- f.combine_duplicate_pdfs(files)
+  
+  # Delete intermediate files if requested
+  if (success && delete_intermediate) {
+    file.remove(files$main)
+    file.remove(files$overlay)
+    message("Intermediate files deleted.")
+  }
+  
+  if (success) {
+    message(paste0(plot_type, " figure test completed successfully! Check: ", files$combined))
+  } else {
+    message(paste0(plot_type, " figure test encountered issues."))
+  }
+  
+  return(success)
+}
+
+# Usage examples:
+# 
+# # Test with main figure
+setwd(wd)
+setwd(fig)
+f.run_duplicate_structure_test(
+  plot_obj = p,
+  legend_obj = legend,
+  plot_type = "main",
+  combined_pdf_name = "test_main_combined.pdf",
+  delete_intermediate = FALSE
+)
+# 
+# # Test with supplementary figure
+# f.run_duplicate_structure_test(
+#   plot_obj = s.p,
+#   legend_obj = legend,
+#   plot_type = "supplement",
+#   combined_pdf_name = "test_supp_combined.pdf",
+#   delete_intermediate = FALSE
+# )
+```
+
+#7
+```{r}
+# Function to create an overlay with duplicate structure and color legend in bottom right
+# With improved vertical positioning
+f.create_duplicate_structure_overlay <- function(plot_obj, legend_obj, rel_widths = c(14, 1)) {
+  # Create an invisible version of the main/supplement plot
+  # Make everything transparent but keep exact structure
+  invisible_plot <- plot_obj + 
+    theme(
+      panel.background = element_rect(fill = NA, color = NA),
+      plot.background = element_rect(fill = NA, color = NA),
+      panel.grid = element_blank(),
+      axis.text = element_text(color = NA),
+      axis.title = element_text(color = NA),
+      axis.ticks = element_line(color = NA),
+      legend.position = "none",
+      plot.margin = margin(0, 0, 0, 0)
+    )
+  
+  # Create an empty placeholder for the top of the right column
+  # This is where the original color legend would be
+  empty_legend_top <- ggplot() + 
+    theme_void() +
+    theme(
+      panel.background = element_rect(fill = NA, color = NA),
+      plot.background = element_rect(fill = NA, color = NA)
+    )
+  
+  # Create the main structure with invisible plot and empty top legend
+  overlay_structure <- plot_grid(
+    invisible_plot, 
+    empty_legend_top,
+    ncol = 2, 
+    rel_widths = rel_widths, 
+    align = "h"
+  )
+  
+  # Now add the duplicate color legend at the VERY BOTTOM of the right column
+  # Lowered the ymax value to position it lower
+  final_overlay <- overlay_structure + 
+    annotation_custom(
+      grob = legend_obj,  # Use provided legend object
+      xmin = 1 - (rel_widths[2] / sum(rel_widths)),  # Start at right column
+      xmax = 1,                                      # End at right edge
+      ymin = -0.2,   # Start below the bottom of the page
+      ymax = 0       # End at the bottom of the page
+    )
+  
+  return(final_overlay)
+}
+
+# Function to save PDFs with duplicate structure
+f.save_duplicate_structure_pdfs <- function(
+  plot_obj,
+  legend_obj,
+  plot_type = "main",
+  main_pdf_name = NULL,
+  overlay_pdf_name = NULL,
+  combined_pdf_name = NULL,
+  main_width = 8.5,
+  main_height = 11,
+  rel_widths = c(14, 1)
+) {
+  # Helper function for null values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Set default filenames based on plot_type
+  main_pdf_name <- main_pdf_name %||% paste0("figure_", plot_type, "_main.pdf")
+  overlay_pdf_name <- overlay_pdf_name %||% paste0("figure_", plot_type, "_overlay.pdf")
+  combined_pdf_name <- combined_pdf_name %||% paste0("figure_", plot_type, "_combined.pdf")
+  
+  # 1. Save main figure with color legend
+  pdf(main_pdf_name, height = main_height, width = main_width)
+  main_plot <- plot_grid(plot_obj, legend_obj, ncol = 2, rel_widths = rel_widths, align = "h")
+  print(main_plot)
+  dev.off()
+  
+  # 2. Create and save overlay with duplicate structure
+  overlay_plot <- f.create_duplicate_structure_overlay(
+    plot_obj = plot_obj,
+    legend_obj = legend_obj,
+    rel_widths = rel_widths
+  )
+  
+  pdf(overlay_pdf_name, height = main_height, width = main_width)
+  par(bg = "transparent")  # Set transparent background
+  print(overlay_plot)
+  dev.off()
+  
+  message(paste0(plot_type, " PDFs created successfully."))
+  
+  # Return file paths for use with combine function
+  return(list(
+    main = main_pdf_name,
+    overlay = overlay_pdf_name,
+    combined = combined_pdf_name
+  ))
+}
+
+# Function to combine PDFs with error handling
+f.combine_duplicate_pdfs <- function(files) {
+  # Check if pdftk is available
+  has_pdftk <- system("which pdftk", ignore.stdout = TRUE, ignore.stderr = TRUE) == 0
+  
+  # Check if ghostscript is available
+  has_gs <- system("which gs", ignore.stdout = TRUE, ignore.stderr = TRUE) == 0
+  
+  success <- FALSE
+  
+  # Combine PDFs using available tool
+  if (has_pdftk) {
+    # Try stamp mode
+    cmd <- sprintf("pdftk %s stamp %s output %s", 
+                   files$main, files$overlay, files$combined)
+    result <- system(cmd)
+    
+    if (result == 0) {
+      message("PDFs combined using pdftk stamp mode")
+      success <- TRUE
+    } else {
+      # Try alternative modes if stamp fails
+      alt_modes <- list(
+        list(name = "background", cmd = sprintf("pdftk %s background %s output %s", 
+                                               files$main, files$overlay, files$combined)),
+        list(name = "multistamp", cmd = sprintf("pdftk %s multistamp %s output %s", 
+                                               files$main, files$overlay, files$combined))
+      )
+      
+      for (mode in alt_modes) {
+        result <- system(mode$cmd)
+        if (result == 0) {
+          message(paste0("PDFs combined using pdftk ", mode$name, " mode"))
+          success <- TRUE
+          break
+        }
+      }
+      
+      if (!success) {
+        message("All pdftk modes failed")
+      }
+    }
+  } else if (has_gs) {
+    # Use ghostscript as fallback
+    cmd <- sprintf("gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=%s %s %s", 
+                   files$combined, files$main, files$overlay)
+    result <- system(cmd)
+    
+    if (result == 0) {
+      message("PDFs combined using Ghostscript")
+      success <- TRUE
+    } else {
+      message("Ghostscript command failed")
+    }
+  } else {
+    message("Neither pdftk nor Ghostscript found. Please install one of these tools.")
+  }
+  
+  # Verify the combined file exists
+  if (success && file.exists(files$combined)) {
+    message("Combined PDF created successfully: ", files$combined)
+    return(TRUE)
+  } else {
+    message("Error: Combined PDF was not created successfully.")
+    return(FALSE)
+  }
+}
+
+# Function to optimize/compress PDF after combining
+f.optimize_pdf <- function(input_pdf, output_pdf = NULL) {
+  # Use input filename with _optimized suffix if no output name provided
+  if (is.null(output_pdf)) {
+    output_pdf <- sub("\\.pdf$", "_optimized.pdf", input_pdf)
+  }
+  
+  # Check if ghostscript is available
+  has_gs <- system("which gs", ignore.stdout = TRUE, ignore.stderr = TRUE) == 0
+  
+  if (!has_gs) {
+    message("Ghostscript not found. Cannot optimize PDF.")
+    return(FALSE)
+  }
+  
+  # Ghostscript command for optimization
+  cmd <- sprintf("gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/printer -dNOPAUSE -dQUIET -dBATCH -sOutputFile=%s %s",
+                output_pdf, input_pdf)
+  
+  result <- system(cmd)
+  
+  if (result == 0) {
+    message("PDF optimized successfully: ", output_pdf)
+    
+    # Get file sizes for reporting
+    original_size <- file.size(input_pdf) / (1024 * 1024)  # Convert to MB
+    optimized_size <- file.size(output_pdf) / (1024 * 1024)
+    reduction <- (1 - optimized_size/original_size) * 100
+    
+    message(sprintf("File size reduced from %.2f MB to %.2f MB (%.1f%% reduction)",
+                   original_size, optimized_size, reduction))
+    
+    return(TRUE)
+  } else {
+    message("PDF optimization failed")
+    return(FALSE)
+  }
+}
+
+# Main function to run the duplicate structure test
+# With added PDF optimization
+f.run_duplicate_structure_test <- function(
+  plot_obj,
+  legend_obj,
+  plot_type = "main",
+  main_pdf_name = NULL,
+  overlay_pdf_name = NULL,
+  combined_pdf_name = NULL,
+  optimized_pdf_name = NULL,
+  main_width = 8.5,
+  main_height = 11,
+  rel_widths = c(14, 1),
+  delete_intermediate = FALSE,
+  optimize_pdf = TRUE
+) {
+  # Helper function for null values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Set default filenames based on plot_type
+  combined_pdf_name <- combined_pdf_name %||% paste0("figure_", plot_type, "_combined.pdf")
+  optimized_pdf_name <- optimized_pdf_name %||% paste0("figure_", plot_type, "_optimized.pdf")
+  
+  # Create PDFs with duplicate structure
+  files <- f.save_duplicate_structure_pdfs(
+    plot_obj = plot_obj,
+    legend_obj = legend_obj,
+    plot_type = plot_type,
+    main_pdf_name = main_pdf_name,
+    overlay_pdf_name = overlay_pdf_name,
+    combined_pdf_name = combined_pdf_name,
+    main_width = main_width,
+    main_height = main_height,
+    rel_widths = rel_widths
+  )
+  
+  # Combine PDFs
+  success <- f.combine_duplicate_pdfs(files)
+  
+  # Optimize the combined PDF if requested
+  if (success && optimize_pdf) {
+    f.optimize_pdf(files$combined, optimized_pdf_name)
+    # Update the combined PDF reference to the optimized version
+    files$final <- optimized_pdf_name
+  } else {
+    files$final <- files$combined
+  }
+  
+  # Delete intermediate files if requested
+  if (success && delete_intermediate) {
+    file.remove(files$main)
+    file.remove(files$overlay)
+    if (optimize_pdf) {
+      file.remove(files$combined)  # Remove the unoptimized combined file
+    }
+    message("Intermediate files deleted.")
+  }
+  
+  if (success) {
+    message(paste0(plot_type, " figure test completed successfully! Check: ", files$final))
+  } else {
+    message(paste0(plot_type, " figure test encountered issues."))
+  }
+  
+  return(success)
+}
+
+# Usage examples:
+# 
+# # Test with main figure
+
+setwd(wd)
+setwd(fig)
+f.run_duplicate_structure_test(
+  plot_obj = p,
+  legend_obj = legend,
+  plot_type = "main",
+  combined_pdf_name = "test_main_combined.pdf",
+  optimized_pdf_name = "test_main_optimized.pdf",
+  delete_intermediate = FALSE,
+  optimize_pdf = TRUE
+)
+# 
+# # Test with supplementary figure
+# f.run_duplicate_structure_test(
+#   plot_obj = s.p,
+#   legend_obj = legend,
+#   plot_type = "supplement",
+#   combined_pdf_name = "test_supp_combined.pdf",
+#   optimized_pdf_name = "test_supp_optimized.pdf",
+#   delete_intermediate = FALSE,
+#   optimize_pdf = TRUE
+# )
+```
+
+
+
+#8
+```{r}
+# Function to create an overlay with duplicate structure and color legend in bottom right
+# With improved vertical positioning
+f.create_duplicate_structure_overlay <- function(plot_obj, legend_obj, rel_widths = c(14, 1)) {
+  # Create an invisible version of the main/supplement plot
+  # Make everything transparent but keep exact structure
+  invisible_plot <- plot_obj + 
+    theme(
+      panel.background = element_rect(fill = NA, color = NA),
+      plot.background = element_rect(fill = NA, color = NA),
+      panel.grid = element_blank(),
+      axis.text = element_text(color = NA),
+      axis.title = element_text(color = NA),
+      axis.ticks = element_line(color = NA),
+      legend.position = "none",
+      plot.margin = margin(0, 0, 0, 0)
+    )
+  
+  # Create an empty placeholder for the top of the right column
+  # This is where the original color legend would be
+  empty_legend_top <- ggplot() + 
+    theme_void() +
+    theme(
+      panel.background = element_rect(fill = NA, color = NA),
+      plot.background = element_rect(fill = NA, color = NA)
+    )
+  
+  # Create the main structure with invisible plot and empty top legend
+  overlay_structure <- plot_grid(
+    invisible_plot, 
+    empty_legend_top,
+    ncol = 2, 
+    rel_widths = rel_widths, 
+    align = "h"
+  )
+  
+  # Now add the duplicate color legend at the VERY BOTTOM of the right column
+  # Lowered the ymax value to position it lower
+  final_overlay <- overlay_structure + 
+    annotation_custom(
+      grob = legend_obj,  # Use provided legend object
+      xmin = 1 - (rel_widths[2] / sum(rel_widths)),  # Start at right column
+      xmax = 1,                                      # End at right edge
+      ymin = -0.2,   # Start below the bottom of the page
+      ymax = 0       # End at the bottom of the page
+    )
+  return(final_overlay)
+}
+
+# Function to save PDFs with duplicate structure
+f.save_duplicate_structure_pdfs <- function(
+  plot_obj,
+  legend_obj,
+  plot_type = "main",
+  main_pdf_name = NULL,
+  overlay_pdf_name = NULL,
+  combined_pdf_name = NULL,
+  main_width = 8.5,
+  main_height = 11,
+  rel_widths = c(14, 1)
+) {
+  # Helper function for null values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Set default filenames based on plot_type
+  main_pdf_name <- main_pdf_name %||% paste0("figure_", plot_type, "_main.pdf")
+  overlay_pdf_name <- overlay_pdf_name %||% paste0("figure_", plot_type, "_overlay.pdf")
+  combined_pdf_name <- combined_pdf_name %||% paste0("figure_", plot_type, "_combined.pdf")
+  
+  # 1. Save main figure with color legend
+  pdf(main_pdf_name, height = main_height, width = main_width)
+  main_plot <- plot_grid(plot_obj, legend_obj, ncol = 2, rel_widths = rel_widths, align = "h")
+  print(main_plot)
+  dev.off()
+  
+  # 2. Create and save overlay with duplicate structure
+  overlay_plot <- f.create_duplicate_structure_overlay(
+    plot_obj = plot_obj,
+    legend_obj = legend_obj,
+    rel_widths = rel_widths
+  )
+  
+  pdf(overlay_pdf_name, height = main_height, width = main_width)
+  par(bg = "transparent")  # Set transparent background
+  print(overlay_plot)
+  dev.off()
+  
+  message(paste0(plot_type, " PDFs created successfully."))
+  
+  # Return file paths for use with combine function
+  return(list(
+    main = main_pdf_name,
+    overlay = overlay_pdf_name,
+    combined = combined_pdf_name
+  ))
+}
+
+# Function to combine PDFs with error handling
+f.combine_duplicate_pdfs <- function(files) {
+  # Check if pdftk is available
+  has_pdftk <- system("which pdftk", ignore.stdout = TRUE, ignore.stderr = TRUE) == 0
+  
+  # Check if ghostscript is available
+  has_gs <- system("which gs", ignore.stdout = TRUE, ignore.stderr = TRUE) == 0
+  
+  success <- FALSE
+  
+  # Combine PDFs using available tool
+  if (has_pdftk) {
+    # Try stamp mode
+    cmd <- sprintf("pdftk %s stamp %s output %s", 
+                   files$main, files$overlay, files$combined)
+    result <- system(cmd)
+    
+    if (result == 0) {
+      message("PDFs combined using pdftk stamp mode")
+      success <- TRUE
+    } else {
+      # Try alternative modes if stamp fails
+      alt_modes <- list(
+        list(name = "background", cmd = sprintf("pdftk %s background %s output %s", 
+                                               files$main, files$overlay, files$combined)),
+        list(name = "multistamp", cmd = sprintf("pdftk %s multistamp %s output %s", 
+                                               files$main, files$overlay, files$combined))
+      )
+      
+      for (mode in alt_modes) {
+        result <- system(mode$cmd)
+        if (result == 0) {
+          message(paste0("PDFs combined using pdftk ", mode$name, " mode"))
+          success <- TRUE
+          break
+        }
+      }
+      
+      if (!success) {
+        message("All pdftk modes failed")
+      }
+    }
+  } else if (has_gs) {
+    # Use ghostscript as fallback
+    cmd <- sprintf("gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=%s %s %s", 
+                   files$combined, files$main, files$overlay)
+    result <- system(cmd)
+    
+    if (result == 0) {
+      message("PDFs combined using Ghostscript")
+      success <- TRUE
+    } else {
+      message("Ghostscript command failed")
+    }
+  } else {
+    message("Neither pdftk nor Ghostscript found. Please install one of these tools.")
+  }
+  
+  # Verify the combined file exists
+  if (success && file.exists(files$combined)) {
+    message("Combined PDF created successfully: ", files$combined)
+    return(TRUE)
+  } else {
+    message("Error: Combined PDF was not created successfully.")
+    return(FALSE)
+  }
+}
+
+# Function to optimize/compress PDF after combining
+f.optimize_pdf <- function(input_pdf, output_pdf = NULL) {
+  # Use input filename with _optimized suffix if no output name provided
+  if (is.null(output_pdf)) {
+    output_pdf <- sub("\\.pdf$", "_optimized.pdf", input_pdf)
+  }
+  
+  # Check if ghostscript is available
+  has_gs <- system("which gs", ignore.stdout = TRUE, ignore.stderr = TRUE) == 0
+  
+  if (!has_gs) {
+    message("Ghostscript not found. Cannot optimize PDF.")
+    return(FALSE)
+  }
+  
+  # Ghostscript command for optimization
+  cmd <- sprintf("gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/printer -dNOPAUSE -dQUIET -dBATCH -sOutputFile=%s %s",
+                output_pdf, input_pdf)
+  
+  result <- system(cmd)
+  
+  if (result == 0) {
+    message("PDF optimized successfully: ", output_pdf)
+    
+    # Get file sizes for reporting
+    original_size <- file.size(input_pdf) / (1024 * 1024)  # Convert to MB
+    optimized_size <- file.size(output_pdf) / (1024 * 1024)
+    reduction <- (1 - optimized_size/original_size) * 100
+    
+    message(sprintf("File size reduced from %.2f MB to %.2f MB (%.1f%% reduction)",
+                   original_size, optimized_size, reduction))
+    
+    return(TRUE)
+  } else {
+    message("PDF optimization failed")
+    return(FALSE)
+  }
+}
+
+# Main function to run the duplicate structure test
+# With added PDF optimization
+f.run_duplicate_structure_test <- function(
+  plot_obj,
+  legend_obj,
+  plot_type = "main",
+  main_pdf_name = NULL,
+  overlay_pdf_name = NULL,
+  combined_pdf_name = NULL,
+  optimized_pdf_name = NULL,
+  main_width = 8.5,
+  main_height = 11,
+  rel_widths = c(14, 1),
+  delete_intermediate = FALSE,
+  optimize_pdf = TRUE
+) {
+  # Helper function for null values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Set default filenames based on plot_type
+  combined_pdf_name <- combined_pdf_name %||% paste0("figure_", plot_type, "_combined.pdf")
+  optimized_pdf_name <- optimized_pdf_name %||% paste0("figure_", plot_type, "_optimized.pdf")
+  
+  # Create PDFs with duplicate structure
+  files <- f.save_duplicate_structure_pdfs(
+    plot_obj = plot_obj,
+    legend_obj = legend_obj,
+    plot_type = plot_type,
+    main_pdf_name = main_pdf_name,
+    overlay_pdf_name = overlay_pdf_name,
+    combined_pdf_name = combined_pdf_name,
+    main_width = main_width,
+    main_height = main_height,
+    rel_widths = rel_widths
+  )
+  
+  # Combine PDFs
+  success <- f.combine_duplicate_pdfs(files)
+  
+  # Optimize the combined PDF if requested
+  if (success && optimize_pdf) {
+    f.optimize_pdf(files$combined, optimized_pdf_name)
+    # Update the combined PDF reference to the optimized version
+    files$final <- optimized_pdf_name
+  } else {
+    files$final <- files$combined
+  }
+  
+  # Delete intermediate files if requested
+  if (success && delete_intermediate) {
+    file.remove(files$main)
+    file.remove(files$overlay)
+    if (optimize_pdf) {
+      file.remove(files$combined)  # Remove the unoptimized combined file
+    }
+    message("Intermediate files deleted.")
+  }
+  
+  if (success) {
+    message(paste0(plot_type, " figure test completed successfully! Check: ", files$final))
+  } else {
+    message(paste0(plot_type, " figure test encountered issues."))
+  }
+  
+  return(success)
+}
+
+# Usage examples:
+
+# Test with main figure
+setwd(wd)
+setwd(fig)
+
+
+f.run_duplicate_structure_test(
+  plot_obj = p,
+  legend_obj = legend,
+  plot_type = "main",
+  combined_pdf_name = "test_main_combined.pdf",
+  optimized_pdf_name = "test_main_optimized.pdf",
+  delete_intermediate = FALSE,
+  optimize_pdf = TRUE
+)
+# 
+# # Test with supplementary figure
+# f.run_duplicate_structure_test(
+#   plot_obj = s.p,
+#   legend_obj = legend,
+#   plot_type = "supplement",
+#   combined_pdf_name = "test_supp_combined.pdf",
+#   optimized_pdf_name = "test_supp_optimized.pdf",
+#   delete_intermediate = FALSE,
+#   optimize_pdf = TRUE
+# )
+```
+

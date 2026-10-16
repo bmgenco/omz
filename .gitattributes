@@ -23,3 +23,9 @@
 *.kmz filter=lfs diff=lfs merge=lfs -text
 *.kml filter=lfs diff=lfs merge=lfs -text
 *.odt filter=lfs diff=lfs merge=lfs -text
+*.rds filter=lfs diff=lfs merge=lfs -text
+*.rda filter=lfs diff=lfs merge=lfs -text
+*.ai filter=lfs diff=lfs merge=lfs -text
+*.jpeg filter=lfs diff=lfs merge=lfs -text
+*.tif filter=lfs diff=lfs merge=lfs -text
+wd/r_wd/r_objects/*.R filter=lfs diff=lfs merge=lfs -text
