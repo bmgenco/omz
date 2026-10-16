@@ -653,19 +653,39 @@ bar_height<-22.70
 
 circle_color1<-"white"
 circle_color2<-"#E65832"
-base<-5.0
-outline<-1.5*base
+# circle_color2<-"black"
+base<-20
+outline<-base
 line1<-"solid"
-line2<-"dashed"
+line2<-"solid"
+# line2<-11
+
 
 circle_parameters <- c(
-  circle_color1 = circle_color1,  
+  circle_color1 = circle_color1,
   circle_color2 = circle_color2,
   base = base,
   outline = outline,
   line1 = line1,
-  line2 = line2
+  line2 = line2,
+  hurricane_image_path = b$image[1]  # Add the hurricane image path here
 )
+
+
+
+
+# circle_parameters <- c(
+#   circle_color1 = circle_color1,
+#   circle_color2 = circle_color2,
+#   base = base,
+#   outline = outline,
+#   line1 = line1,
+#   line2 = line2,
+#   hurricane_image_path = b$image[1],
+#   aletta_symbol = aletta_symbol,
+#   aletta_color = aletta_color,
+#   aletta_size = aletta_size
+# )
 
 circle_geom <- list(
   geom_sf(data = circle, color = circle_color1, linetype = line1, size = outline, alpha = 0, inherit.aes = FALSE),
@@ -718,73 +738,73 @@ zoom<-.60
 
 ### Main figure select days ####
 
-i<-which(names(combined)==4)
-plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==10)
-plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==14)
-plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==17)
-plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==5)
-plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==9)
-plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==11)
-plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==12)
-plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==15)
-plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==16)
-plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==21)
-plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-i<-which(names(combined)==23)
-plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-
-
-p<-(plots[[which(names(combined)==4)]]+ plots[[which(names(combined)==5)]]+plots[[which(names(combined)==9)]]+plots[[which(names(combined)==10)]]+plots[[which(names(combined)==11)]]+ plots[[which(names(combined)==12)]]+ plots[[which(names(combined)==14)]]+ plots[[which(names(combined)==15)]]+plots[[which(names(combined)==16)]]+plots[[which(names(combined)==17)]]+ plots[[which(names(combined)==21)]]+plots[[which(names(combined)==23)]]+plot_layout(ncol=3))
+# i<-which(names(combined)==4)
+# plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==10)
+# plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==14)
+# plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==17)
+# plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==5)
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==9)
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==11)
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==12)
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==15)
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==16)
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==21)
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# i<-which(names(combined)==23)
+# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+# 
+# 
+# p<-(plots[[which(names(combined)==4)]]+ plots[[which(names(combined)==5)]]+plots[[which(names(combined)==9)]]+plots[[which(names(combined)==10)]]+plots[[which(names(combined)==11)]]+ plots[[which(names(combined)==12)]]+ plots[[which(names(combined)==14)]]+ plots[[which(names(combined)==15)]]+plots[[which(names(combined)==16)]]+plots[[which(names(combined)==17)]]+ plots[[which(names(combined)==21)]]+plots[[which(names(combined)==23)]]+plot_layout(ncol=3))
 
 # legend<-f.fig2_legend(combined, v_rgb, height=bar_height, width=1, t=-390, b=0, r=0, l=-115,  title.textsize=10, marks.textsize=8)
 
 
 ### supplements  ####
 
-# right<--97.02084
-# bottom<-5.520833
-# 
-# zoom<-1
-# lat_ticks<-seq(10,30, b=5)
-# lon_ticks<-seq(-120, -100, b=10)
-# 
-# 
-# i<-which(names(combined)==6)
-# plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
-# i<-which(names(combined)==13)
-# plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
-# i<-which(names(combined)==20)
-# plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
-# i<-which(names(combined)==25)
-# plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
-# i<-which(names(combined)==7)
-# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-# i<-which(names(combined)==8)
-# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-# i<-which(names(combined)==18)
-# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-# i<-which(names(combined)==19)
-# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-# i<-which(names(combined)==22)
-# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-# i<-which(names(combined)==24)
-# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-# i<-which(names(combined)==26)
-# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-# i<-which(names(combined)==27)
-# plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
-# 
-# s.p<-(plots[[which(names(combined)==6)]]+ plots[[which(names(combined)==7)]]+plots[[which(names(combined)==8)]]+plots[[which(names(combined)==13)]]+plots[[which(names(combined)==18)]]+ plots[[which(names(combined)==19)]]+ plots[[which(names(combined)==20)]]+ plots[[which(names(combined)==22)]]+plots[[which(names(combined)==24)]]+plots[[which(names(combined)==25)]]+ plots[[which(names(combined)==26)]]+plots[[which(names(combined)==27)]]+plot_layout(ncol=3))
+right<--97.02084
+bottom<-5.520833
+
+zoom<-1
+lat_ticks<-seq(10,30, b=5)
+lon_ticks<-seq(-120, -100, b=10)
+
+
+i<-which(names(combined)==6)
+plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==13)
+plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==20)
+plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==25)
+plots[[i]]<-f.fig2(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==7)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==8)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==18)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==19)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==22)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==24)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==26)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+i<-which(names(combined)==27)
+plots[[i]]<-f.fig2_no_y(combined, v_rgb, i=i, t=0, l=0)
+
+s.p<-(plots[[which(names(combined)==6)]]+ plots[[which(names(combined)==7)]]+plots[[which(names(combined)==8)]]+plots[[which(names(combined)==13)]]+plots[[which(names(combined)==18)]]+ plots[[which(names(combined)==19)]]+ plots[[which(names(combined)==20)]]+ plots[[which(names(combined)==22)]]+plots[[which(names(combined)==24)]]+plots[[which(names(combined)==25)]]+ plots[[which(names(combined)==26)]]+plots[[which(names(combined)==27)]]+plot_layout(ncol=3))
 rm(plots)
 
 
@@ -1660,7 +1680,7 @@ f.create_dual_legend_main_figure <- function(
 vertical legend
 ```{r}
 # Create the vertical eye legend
-legend_vertical <- f.eye_legend_horiz_to_vert_v7(
+vertical_legend <- f.eye_legend_horiz_to_vert_v7(
   long_side_dimension = 800,
   short_side_dimension = 100,
   is_vertical = TRUE,
@@ -1682,6 +1702,7 @@ legend_vertical <- f.eye_legend_horiz_to_vert_v7(
 
 
 # final plotiing
+## main
 ```{r}
 
 # Generate the dual legend figure
@@ -1695,7 +1716,8 @@ setwd(fig)
 f.create_dual_legend_main_figure(
   plot_obj = p,
   color_legend_obj = legend,  # Color bar legend from original code
-  eye_legend_obj = legend_vertical,
+  # eye_legend_obj = legend_vertical,
+  eye_legend_obj = vertical_legend,
   
   # Plot type identifier (optional)
   plot_type = "two",
@@ -1737,7 +1759,59 @@ f.create_dual_legend_main_figure(
   # Other options
   preserve_axis_text = TRUE,  # Keep axis text visible in overlay
   create_diagnostic = FALSE,  # Create diagnostic overlay (if supported)
-  delete_intermediate = FALSE # Delete intermediate PDF files
+  delete_intermediate =FALSE # Delete intermediate PDF files
+)
+```
+
+
+
+```{r}
+# Generate the dual legend figure
+# Set the working directory to the figures folder
+# Generate the supplementary figure with dual legend
+setwd(wd)
+setwd(fig)
+
+f.create_dual_legend_main_figure(
+  plot_obj = s.p,  # Use your supplementary plot object instead of p
+  color_legend_obj = legend,  # Use the same legend object as the main figure
+  eye_legend_obj = vertical_legend,
+  
+  # Change plot type to "supplementary" or any other identifier
+  plot_type = "supplementary",
+  
+  # Optional custom PDF filenames
+  main_pdf_name = "figure_supplementary_main.pdf",
+  overlay_pdf_name = "figure_supplementary_eye_overlay.pdf",
+  combined_pdf_name = "figure_supplementary_both_legends.pdf",
+  optimized_pdf_name = "figure_supplementary_both_legends_optimized.pdf",
+  
+  # Keep the rest of the parameters the same as your main figure
+  main_width = 8.5,
+  main_height = 11,
+  rel_widths = c(14, 1),
+  
+  # Positioning for color legend
+  color_legend_xmin = 0.75,
+  color_legend_xmax = 0.99,
+  color_legend_ymin = 0,
+  color_legend_ymax = 0.25,
+  
+  # Positioning for eye legend
+  eye_legend_xmin = 0.75,
+  eye_legend_xmax = 0.99,
+  eye_legend_ymin = -0.1,
+  eye_legend_ymax = 0.15,
+  
+  # Optional settings
+  optimize_pdf = TRUE,
+  quality = "prepress",
+  compatibility = "1.5",
+  embed_fonts = TRUE,
+  compress_images = TRUE,
+  preserve_axis_text = TRUE,
+  create_diagnostic = FALSE,
+  delete_intermediate = FALSE
 )
 ```
 

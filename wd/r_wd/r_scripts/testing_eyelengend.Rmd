@@ -1,0 +1,536 @@
+---
+title: "testing eye position"
+output: html_document
+date: '2025-03-13'
+---
+
+```{r}
+# Function to create a horizontal eye legend
+f.fig2_legend_eyes_horizontal <- function(plot_width, plot_height, text_size, circle_parameters) {
+  # Helper function for null values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Calculate spacing for horizontal layout
+  # We'll divide the plot width into sections
+  section_width <- plot_width / 6  # 6 elements (3 icons + 3 text blocks)
+  
+  # Horizontal positions for elements
+  x1 <- section_width * 0.5        # Position for Bud eye
+  x2 <- section_width * 1.5        # Position for Bud text
+  x3 <- section_width * 2.5        # Position for Aletta eye
+  x4 <- section_width * 3.5        # Position for Aletta text
+  x5 <- section_width * 4.5        # Position for Station circle
+  x6 <- section_width * 5.5        # Position for Station text
+  
+  # Vertical position - center everything vertically
+  y_center <- plot_height / 2
+  
+  # Circle size calculation (adjust as needed)
+  circle_size <- section_width * 0.4
+  
+  # Create data objects
+  # Bud eye
+  new_eye.b <- data.frame(x=x1, y=y_center, image=b$image[1])
+  
+  # Aletta eye
+  new_eye.a <- data.frame(x=x3, y=y_center) %>% 
+    st_as_sf(., coords=c("x", "y"))
+  st_crs(new_eye.a) <- st_crs(a)
+  
+  # Station circle with proper creation
+  center_point <- st_point(c(x5, y_center))
+  center_sf <- st_sf(geometry = st_sfc(center_point))
+  st_crs(center_sf) <- st_crs(a)
+  new_circle <- st_buffer(center_sf, dist=circle_size)
+  
+  # Extract styling from circle_parameters
+  circle_color1 <- circle_parameters["circle_color1"]
+  circle_color2 <- circle_parameters["circle_color2"]
+  base <- as.numeric(circle_parameters["base"])
+  outline <- as.numeric(circle_parameters["outline"])
+  line1 <- circle_parameters["line1"]
+  line2 <- circle_parameters["line2"]
+  
+  # Adjust line thickness for legend
+  legend_base <- base * 0.8    # Still visible but not too thick
+  legend_outline <- outline * 0.8
+  
+  # Text labels
+  text1 <- "TC Bud Eye"
+  text2 <- "TC Aletta Eye"
+  text3 <- "200km Diameter\nStation 3.5"
+  
+  # Create horizontal legend
+  p <- ggplot() +
+    # Apply white outline circle
+    geom_sf(data = new_circle, color = circle_color1, linetype = line1, 
+            linewidth = legend_outline, alpha = 0, inherit.aes = FALSE) +
+    # Apply orange dashed circle
+    geom_sf(data = new_circle, color = circle_color2, linetype = line2, 
+            linewidth = legend_base, alpha = 0, inherit.aes = FALSE) +
+    
+    # Add Aletta eye
+    geom_sf(data=new_eye.a, shape=aletta_symbol, col=aletta_color, 
+            fill=aletta_color, size=aletta_size) +
+    
+    # Add Bud eye
+    geom_image(data=new_eye.b, aes(x=x, y=y, image=image), size=0.15) + 
+    scale_size_identity() +
+    
+    # Add text labels with horizontal alignment
+    annotate("text", x=x2, y=y_center, label=text1, hjust=0, size=text_size/3) +
+    annotate("text", x=x4, y=y_center, label=text2, hjust=0, size=text_size/3) +
+    annotate("text", x=x6, y=y_center, label=text3, hjust=0, size=text_size/3) +
+    
+    # Clean theme
+    theme_void() +
+    
+    # Set plot dimensions with fixed aspect ratio
+    coord_sf(xlim=c(0, plot_width), ylim=c(0, plot_height), expand=FALSE, datum=NA)
+  
+  return(p)
+}
+
+# Test function to quickly create and save the horizontal eye legend
+test_horizontal_eye_legend <- function() {
+  # Set working directory
+  setwd(wd)
+  setwd(fig)
+  
+  # Create the horizontal eye legend
+  legend_horizontal <- f.fig2_legend_eyes_horizontal(
+    plot_width = 800,
+    plot_height = 150,  # Made shorter since it's a horizontal layout
+    text_size = 12,     # Adjusted for better readability
+    circle_parameters = circle_parameters
+  )
+  
+  # Save it to PDF for inspection
+  pdf("test_horizontal_eye_legend.pdf", width=8, height=2)
+  print(legend_horizontal)
+  dev.off()
+  
+  # Return the legend object
+  return(legend_horizontal)
+}
+
+# Modified version of the duplicate structure approach to include both legends
+f.create_duplicate_structure_with_two_legends <- function(
+  plot_obj,
+  color_legend_obj,
+  eye_legend_obj,
+  rel_widths = c(14, 1),
+  eye_legend_xmin = NULL,  # Will be calculated if NULL
+  eye_legend_xmax = 1,
+  eye_legend_ymin = -0.1,  # Previously tested position
+  eye_legend_ymax = 0.15,  # Previously tested position
+  preserve_axis_text = TRUE,
+  create_diagnostic = FALSE
+) {
+  # Helper function for null values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Calculate legend_xmin if not provided
+  eye_legend_xmin <- eye_legend_xmin %||% (1 - (rel_widths[2] / sum(rel_widths)))
+  
+  # Create the original plot with color legend
+  main_plot <- plot_grid(plot_obj, color_legend_obj, ncol=2, rel_widths=rel_widths, align="h")
+  
+  # If diagnostic mode, create a grid overlay
+  if (create_diagnostic) {
+    # Create a grid overlay to visualize coordinate space
+    grid_plot <- ggplot() +
+      # Add vertical lines at 0.1 intervals
+      geom_vline(xintercept = seq(0, 1, by = 0.1), color = "blue", alpha = 0.5) +
+      # Add horizontal lines at 0.1 intervals
+      geom_hline(yintercept = seq(0, 1, by = 0.1), color = "red", alpha = 0.5) +
+      # Add text labels for coordinates
+      annotate("text", x = seq(0, 1, by = 0.1), y = 0.02, 
+               label = paste0(seq(0, 1, by = 0.1)), 
+               color = "blue", angle = 90, hjust = 0) +
+      annotate("text", x = 0.02, y = seq(0, 1, by = 0.1), 
+               label = paste0(seq(0, 1, by = 0.1)), 
+               color = "red", hjust = 0) +
+      # Highlight the legend position rectangle
+      annotate("rect", 
+               xmin = eye_legend_xmin, xmax = eye_legend_xmax,
+               ymin = eye_legend_ymin, ymax = eye_legend_ymax,
+               alpha = 0.2, fill = "green") +
+      # Add a note about the highlighted area
+      annotate("text", x = (eye_legend_xmin + eye_legend_xmax)/2, 
+               y = (eye_legend_ymin + eye_legend_ymax)/2,
+               label = "Eye Legend\nPosition", color = "darkgreen") +
+      # Clean theme with labels
+      theme_minimal() +
+      labs(title = "Coordinate Grid Overlay",
+           subtitle = paste0("Eye legend position: xmin=", eye_legend_xmin, 
+                            ", xmax=", eye_legend_xmax,
+                            ", ymin=", eye_legend_ymin,
+                            ", ymax=", eye_legend_ymax))
+    
+    # Create grid diagnostic overlay
+    diagnostic_overlay <- main_plot + 
+      annotation_custom(
+        grob = ggplotGrob(grid_plot),
+        xmin = 0, xmax = 1, ymin = 0, ymax = 1
+      )
+    
+    return(diagnostic_overlay)
+  }
+  
+  # Create a transparent version of the main plot for overlay
+  # (this preserves the original plot structure but makes it invisible)
+  invisible_plot <- main_plot +
+    theme(
+      panel.background = element_rect(fill = NA, color = NA),
+      plot.background = element_rect(fill = NA, color = NA),
+      panel.grid = element_blank(),
+      # Conditionally preserve axis text
+      axis.text = if (preserve_axis_text) element_text() else element_text(color = NA),
+      axis.title = element_text(color = NA),
+      axis.ticks = if (preserve_axis_text) element_line() else element_line(color = NA),
+      legend.position = "none"
+    )
+  
+  # Add the eye legend at the specified position
+  final_plot <- invisible_plot + 
+    annotation_custom(
+      grob = ggplotGrob(eye_legend_obj),
+      xmin = eye_legend_xmin,
+      xmax = eye_legend_xmax,
+      ymin = eye_legend_ymin,
+      ymax = eye_legend_ymax
+    )
+  
+  return(final_plot)
+}
+
+# Function to use the new approach to save PDFs with both legends
+f.save_two_legend_pdfs <- function(
+  plot_obj,
+  color_legend_obj,
+  eye_legend_obj,
+  plot_type = "two",
+  main_pdf_name = NULL,
+  overlay_pdf_name = NULL,
+  combined_pdf_name = NULL,
+  main_width = 8.5,
+  main_height = 11,
+  rel_widths = c(14, 1),
+  eye_legend_xmin = NULL,  # Will be calculated if NULL
+  eye_legend_xmax = 1,
+  eye_legend_ymin = -0.1,  # Previously tested position
+  eye_legend_ymax = 0.15,  # Previously tested position
+  preserve_axis_text = TRUE,
+  create_diagnostic = FALSE
+) {
+  # Helper function for null values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Set default filenames based on plot_type
+  main_pdf_name <- main_pdf_name %||% paste0("figure_", plot_type, "_main.pdf")
+  overlay_pdf_name <- overlay_pdf_name %||% paste0("figure_", plot_type, "_overlay.pdf")
+  combined_pdf_name <- combined_pdf_name %||% paste0("figure_", plot_type, "_combined.pdf")
+  
+  # If diagnostic mode, modify overlay filename
+  if (create_diagnostic) {
+    overlay_pdf_name <- sub("\\.pdf$", "_diagnostic.pdf", overlay_pdf_name)
+  }
+  
+  # 1. Save main figure with color legend
+  pdf(main_pdf_name, height = main_height, width = main_width)
+  main_plot <- plot_grid(plot_obj, color_legend_obj, ncol = 2, rel_widths = rel_widths, align = "h")
+  print(main_plot)
+  dev.off()
+  
+  # 2. Create and save overlay with eye legend
+  overlay_plot <- f.create_duplicate_structure_with_two_legends(
+    plot_obj = plot_obj,
+    color_legend_obj = color_legend_obj,
+    eye_legend_obj = eye_legend_obj,
+    rel_widths = rel_widths,
+    eye_legend_xmin = eye_legend_xmin,
+    eye_legend_xmax = eye_legend_xmax,
+    eye_legend_ymin = eye_legend_ymin,
+    eye_legend_ymax = eye_legend_ymax,
+    preserve_axis_text = preserve_axis_text,
+    create_diagnostic = create_diagnostic
+  )
+  
+  pdf(overlay_pdf_name, height = main_height, width = main_width)
+  par(bg = "transparent")  # Set transparent background
+  print(overlay_plot)
+  dev.off()
+  
+  message(paste0(plot_type, " PDFs created successfully."))
+  
+  # Return file paths
+  result <- list(
+    main = main_pdf_name,
+    overlay = overlay_pdf_name,
+    combined = combined_pdf_name
+  )
+  
+  # Add the diagnostic file path if created
+  if (create_diagnostic) {
+    result$diagnostic <- overlay_pdf_name
+  }
+  
+  return(result)
+}
+
+# Modified main function to run the two-legend approach
+f.run_two_legend_test <- function(
+  # Required parameters
+  plot_obj,
+  color_legend_obj,
+  eye_legend_obj,
+  
+  # Identification parameters
+  plot_type = "two",
+  
+  # File parameters
+  main_pdf_name = NULL,
+  overlay_pdf_name = NULL,
+  combined_pdf_name = NULL,
+  optimized_pdf_name = NULL,
+  
+  # Dimension parameters
+  main_width = 8.5,
+  main_height = 11,
+  rel_widths = c(14, 1),
+  
+  # Legend positioning parameters
+  eye_legend_xmin = NULL,
+  eye_legend_xmax = 1,
+  eye_legend_ymin = -0.1,
+  eye_legend_ymax = 0.15,
+  
+  # Display parameters
+  preserve_axis_text = TRUE,
+  
+  # PDF combination parameters
+  pdftk_options = NULL,
+  gs_options = NULL,
+  
+  # Optimization parameters
+  optimize_pdf = TRUE,
+  quality = "prepress",
+  compatibility = "1.5",
+  embed_fonts = TRUE,
+  compress_images = TRUE,
+  
+  # Diagnostic parameters
+  create_diagnostic = FALSE,
+  
+  # Cleanup parameters
+  delete_intermediate = FALSE
+) {
+  # Helper function for null values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Set default filenames based on plot_type
+  combined_pdf_name <- combined_pdf_name %||% paste0("figure_", plot_type, "_combined.pdf")
+  optimized_pdf_name <- optimized_pdf_name %||% paste0("figure_", plot_type, "_optimized.pdf")
+  
+  # Create PDFs with both legends
+  files <- f.save_two_legend_pdfs(
+    plot_obj = plot_obj,
+    color_legend_obj = color_legend_obj,
+    eye_legend_obj = eye_legend_obj,
+    plot_type = plot_type,
+    main_pdf_name = main_pdf_name,
+    overlay_pdf_name = overlay_pdf_name,
+    combined_pdf_name = combined_pdf_name,
+    main_width = main_width,
+    main_height = main_height,
+    rel_widths = rel_widths,
+    eye_legend_xmin = eye_legend_xmin,
+    eye_legend_xmax = eye_legend_xmax,
+    eye_legend_ymin = eye_legend_ymin,
+    eye_legend_ymax = eye_legend_ymax,
+    preserve_axis_text = preserve_axis_text,
+    create_diagnostic = create_diagnostic
+  )
+  
+  # Skip PDF combination if only creating diagnostic
+  if (create_diagnostic) {
+    message("Diagnostic overlay created. Skipping PDF combination.")
+    message("To see coordinate grid, check: ", files$diagnostic)
+    return(TRUE)
+  }
+  
+  # Combine PDFs using existing function
+  success <- f.combine_duplicate_pdfs(
+    files = files,
+    pdftk_options = pdftk_options,
+    gs_options = gs_options
+  )
+  
+  # Optimize the combined PDF if requested
+  if (success && optimize_pdf) {
+    f.optimize_pdf(
+      input_pdf = files$combined, 
+      output_pdf = optimized_pdf_name,
+      quality = quality,
+      compatibility = compatibility,
+      embed_fonts = embed_fonts,
+      compress_images = compress_images
+    )
+    # Update the combined PDF reference to the optimized version
+    files$final <- optimized_pdf_name
+  } else {
+    files$final <- files$combined
+  }
+  
+  # Delete intermediate files if requested
+  if (success && delete_intermediate) {
+    file.remove(files$main)
+    file.remove(files$overlay)
+    if (optimize_pdf) {
+      file.remove(files$combined)  # Remove the unoptimized combined file
+    }
+    message("Intermediate files deleted.")
+  }
+  
+  if (success) {
+    message(paste0(plot_type, " figure completed successfully! Check: ", files$final))
+  } else {
+    message(paste0(plot_type, " figure encountered issues."))
+  }
+  
+  return(success)
+}
+```
+
+
+
+```{r}
+setwd(wd)
+setwd(fig)
+
+# Test the horizontal eye legend
+legend_horizontal <- f.fig2_legend_eyes_horizontal(
+  plot_width = 800,
+  plot_height = 150,  # Made shorter since it's a horizontal layout
+  text_size = 12,     # Adjusted for better readability
+  circle_parameters = circle_parameters
+)
+
+# Save it to PDF for inspection
+pdf("test_horizontal_eye_legend.pdf", width=8, height=2)
+print(legend_horizontal)
+dev.off()
+
+# Let's also create a diagnostic to see where the eye legend will be positioned
+f.run_two_legend_test(
+  plot_obj = p,
+  color_legend_obj = legend,
+  eye_legend_obj = legend_horizontal,
+  plot_type = "two",
+  eye_legend_ymin = -0.1,    # Position slightly below the plot
+  eye_legend_ymax = 0.15,    # About 1/4 of the way up
+  create_diagnostic = TRUE
+)
+```
+
+
+# nelwy add testing printing out legned
+```{r}
+setwd(wd)
+setwd(fig)
+pdf("testing_vertical.pdf", height=2, width=8)
+print(legend_vertical)
+dev.off()
+
+
+```
+`
+ 
+Here 2025-03-19
+
+
+vertical legend
+```{r}
+# Create the vertical eye legend
+legend_vertical <- f.eye_legend_horiz_to_vert_v7(
+  long_side_dimension = 800,
+  short_side_dimension = 100,
+  is_vertical = TRUE,
+  left_margin = 80,       # Increased margin
+  right_margin = 80,      # Increased margin
+  icon_text_gap = 30,     # Increased icon-text gap
+  element_gap = 100,      # Increased element spacing
+  margin_ratio = 0.15,    # Adjusted margin ratio
+  inter_element_ratio = 0.17, # Adjusted inter-element ratio
+  text_size = 10,
+  circle_size = 22,
+  aletta_scale = 3.0,
+  bud_scale = 0.22,
+  icon_scale_factor = 1.2,
+  orange_circle_dash_length = 1  # Default dash length
+)
+```
+
+horizontal legend
+```{r}
+# Create the HORIZONTAl eye legend
+legend_horizontal <- f.eye_legend_horiz_to_vert_v7(
+  long_side_dimension = 800,
+  short_side_dimension = 100,
+  is_vertical = FALSE,
+  left_margin = 80,       # Increased margin
+  right_margin = 80,      # Increased margin
+  icon_text_gap = 30,     # Increased icon-text gap
+  element_gap = 100,      # Increased element spacing
+  margin_ratio = 0.15,    # Adjusted margin ratio
+  inter_element_ratio = 0.17, # Adjusted inter-element ratio
+  text_size = 10,
+  circle_size = 22,
+  aletta_scale = 3.0,
+  bud_scale = 0.22,
+  icon_scale_factor = 1.2,
+  orange_circle_dash_length = 1  # Default dash length
+)
+```
+
+
+
+
+# printing
+
+
+```{r}
+setwd(wd)
+setwd(fig)
+pdf("test_horizontal_eye_legend.pdf", width=8, height=2)
+  print(legend_horizontal)
+  dev.off()
+```
+
+
+```{r}
+setwd(wd)
+setwd(fig)
+pdf("test_vertical_eye_legend.pdf", width=2, height=8)
+  print(legend_vertical)
+  dev.off()
+```
+
+
+```{r}
+setwd(wd)
+setwd(fig)
+pdf("figure_two_2nd_legend_testing.pdf")
+horizontal_legend
+dev.off()
+```
+

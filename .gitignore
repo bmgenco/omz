@@ -1,13 +1,40 @@
-
-wd/r_wd/r_scripts/Enceladus_directories.R
+# --- R / editor ---
 .Rproj.user
+*.Rhistory
 *.html
-data/gis_data/my_gis_creations/
-data/ocean_color_bud/clouds/
+.~lock.*#
+
+# --- machine-specific ---
+wd/r_wd/r_scripts/Enceladus_directories.R
+
+# --- existing data exclusions ---
+data/2017_data/
 data/WOA/woa18_all_o00_01.Data/
 data/gis_data/files/
-data/2017_data/
-wd/r_wd/Index/argo_synthetic-profile_index.txt
-wd/r_wd/Index/argo_synthetic-profile_index.txt.gz
-wd/r_wd/r_objects/.Rhistory
-*.Rhistory
+data/gis_data/my_gis_creations/
+data/ocean_color_bud/clouds/
+
+# --- re-downloadable, large ---
+data/GOBAI_O2/
+data/ocean_color_bud/duplicate files/
+wd/r_wd/Index/
+wd/r_wd/r_objects/Index/
+wd/r_wd/r_objects/Profiles/
+
+# --- new Argo profiles: ignore, keep the ones already tracked ---
+wd/r_wd/Profiles/*.nc
+!wd/r_wd/Profiles/5903888_Sprof.nc
+!wd/r_wd/Profiles/5905067_Sprof.nc
+!wd/r_wd/Profiles/5905068_Sprof.nc
+!wd/r_wd/Profiles/6903093_Sprof.nc
+!wd/r_wd/Profiles/6903094_Sprof.nc
+
+# --- iteration figures (keep final_figs) ---
+figures/*
+!figures/final_figs/
+figures/final_figs/*.zip
+figures/final_figs/updated_figures/
+wd/r_wd/**/*.pdf
+wd/r_wd/**/*.png
+wd/r_wd/**/*.jpeg
+wd/r_wd/r_scripts/submodules/OneArgo-R/Figures for sample code/

@@ -1,0 +1,56 @@
+---
+title: "sup_fig_station_specific_EF"
+output: html_document
+date: '2022-10-21'
+---
+
+# Setup  
+Packages, Directories, 
+
+## dynamic directories
+
+```{r setup}
+rm(list=ls())
+# relative directories
+robj<-"r_objects"
+fig<-"../../figures"
+
+csv_data<-"../../data/POC_Flux_data_sets/processed_csvs/"
+
+
+knitr::opts_chunk$set(echo =FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+## packages and working directory
+
+Installed custom hurdat package using r markdown menu
+* download  tar from archive as no longer maintained on cran repository
+* https://cran.r-project.org/src/contrib/Archive/HURDAT/
++ include as git submodule instead
+
+```{r}
+wd<-getwd()
+
+f.ipak <- function(pkg){
+  # loads packages, quietly, given by a vector of package names e.g., pkg<-c("ggplot", "tidyverse")
+  # will install  packages listed , and their dependencies, if needed.
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg))
+    install.packages(new.pkg, dependencies = TRUE, quiet=T, verbose = F)
+  sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
+}
+
+
+packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT", "ggpattern")
+
+# "HURDAT",
+
+f.ipak(packages)
+# lapply(packages, require, character.only = TRUE)
+# rm(f.ipak, packages)
+print(paste0("Current Working Directory is ", getwd()))
+
+```
+
+# Functions

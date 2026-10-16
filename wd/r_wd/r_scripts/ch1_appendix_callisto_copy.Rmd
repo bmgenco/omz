@@ -1,0 +1,1074 @@
+---
+title: "ch1_appendix"
+author: "Brandon M. Genco"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+In order of
+1)ADCP
+2)CTD casts
+3) extra export figs
+-signal and noise
+-pdo and enso
+
+
+# setup
+```{r setup}
+rm(list=ls())
+
+r_scriptwd<-getwd()
+wd<-substring(r_scriptwd,1,nchar(r_scriptwd) -10) # hardcoding replace here
+knitr::opts_knit$set(root.dir = wd)
+
+
+# relative directories
+robj<-"r_objects"
+fig<-"../../figures"
+gis_data<-"../../data/gis_data"
+output<-"../../output"
+
+
+knitr::opts_chunk$set(echo =FALSE, warning = FALSE)
+#knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file()) #deleated local rproj file. giut hub issues
+```
+
+## packages and working directory
+
+Installed custom hurdat package using r markdown menu
+* download  tar from archive as no longer maintained on cran repository
+* https://cran.r-project.org/src/contrib/Archive/HURDAT/
++ include as git submodule instead
+
+```{r}
+# wd<-getwd()
+
+f.ipak <- function(pkg){
+  # loads packages, quietly, given by a vector of package names e.g., pkg<-c("ggplot", "tidyverse")
+  # will install  packages listed , and their dependencies, if needed.
+  new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
+  if (length(new.pkg))
+    install.packages(new.pkg, dependencies = TRUE, quiet=T, verbose = F)
+  sapply(pkg, require, character.only = TRUE, quietly = FALSE, warn.conflicts=F)
+}
+
+# packages<-c("stars", "gridExtra", "cowplot", "sf", "ggspatial","stringr","sp", "rgdal",  "rgeos", "raster","readr" ,"tidyverse", "ggplot2", "lubridate",  "ggthemes", "data.table", "reshape2", "RColorBrewer", "marmap", "extrafont", "oce", "MODIS", "measurements")  # set packages here
+# tidyverse: is all of the following packages: ggplot2, dplyr, tidyr, readr, purr, tibble, sringr, & forcats.
+
+# remotes::install_github("R-Finance/xtsExtra")
+
+packages<-c("sp", "rgdal",  "rgeos", "raster", "readr", "tidyverse", "lubridate",  "ggthemes",  "sf", "cmocean", "ncdf4", "RNetCDF",  "plot3D", "tidync", "devtools", "stars", "ncmeta", "maps", "oce", "data.table", "fasterize", "RStoolbox", "scales", "purrr", "HURDAT", "ggpattern", "zoo", "xts", "dsa",  "tsibble", "feasts", "tsbox", "rsoi", "cowplot")
+
+# "HURDAT",
+# "cowplot.pa")
+
+
+f.ipak(packages)
+# lapply(packages, require, character.only = TRUE)
+# rm(f.ipak, packages)
+print(paste0("Current Working Directory is ", getwd()))
+
+```
+
+
+## Functions
+
+```{r}
+f.anomaly<-function(c){
+  m<-mean(c)
+  n<-c-m
+  return(n)
+}
+
+f.noise<-function(x, h.date, prior, post){
+
+x<-x1
+noise<-vector(mode='list', length=(length(h.date)))
+# y<-na.omit(x1)
+
+for(i in 1:length(h.date)){
+noise[[i]]<-filter(x, between(x$date, (h.date[i]-prior), (h.date[i]+post)))
+}
+
+noise<-Filter(Negate(is.null), noise)
+noise<-bind_rows(noise)
+noise<-filter(noise, duplicated(noise$date)==F)
+
+signal<-x[!x$date %in% noise$date,]
+# signal<-filter(x, date!=noise$date)
+split<-list(signal, noise)
+names(split)<-c("signal", "noise")
+return(split)}
+```
+
+# adcp
+# ctd casts
+```{r}
+print(getwd())
+```
+
+```{r}
+setwd(wd)
+d.sec<-readRDS("r_objects/OC1806A_ctd_sections.R")
+d35<-d.sec$st3.5
+
+c1<-d35@data$station[[1]]
+
+c2<-d35@data$station[[2]]
+c3<-d35@data$station[[3]]
+c4<-d35@data$station[[4]]
+c5<-d35@data$station[[5]]
+
+times<-c(c1@metadata$date, c2@metadata$date, c3@metadata$date, c4@metadata$date, c5@metadata$date) 
+times<-ymd_hms(times)%>%with_tz(., tzone="US/Mountain")%>%round_date(., 'minute')%>% as.character(.) %>%as.POSIXct(.)      
+times<-format(times, format="%m-%d %H:%M")
+
+# d35@metadata$time<-times
+
+d4<-d.sec$st4
+d3<-d.sec$st3
+
+d3<-d.sec$st3
+
+```
+
+
+```{r}
+setwd(wd)
+write.csv(times, "station3_local.csv")
+
+```
+
+
+### checking dpdp
+
+```{r}
+par(mfrow = c(1, 3))
+
+
+
+plot(c1, which=2, plim=c(100,0), )
+plot(c2, which =6,  plim=c(100,0))
+plot(c3, which =6,  plim=c(100,0))
+
+```
+
+
+## messing around with section plots:
+
+```{r}
+
+plot(d35, which="salinity")
+distance <- section[["distance"]]
+depth <- section[["depth"]]
+spice <- section[["spice"]]
+look <- spice > 1.8 & depth > 500
+points(distance[look], depth[look], col="red")
+
+
+plot(d35, which="oxygen2", ztype="points", xtype="time", ylim=c(-20,80), xlab=NULL)
+```
+
+# station 3
+```{r}
+plot(d3, which="oxygen2", ztype="image", xtype="time")
+plot(d3, which=3, ztype="image", xtype="time", ylim=c(-20,80), add=T) # density
+plot(d3, which=c("oxygen2", "density"), ztype="point", xtype="time", ylim=c(-20,70)) # density
+
+plot(d3, which=c("oxygen2", "beamAttenuation", "density"), ztype="image", xtype="time", ylim=c(-20,70)) # density
+plot(d3, which=c("oxygen2", "beamAttenuation", "density"), ztype="image", xtype="time")
+
+plot(d3, which="fluorescence", ztype="image", xtype="time", ylim=c(-20,80))
+plot(d3, which="par", ztype="image", xtype="time", ylim=c(-20,70)) #not neede
+plot(d3, which="par", ztype="points", xtype="time", ylim=c(-20,70)) #not needed
+
+
+```
+
+
+
+```{r}
+# need to use local time on these objects. will need to photohsop times
+
+
+
+
+
+
+plot(d35, which="oxygen2", ztype="image", xtype="time", ylim=c(-20,80), xlab=NULL)
+plot(d35, which=3, ztype="image", xtype="time", ylim=c(-20,80), add=T) # density
+plot(d35, which=c("oxygen2", "density"), ztype="point", xtype="time", ylim=c(-20,70)) # density
+
+plot(d35, which=c("oxygen2", "beamAttenuation", "density"), ztype="image", xtype="time", ylim=c(-20,70)) # density
+plot(d35, which=c("oxygen2", "beamAttenuation", "density"), ztype="image", xtype="time")
+
+plot(d35, which="fluorescence", ztype="image", xtype="time", ylim=c(-20,80))
+plot(d35, which="par", ztype="image", xtype="time", ylim=c(-20,70)) #not neede
+plot(d35, which="par", ztype="points", xtype="time", ylim=c(-20,70)) #not needed
+
+
+# version 2 does not work becuase og grob issue
+# plot(d35, which="oxygen2", ztype="image", xtype="time", ylim=c(-20,80))
+# pa<-recordPlot()
+# plot(d35, which="beamAttenuation", ztype="image", xtype="time", ylim=c(-20,80))
+# pb<-recordPlot()
+# plot(d35, which="fluorescence", ztype="image", xtype="time", ylim=c(-20,80))
+# pc<-recordPlot()
+# plot(d35, which="density", ztype="image", xtype="time", ylim=c(-20,80))
+# pd<-recordPlot()
+# 
+# pdf("station_35_section.pdf")
+# plot_grid(pa, pb, pc, pd, nrow=2, ncol=2,
+#          labels = c('a', 'b', 'c', 'd'), align = "h", scale=.5, greed=T, axis="r")
+# dev.off()
+
+
+plot(d4, which=c("oxygen2", "beamAttenuation","fluorescence","density"), ztype="image", xtype="time", ylim=c(-20,70)) # density
+
+
+```
+
+
+```{r}
+plot(d4, which="oxygen2", ztype="image", xtype="time", ylim=c(-20,80), xlab=NULL)
+plot(d4, which=3, ztype="image", xtype="time", ylim=c(-20,80)) # density
+
+plot(d4, which="fluorescence", ztype="image", xtype="time", ylim=c(-20,80))
+plot(d4, which="par", ztype="image", xtype="time", ylim=c(-20,80)) #not needed
+
+st_4times<-ymd_hms(d4@metadata$time)%>%with_tz(., tzone="US/Mountain")%>%round_date(., 'minute')%>% as.character(.) %>%as.POSIXct(.) 
+
+```
+
+
+```{r}
+plot(d35, drawIsobaths=T, which="map")
+plot(d35, which=3, ztype="image")
+# plot(d35, which="salinity", ztype="image", xtype="time")
+# plot(d35, which="temperature", ztype="image", xtype="time")
+plot(d35, which="oxygen2", ztype="image", xtype="time")
+plot(d35, which="fluorescence", ztype="image", xtype="time")
+
+```
+
+### station 3
+
+```{r}
+plot(d3, drawIsobaths=T, which="map")
+plot(d3, which=3, ztype="image")
+# plot(d35, which="salinity", ztype="image", xtype="time")
+# plot(d35, which="temperature", ztype="image", xtype="time")
+plot(d3, which="oxygen2", ztype="image", xtype="time")
+plot(d3, which="fluorescence", ztype="image", xtype="time")
+
+
+plot(d3, which="oxygen2", ztype="image", xtype="time", ylim=c(-20,180))
+
+plot(d3, which=3, ztype="image", xtype="time", ylim=c(-20,180)) # density
+
+plot(d3, which="fluorescence", ztype="image", xtype="time", ylim=c(-20,180))
+# plot(d3, which="par", ztype="image", xtype="time", ylim=c(-20,180)) #not needed
+
+
+```
+
+
+
+
+
+
+## individual plots
+
+
+corelation
+
+# other plots
+```{r}
+plot(c2, which=c("oxygen2", 6), type="l")
+plot(c2, which=c("oxygen2", 2), type="l")
+plot(c5, which=c("oxygen2", "density", "temperature", "beamAttenuation", "fluorescence"), type="l", plim=c(180, 0))
+plotProfile(c2, which=c("oxygen2", "temperature", "beamAttenuation"), type="l",ylim=c(0,80))
+
+plotProfile(c2, xtype="density+dddt", type="l", ylim=c(80,10))
+
+
+par(mfrow = c(2, 2))
+plotProfile(c5, xtype="density+N2", ylim=c(180,10),  ytype="depth")
+plotProfile(c2, xtype="salinity+temperature", ylim=c(180,10))
+ plotProfile(c1, xtype="spice", ylim=c(180,10),  ytype="depth")
+plotProfile(c1, xtype="Rrho", ylim=c(180,10),  ytype="depth")
+            
+            
+            #Will need to clautlae density
+
+```
+
+##
+
+
+```{r}
+par(mfrow = c(3, 5))
+
+plotProfile(c1, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+plotProfile(c2, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+plotProfile(c3, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+plotProfile(c4, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+plotProfile(c5, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+
+plotProfile(c1, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+plotProfile(c2, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+plotProfile(c3, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+plotProfile(c4, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+plotProfile(c5, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+
+plotProfile(c1, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+plotProfile(c2, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+plotProfile(c3, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+plotProfile(c4, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+plotProfile(c5, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+
+```
+
+
+#ch1 appendix v1 
+```{r}
+
+
+
+
+# main plot do in console
+# depth  profiles
+par(mfrow = c(3, 2))
+plotProfile(c2, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+plotProfile(c2, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+plotProfile(c2, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+plotProfile(c2, xtype="par",ylim=c(80,10), col ="purple", ytype="depth")
+plotProfile(c2, xtype="density", ylim=c(80,10), col="brown", ytype="depth")
+plotProfile(c2, xtype="temperature", ylim=c(80,10), col="red", ytype="depth")
+
+
+
+
+par(mfrow = c(3, 2))
+plotProfile(c2, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+plotProfile(c2, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+plotProfile(c2, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+plotProfile(c2, xtype="par",ylim=c(80,10), col ="purple", ytype="depth")
+plotProfile(c2, xtype="density", ylim=c(80,10), col="brown", ytype="depth")
+plotProfile(c2, xtype="temperature", ylim=c(80,10), col="red", ytype="depth")
+
+
+bo<-recordPlot()
+pdf("station_35_profiles.pdf", height =9, width=6)
+bo
+dev.off()
+
+# density profiles
+par(mfrow = c(2, 2))
+plotProfile(c2, xtype="beamAttenuation",  ytype="sigmaTheta")
+plotProfile(c2, xtype="oxygen2",  ytype="sigmaTheta", col="blue")
+# plotProfile(c2, xtype="oxygen2",  ytype="sigmaTheta", col="blue")
+plotProfile(c2, xtype="fluorescence",col ="green", ytype="sigmaTheta")
+plotProfile(c2, xtype="par",  ytype="sigmaTheta", col="purple")
+b1<-recordPlot()
+
+
+pdf("station_35_density_profiles.pdf", height =9, width=8)
+b1
+dev.off()
+
+
+par(mfrow = c(2, 2))
+plotProfile(c2, xtype="density+N2", ylim=c(80,10),  ytype="depth")
+plotProfile(c2, xtype="salinity+temperature", ylim=c(80,10))
+plotProfile(c2, xtype="spice", ylim=c(80,10),  ytype="depth")
+plotProfile(c2, xtype="Rrho", ylim=c(80,10),  ytype="depth")
+
+b2<-recordPlot()
+
+pdf("station_35_oceanography_profiles.pdf", height =9, width=8)
+b2
+dev.off()
+
+
+
+
+```
+
+
+#ch1 appendix v2 
+
+station 3.5
+
+```{r}
+plotProfile(c2, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+pa<-recordPlot()
+plotProfile(c2, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+pb<-recordPlot()
+plotProfile(c2, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+pc<-recordPlot()
+plotProfile(c2, xtype="par",ylim=c(80,10), col ="purple", ytype="depth")
+pd<-recordPlot()
+plotProfile(c2, xtype="density", ylim=c(80,10), col="brown", ytype="depth")
+pe<-recordPlot()
+plotProfile(c2, xtype="temperature", ylim=c(80,10), col="red", ytype="depth")
+pf<-recordPlot()
+
+
+
+
+pdf("station_35_profiles_v3.pdf", height =14.5, width=9.5)
+
+plot_grid(pa, pb, pc, pd, pe, pf, nrow=3, ncol=2,
+         labels = c('a', 'b', 'c', 'd', 'e', 'f'), align = "h", scale=.83, greed=T, axis="r")
+dev.off()
+
+
+
+# par(mfrow = c(2, 2))
+plotProfile(c2, xtype="oxygen2",  ytype="sigmaTheta", col="blue")
+pa<-recordPlot()
+plotProfile(c2, xtype="beamAttenuation",  ytype="sigmaTheta")
+pb<-recordPlot()
+# plotProfile(c2, xtype="oxygen2",  ytype="sigmaTheta", col="blue")
+plotProfile(c2, xtype="fluorescence",col ="green", ytype="sigmaTheta")
+pc<-recordPlot()
+plotProfile(c2, xtype="par",  ytype="sigmaTheta", col="purple")
+pd<-recordPlot()
+
+setwd(wd)
+setwd(fig)
+pdf("station_35 density_profiles_v2.pdf", height=9, width=8)
+plot_grid(pa, pb, pc, pd, nrow=2, ncol=2,
+         labels = c('a', 'b', 'c', 'd'), align = "h", scale=1, greed=T, axis="r")
+dev.off()
+
+
+par(mfrow = c(2, 2))
+plotProfile(c2, xtype="density+N2", ylim=c(80,10),  ytype="depth")
+# pa<-recordPlot()
+plotProfile(c2, xtype="salinity+temperature", ylim=c(80,10))
+# pb<-recordPlot()
+plotProfile(c2, xtype="spice", ylim=c(80,10),  ytype="depth")
+# pc<-recordPlot()
+plotProfile(c2, xtype="Rrho", ylim=c(80,10),  ytype="depth")
+# pd<-recordPlot()
+
+
+pdf("station_35_oceanography_profiles_v2.pdf", height =9, width=8)
+plot_grid(pa, pb, pc, pd, nrow=2, ncol=2,
+         labels = c('a', 'b', 'c', 'd'), align = "h", scale=.8, greed=T, axis="r")
+dev.off()
+
+
+
+
+
+```
+
+### time seris of focus plots
+
+```{r}
+ # dev.off()
+par(mfrow = c(3, 5), oma=c(3,0,0,0), mar=c(5,0,0,0))
+
+plotProfile(c1, xtype="oxygen2",  ytype="sigmaTheta", col="blue", ylim=c(26.5,25))
+mtext("Cast 1", side=3, line=3, outer =T)
+
+plotProfile(c2, xtype="oxygen2",  ytype="sigmaTheta", col="blue", ylim=c(26.5,25))
+plotProfile(c3, xtype="oxygen2",  ytype="sigmaTheta", col="blue", ylim=c(26.5,25))
+plotProfile(c4, xtype="oxygen2",  ytype="sigmaTheta", col="blue", ylim=c(26.5,25))
+plotProfile(c5, xtype="oxygen2",  ytype="sigmaTheta", col="blue", ylim=c(26.5,25))
+plotProfile(c1, xtype="beamAttenuation",  ytype="sigmaTheta", col="black", ylim=c(26.5,25))
+plotProfile(c2, xtyp="beamAttenuation",  ytype="sigmaTheta", col="black", ylim=c(26.5,25))
+plotProfile(c3, xtype="beamAttenuation",  ytype="sigmaTheta", col="black", ylim=c(26.5,25))
+plotProfile(c4, xtype="beamAttenuation",  ytype="sigmaTheta", col="black", ylim=c(26.5,25))
+plotProfile(c5, xtype="beamAttenuation",  ytype="sigmaTheta", col="black", ylim=c(26.5,25))
+plotProfile(c1, xtype="fluorescence",  ytype="sigmaTheta", col="green", ylim=c(26.5,25))
+plotProfile(c2, xtyp="fluorescence",  ytype="sigmaTheta", col="green", ylim=c(26.5,25))
+plotProfile(c3, xtype="fluorescence",  ytype="sigmaTheta", col="green", ylim=c(26.5,25))
+plotProfile(c4, xtype="fluorescence",  ytype="sigmaTheta", col="green", ylim=c(26.5,25))
+plotProfile(c5, xtype="fluorescence",  ytype="sigmaTheta", col="green", ylim=c(26.5,25))
+
+
+```
+
+
+
+
+
+## stats
+```{r}
+print("cor")
+
+test<-subset(c2, depth >=200)
+
+
+cor(c2@data$oxygen2, c2@data$beamAttenuation)
+
+```
+
+#ch1 appendi staion 4
+```{r}
+
+plotProfile(c1, xtype="oxygen2",ylim=c(80,10), col="blue", ytype= "depth")
+pa<-recordPlot()
+plotProfile(c1, xtype="beamAttenuation",ylim=c(80,10), col ="black", ytype= "depth")
+pb<-recordPlot()
+plotProfile(c1, xtype="fluorescence",ylim=c(80,10), col ="green", ytype="depth")
+pc<-recordPlot()
+plotProfile(c1, xtype="par",ylim=c(80,10), col ="purple", ytype="depth")
+pd<-recordPlot()
+plotProfile(c1, xtype="density", ylim=c(80,10), col="brown", ytype="depth")
+pe<-recordPlot()
+plotProfile(c1, xtype="temperature", ylim=c(80,10), col="red", ytype="depth")
+pf<-recordPlot()
+
+plot_grid(pa, pb, pc, pd, pe, pf, nrow=3, ncol=2,
+         labels = c('a', 'b', 'c', 'd', 'e', 'f'), align = "h", scale=.83, greed=T, axis="r")
+
+
+
+
+```
+
+
+# export flux
+## export flux load data
+
+```{r}
+setwd(wd)
+setwd(robj)
+
+data<-read_rds("vgpm_integrated_all_years_202200607.R")
+x<-data$st3.5
+rm(data)
+
+window_area<-round((x$`window_area (m^2)`[1]*1e-6),0)
+lab_total<-paste0("Station ", "3.5", ":", " Total Export Flux - ", window_area, " km^2 area")
+
+x$date<-ymd(x$date)
+x<-select(x, date, `mean_export_flux (mgC/m^2/day) for_window_area (total/sum_grid_area)`, `total_export_flux (mgC/day)`)
+names(x)<-c("date", "avg", "ef")
+x$ef<-x$ef/1000000
+
+sst<-readRDS("st35_sst_modis.R")
+z<-select(sst, date, `SST_mean (area weighted)`)
+rm(sst)
+names(z)<-c("date", "sst")
+z$date<-ymd(z$date)
+
+chl<-readRDS("st35_chl_modis.R")
+y<-select(chl, date, 'chl_mean (area weighted)')
+rm(chl)
+names(y)<-c("date", "chl")
+y$date<-ymd(y$date)
+
+```
+
+## create anomalies
+```{r}
+x$ef.a<-f.anomaly(x$ef)
+x$avg.a<-f.anomaly(x$avg)
+
+y$chl.a<-f.anomaly(y$chl)
+z$sst.a<-f.anomaly(z$sst)
+
+xnames<-c("date", "avg_EF_mgC_m2_day", "total_EF_mgC_day", "total_EF_anomaly_mgC_day", "avg_EF_anomaly_mgC_m2_day")
+ynames<-c("date", "avg_CHL_mg_m3_day","avg_CHL_anomaly_mg_m3_day")
+znames<-c("date", "avg_SST_C", "SST_anomaly_C")
+
+names(x)<-xnames
+names(y)<-ynames
+names(z)<-znames
+
+# conv<-3.944e+10
+# 94.11872*conv
+
+rm(xnames, ynames, znames)
+
+x1<-full_join(y,z, by="date")%>% full_join(., x, by="date")
+# missing_values<- x1[rowSums(is.na(x1)) > 0,] # a few misinf vlauers. see august 2020 for export flux
+rm(x,y,z)
+
+```
+## filled and non-filled dataset
+
+x1= non_filled
+
+```{r}
+start<-min(x1$date)
+end<-max(x1$date)%>%+7
+d<-data.frame(seq(ymd(start), ymd(end), b="days"), NA)
+names(d)<-c("date", "remove")
+
+
+x1[is.na(x1)]<--1 #save an values for later
+
+x2<-full_join(d, x1, by="date") %>% select(., -remove) 
+x2<-x2%>% fill(names(x2), .direction =  "down")
+x2[x2==-1]<-NA
+# rm(x1,d)
+
+```
+
+## spatil selection of storms
+
+
+
+#### load hurricanes
+## load basic hurdat
+
+```{r}
+setwd(wd)
+setwd(robj)
+#<-get_hurdat(basin="EP")
+#saveRDS(h, "hurdat.R")
+h<-readRDS("hurdat.R")
+h$DateTime<-force_tz(h$DateTime, tz="UTC")
+
+```
+
+#### load POC
+
+```{r}
+setwd(wd)
+setwd(robj)
+
+data<-read_rds("vgpm_integrated_all_years_202200607.R")
+x<-data$st3.5
+rm(data)
+
+window_area<-round((x$`window_area (m^2)`[1]*1e-6),0)
+lab_total<-paste0("Station ", "3.5", ":", " Total Export Flux - ", window_area, " km^2 area")
+
+x$date<-ymd(x$date)
+x<-select(x, date, `mean_export_flux (mgC/m^2/day) for_window_area (total/sum_grid_area)`, `total_export_flux (mgC/day)`)
+names(x)<-c("date", "avg", "ef")
+x$ef<-x$ef/1000000
+
+sst<-readRDS("st35_sst_modis.R")
+z<-select(sst, date, `SST_mean (area weighted)`)
+rm(sst)
+names(z)<-c("date", "sst")
+z$date<-ymd(z$date)
+
+chl<-readRDS("st35_chl_modis.R")
+y<-select(chl, date, 'chl_mean (area weighted)')
+rm(chl)
+names(y)<-c("date", "chl")
+y$date<-ymd(y$date)
+
+```
+
+
+
+```{r}
+# 
+ # save_h<-h
+# h<-save_h
+
+h<-filter(h, DateTime >=date(min(x2$date))-60) 
+h$date<-date(h$DateTime)
+h<-select(h, date,Key, Name, Status, Pressure, Wind, Lon, Lat)
+
+# distance<-100000 #200 km
+distance<-200000 #400 km
+
+setwd(wd)
+setwd(robj)
+stations_positions_list<-readRDS("OC1806A_stations_positions_list.R")
+st<-stations_positions_list[[3]][4,cbind(2,3)]
+st<-sf::st_as_sf(st, coords =c("longitude", "latitude"),  crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+flat<-sf::st_transform(st, "+proj=aeqd +lat_0=18.5005 +lon_0=-108.502" )
+circle_3.5<-sf::st_buffer(flat, dist=distance)%>%sf::st_transform(., "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
+bbox<-st_bbox(circle_3.5)
+
+h.pts<- sf::st_as_sf(h, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>% 
+sf::st_crop(., c(xmin=bbox$xmin[[1]], ymin=bbox$ymin[[1]], xmax=bbox$xmax[[1]], ymax=bbox$ymax[[1]])) #subset by user defined 
+
+h<-st_set_geometry(h.pts, NULL)
+
+# smoothing out multi-tiem points
+
+
+new.h<-h %>% distinct(date, .keep_all = TRUE)
+
+
+rm(circle_3.5, flat, stations_positions_list, st)
+
+```
+
+
+
+## Signal and noise
+
+split date
+
+```{r}
+# data<-f.noise(x=x1, h.date=new.h$date, prior=14, post=24)
+# conservative, and more accutrate nounds
+data<-f.noise(x=x1, h.date=new.h$date, prior=10, post=24)
+
+```
+
+### full times series
+
+```{r}
+
+t<-na.omit(x1) %>%filter(date <= '2020-08-12') 
+# t<-na.omit(x1)
+t.d<-select(t, date)%>% .[,1]
+t<-t%>%select(.,avg_CHL_mg_m3_day, avg_SST_C, avg_EF_mgC_m2_day )
+names(t)<-c("CHL", "SST", "EF")
+
+t.sst<-t%>%select(., SST)%>% xts(., t.d)
+t.chl<-t%>%select(., CHL)%>% xts(., t.d)
+t.ef<-t%>%select(., EF)%>% xts(., t.d)
+
+# trends<-ts_trend(t)
+trend.sst<-ts_trend(t.sst)
+trend.chl<-ts_trend(t.chl)
+trend.ef<-ts_trend(t.ef)
+
+p1<-ts_ggplot(t.chl, ts_trend(t.chl))+scale_color_manual(values = c("darkgreen", "purple"), labels=c("Mean CHL [mg/m3/day]", "Loews Trend"))+ theme_tsbox() + ggtitle("Time Series")
+p2<-ts_ggplot(t.sst, ts_trend(t.sst))+scale_color_manual(values = c("red", "purple"), labels=c("Mean SST (°C)", "Loews Trend"))+ theme_tsbox() + ggtitle("Time Series")
+p3<-ts_ggplot(t.ef, ts_trend(t.ef))+scale_color_manual(values = c("black", "purple"), labels=c("Mean Export Flux (mgC/m^2/day)", "Loews Trend"))+ theme_tsbox() + ggtitle("Time Series")
+
+```
+
+
+### signal
+```{r}
+# x1<-x1 %>% filter(date <= '2020-08-12') 
+# t<-(x1)%>%select(.,avg_CHL_mg_m3_day, avg_SST_C, avg_EF_mgC_m2_day )
+# t<-na.omit(data$signal) %>%filter(date <= '2020-08-12') 
+
+
+t<-na.omit(data$signal) %>%filter(date <= '2020-08-12') 
+t.d<-select(t, date)%>% .[,1]
+t<-(t)%>%select(.,avg_CHL_mg_m3_day, avg_SST_C, avg_EF_mgC_m2_day )
+names(t)<-c("CHL", "SST", "EF")
+
+signal.sst<-t%>%select(., SST)%>% xts(., t.d)
+signal.chl<-t%>%select(., CHL)%>% xts(., t.d)
+signal.ef<-t%>%select(., EF)%>% xts(., t.d)
+
+# trends<-ts_trend(t)
+
+signal_trend.sst<-ts_trend(signal.sst)
+signal_trend.chl<-ts_trend(signal.chl)
+signal_trend.ef<-ts_trend(signal.ef)
+
+p4<-ts_ggplot(signal.chl, ts_trend(signal.chl))+scale_color_manual(values = c("darkgreen", "purple"), labels=c("Mean CHL [mg/m3/day]", "Loews Trend"))+ theme_tsbox()+ ggtitle("Non TC signal component")
+p5<-ts_ggplot(signal.sst, ts_trend(signal.sst))+scale_color_manual(values = c("red", "purple"), labels=c("Mean SST (°C)", "Loews Trend"))+ theme_tsbox() + ggtitle("Non TC signal component") 
+p6<-ts_ggplot(signal.ef, ts_trend(signal.ef))+scale_color_manual(values = c("black", "purple"), labels=c("Mean Export Flux (mgC/m^2/day)", "Loews Trend"))+ theme_tsbox() + ggtitle("Non TC signal component")
+
+
+```
+
+### noise
+
+```{r}
+
+t<-na.omit(data$noise) %>%filter(date <= '2020-08-12') 
+t.d<-select(t, date)%>% .[,1]
+t<-(t)%>%select(.,avg_CHL_mg_m3_day, avg_SST_C, avg_EF_mgC_m2_day )
+names(t)<-c("CHL", "SST", "EF")
+
+noise.sst<-t%>%select(., SST)%>% xts(., t.d)
+noise.chl<-t%>%select(., CHL)%>% xts(., t.d)
+noise.ef<-t%>%select(., EF)%>% xts(., t.d)
+
+# trends<-ts_trend(t)
+
+noise_trend.sst<-ts_trend(noise.sst)
+noise_trend.chl<-ts_trend(noise.chl)
+noise_trend.ef<-ts_trend(noise.ef)
+
+p7<-ts_ggplot(noise.chl, ts_trend(noise.chl))+scale_color_manual(values = c("darkgreen", "purple"), labels=c("Mean CHL [mg/m3/day]", "Loews Trend"))+ theme_tsbox() + ggtitle("TC noise component") 
+p8<-ts_ggplot(noise.sst, ts_trend(noise.sst))+scale_color_manual(values = c("red", "purple"), labels=c("Mean SST (°C)", "Loews Trend"))+ theme_tsbox()+ ggtitle("TC noise component")
+p9<-ts_ggplot(noise.ef, ts_trend(noise.ef))+scale_color_manual(values = c("black", "purple"), labels=c("Mean Export Flux (mgC/m^2/day)", "Loews Trend"))+ theme_tsbox()+ ggtitle("TC noise component")
+
+```
+
+#### comparing trends
+
+```{r}
+
+sst_trend.dif<-trend.sst-signal_trend.sst
+chl_trend.dif<-trend.chl-signal_trend.chl
+ef_trend.dif<-trend.ef-signal_trend.ef
+
+
+
+
+# p<-ts_ggplot(t.chl, signal.chl)
+
+
+```
+
+
+
+
+# matching ONI index to trend
+
+```{r}
+oni<-download_oni()
+oni<-oni%>% filter(Date>= min(t.chl$time), Date<=max(t.chl$time))
+t.oni<-xts(oni$ONI, oni$Date)
+
+cutoff<-'2020-08-12'
+start<-min(data$signal$date)
+pdo<-download_pdo()
+# heat.sst<-filter(t.sst, time<=cutoff)
+pdo<-pdo%>% filter(Date>= start, Date<=cutoff)
+# pdo<-pdo%>%filter(Date>= min(t.chl$time), Date<=max(t.chl$time))
+
+
+pdo$PDO<-scale(pdo$PDO)
+t.pdo<-xts(pdo$PDO, pdo$Date)
+
+# ccf need tim series to be smae smapling ferqucny..
+
+t.chl$CHL<-scale(t.chl$CHL)
+t.sst$SST<-scale(t.sst$SST)
+t.ef$EF<-scale(t.ef$EF)
+
+# t.pdo$value<-scale(t.pdo$value)
+p13<-ts_ggplot(t.pdo,  t.chl, ts_trend(t.chl), -ts_trend(t.pdo))+ theme_tsbox() + ggtitle("CHL")
+
+p14<-ts_ggplot(t.pdo,  t.sst, ts_trend(t.sst), -ts_trend(t.pdo))+ theme_tsbox()+ggtitle("SST")
+p15<-ts_ggplot(t.pdo,  t.ef, ts_trend(t.ef), -ts_trend(t.pdo))+ theme_tsbox() + ggtitle("EF")
+
+p16<-ts_ggplot(t.pdo,  t.chl, ts_trend(t.chl), ts_trend(t.pdo))+ theme_tsbox() + ggtitle("CHL")
+p17<-ts_ggplot(t.pdo,  t.sst, ts_trend(t.sst), ts_trend(t.pdo))+ theme_tsbox()+ggtitle("SST")
+p18<-ts_ggplot(t.pdo,  t.ef, ts_trend(t.ef), ts_trend(t.pdo))+ theme_tsbox() + ggtitle("EF")
+
+trend.pdo<--1*ts_trend(t.pdo)
+
+
+test<-(ts_trend(t.chl))
+# test%>%ts_frequency(., to="month", aggregate = "mean")
+# test1<-ts_frequency(((t) %>% filter(., id=="CHL")), to=12, aggregate = "mean")
+
+# trend.chl<- t.chl %>%ts_frequency(., to="month", aggregate="mean") %>% ts_trend()
+# cor(-ts_trend(t.pdo), ts_trend(t.chl))
+
+par(mfrow = c(2, 1))
+p13
+p15
+
+
+p.new<-ts_plot(t.pdo,  t.chl, ts_trend(t.chl), -ts_trend(t.pdo), title = "CHL") 
+```
+
+```{r}
+
+
+p10<-ggplot()+geom_point(data=data$signal, aes(x=date, y=avg_CHL_mg_m3_day, color="Signal"))+ 
+geom_point(data=data$noise, aes(x=date, y=avg_CHL_mg_m3_day, color="Noise"))+ 
+geom_line(data=ts_df(trend.chl), aes(x=time, y=value, color="Trend"))+
+labs(y="Mean CHL [mg/m3/day]")+
+scale_color_manual(values=c(Signal="darkgreen", Noise="#640064", Trend="black"))+
+theme(legend.position="bottom") +
+theme(legend.title=element_blank())
+
+
+# p.signal<-data$signal
+
+
+p11<-ggplot()+geom_point(data=data$signal, aes(x=date, y=avg_SST_C, color="Signal"))+ 
+geom_point(data=data$noise, aes(x=date, y=avg_SST_C, color="Noise"))+ 
+geom_line(data=ts_df(trend.sst), aes(x=time, y=value, color="Trend"))+
+xlim(min(data$signal$date), max(data$signal$date))+
+ylim(20, 30)+
+labs(y="Mean SST (°C)")+
+scale_color_manual(values=c(Signal="red", Noise="#00ffff", Trend="black"))+
+theme(legend.position="bottom") +
+theme(legend.title=element_blank())
+
+
+
+p12<-ggplot()+geom_point(data=data$signal, aes(x=date, y=avg_EF_mgC_m2_day, color="Signal"))+ 
+geom_point(data=data$noise, aes(x=date, y=avg_EF_mgC_m2_day, color="Noise"))+ 
+geom_line(data=ts_df(trend.ef), aes(x=time, y=value, color="Trend"))+
+ylim(35, 130)+
+labs(y="Mean Export Flux (mgC/m^2/day)")+
+scale_color_manual(values=c(Signal="brown", Noise="#2aa5a5", Trend="black"))+
+theme(legend.position="bottom") +
+theme(legend.title=element_blank())
+
+
+```
+
+
+
+# plots 1
+```{r}
+plots<-vector(mode='list')
+
+#time series with trends
+plots[[1]]<-p1
+plots[[2]]<-p2
+plots[[3]]<-p3
+
+plots
+
+
+
+
+```
+
+saving plots
+```{r}
+
+setwd(fig)
+# pdf("figure_a1_v2.png", height=11 , width =8.5)
+# plot_grid(plots[[1]], plots[[2]], plots[[3]], ncol=1, labels="auto")
+# dev.off()
+
+
+
+pdf("figure_a2_v3.pdf", height=11 , width =9.5)
+plot_grid(p4,p7,p5,p8,p6,p9, ncol=2, labels="auto")
+dev.off()
+
+
+# 
+# pdf("figure_a3_v2.pdf", height=11 , width =8.5)
+# plot_grid(p10, p11,p12, ncol=1, labels="auto")
+# dev.off()
+# 
+# 
+# pdf("figure_a4_v2.pdf", height=11 , width =8.5)
+# plot_grid(p13, p14,p15, ncol=1)
+# dev.off()
+
+
+```
+
+
+
+```{r}
+# p10<-ts_ggplot(signal_trend.chl, noise_trend.chl, trend.chl)+ylim(.05, .1)
+# p10<-ts_plot(signal_trend.chl, noise_trend.chl, trend.chl)
+
+
+pa<-ts_ggplot(signal_trend.sst)
+pb<-ts_ggplot(trend.sst)
+# p<-
+# p<-ts_ggplot(trend.sst, noise_trend.sst)
+
+```
+
+
+
+
+### random attempts
+```{r}
+
+s<-spectrum(t.chl)
+f.chl<-fft(t.chl$value)
+# stuff that dpes wqorkk.
+
+test<-t %>% model(stl = STL(value))
+
+test<-tidy_fft(t$value)
+
+
+test2<-ts_decompose(t$CHL)
+
+test<-ts_trend(t)
+
+
+test<-decompose(t)
+
+```
+
+
+Read me
+https://stackoverflow.com/questions/52703938/decomposing-time-series-data-no-or-less-than-2-periods
+
+### xts and ts
+requres t as xts object
+```{r}
+# seems like ther should be an easri way..
+
+
+
+
+remove(t.d)
+periodicity(t$avg_SST_C)
+periodicity(t$CHL)
+
+# weekly hack
+
+ts.sst<-ts(x1$avg_SST_C, frequency=52, start=c(2002, 07))
+ts.chl<-ts(x1$avg_CHL_mg_m3_day, frequency=52, start=c(2002, 07))
+## added 
+
+ts.sst<-ts(x1$avg_SST_C, frequency=(365/8), start=c(2002, 07))
+ts.chl<-ts(x1$avg_CHL_mg_m3_day, frequency=52, start=c(2002, 07))
+
+
+d.noise_chl<-decompose(noise.chl, type = "multiplicative")
+d.noise
+
+
+d.sst<-decompose(ts.sst, type = "multiplicative")
+d.chl<-decompose(ts.chl, type = "multiplicative")
+
+s<-spectrum(ts, demean=T)
+
+
+test<-stl(ts)
+
+# messing asbout:
+test<-stl.xts(t, s.window="periodic")
+
+s<-spectrum(t$avg_SST_C, demean=F)
+
+test<-fft(t)
+
+
+
+plot(fft(t), type = "l")
+
+test<-acf(t, demean=T)
+s<-spectrum(t, demean=T)
+
+```
+
+
+
+
+## with ts whioch is  apin for 8 day observersations
+
+```{r}
+start<-min(x1$date)%>%as.POSIXct()
+end<-max(x1$date)%>%as.POSIXct()
+
+start<-c(20)
+
+start<-min(x1$date)
+end<-max(x1$date)
+
+
+t<-x1%>%select(.,avg_CHL_mg_m3_day, avg_SST_C, avg_EF_mgC_m2_day ) %>% ts(.,start=start, end=end, deltat =(8/365) )
+
+t<-x1%>%select(.,avg_EF_mgC_m2_day ) %>% ts(.,start=start, end=end, deltat =(7/365) )
+
+
+t1<-decompose(t, type ="additive", filter=NULL)
+
+
+```
+
+
+
+
+
+
+## PDO & Enso
+

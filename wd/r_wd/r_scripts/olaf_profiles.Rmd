@@ -975,9 +975,7 @@ buffer_subtitle<-paste0("Profiles corresponding to Cycles 46-53 in green")
 
 m.map6<-ggplot()+c1+c2+f1+f2+t1+t2+p2a+p1b+ggtitle("Hurricanes Olaf and corresponding Argo Float Tracks", subtitle = buffer_subtitle )+theme(plot.title = element_text(size = title.size))+f1b+s1+s2+s3+s5+s7+s8+s9+c4+l1+l2+th1+a1+y1+theme(plot.subtitle=element_text(hjust=0.5))+date_labels+olaf_labels
 
-m.map6<-ggplot()+c1+c2+f1+f2+t1+t2+p2a+p1b+ggtitle("Hurricanes Olaf and corresponding Argo Float Tracks", subtitle = buffer_subtitle )
-
-+theme(plot.title = element_text(size = title.size))+f1b+s1+s2+s3+s5+s7+s8+s9+c4+l1+l2+a1+th2+theme(plot.subtitle=element_text(hjust=0.5))+date_labels+olaf_labels
+m.map6<-ggplot()+c1+c2+f1+f2+t1+t2+p2a+p1b+ggtitle("Hurricanes Olaf and corresponding Argo Float Tracks", subtitle = buffer_subtitle )+theme(plot.title = element_text(size = title.size))+f1b+s1+s2+s3+s5+s7+s8+s9+c4+l1+l2+a1+th2+theme(plot.subtitle=element_text(hjust=0.5))+date_labels+olaf_labels
 
 
 p4<-m.map6 +annotation_custom(grob = argo_legend, xmin = -Inf,  ymin = -Inf, ymax=19, xmax = -110)

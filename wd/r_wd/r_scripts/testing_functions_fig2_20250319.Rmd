@@ -1,0 +1,617 @@
+---
+title: "testing_functions_fig2"
+output: html_document
+date: '2025-03-19'
+---
+# functions
+v8
+```{r}
+# Function to create a horizontal or vertical eye legend - Version 8
+# Improved implementation with better geometry control and consistent orientation handling
+f.eye_legend_horiz_to_vert_v8 <- function(
+  # Basic dimensions with dynamic orientation handling
+  long_side_dimension = 800,   # Longer side of the plot
+  short_side_dimension = 100,  # Shorter side of the plot
+  is_vertical = FALSE,         # Control orientation
+  
+  # Spacing parameters
+  left_margin = 40,            # Space at left/bottom edge (depending on orientation)
+  right_margin = 40,           # Space at right/top edge (depending on orientation)
+  icon_text_gap = 20,          # Space between icon and its text
+  element_gap = 60,            # Space between text and next icon
+  
+  # Flexible spacing ratios
+  margin_ratio = NULL,         # Optional ratio-based margin calculation
+  inter_element_ratio = NULL,  # Optional ratio-based element spacing
+  
+  # Sizing parameters
+  text_size = 10,              # Base text size
+  circle_size = 20,            # Radius of the station circle
+  aletta_scale = 2.5,          # Scale factor for Aletta symbol
+  bud_scale = 0.18,            # Scale factor for Bud hurricane image
+  icon_scale_factor = 1,       # Global scaling for all icons
+  
+  # Circle styling parameters
+  circle_parameters = NULL,    # Circle styling parameters
+  orange_circle_dash_length = "dashed", # Parameter to control dash spacing
+  
+  # Debug options
+  debug_grid = FALSE           # Add debug grid to visualize layout
+) {
+  # Helper function for null values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Dynamically set plot dimensions based on orientation
+  if (is_vertical) {
+    plot_width <- short_side_dimension
+    plot_height <- long_side_dimension
+  } else {
+    plot_width <- long_side_dimension
+    plot_height <- short_side_dimension
+  }
+  
+  # Calculate margins using ratio if provided
+  if (!is.null(margin_ratio)) {
+    total_margin_width <- plot_width * margin_ratio
+    left_margin <- total_margin_width / 2
+    right_margin <- total_margin_width / 2
+  }
+  
+  # Calculate element gap using ratio if provided
+  if (!is.null(inter_element_ratio)) {
+    if (is_vertical) {
+      element_gap <- plot_height * inter_element_ratio
+    } else {
+      element_gap <- plot_width * inter_element_ratio
+    }
+  }
+  
+  # Adjust scaling for icons
+  adjusted_circle_size <- circle_size * icon_scale_factor
+  adjusted_aletta_scale <- aletta_scale * icon_scale_factor
+  adjusted_bud_scale <- bud_scale * icon_scale_factor
+  
+  # Extract styling from circle_parameters
+  if (!is.null(circle_parameters)) {
+    circle_color1 <- circle_parameters["circle_color1"] %||% "white"
+    circle_color2 <- circle_parameters["circle_color2"] %||% "#E65832"
+    base <- as.numeric(circle_parameters["base"] %||% "5.0")
+    outline <- as.numeric(circle_parameters["outline"] %||% "7.5")
+    line1 <- circle_parameters["line1"] %||% "solid"
+    line2 <- circle_parameters["line2"] %||% "dashed"
+    hurricane_image_path <- circle_parameters["hurricane_image_path"] %||% NULL
+  } else {
+    # Default values if circle_parameters is NULL
+    circle_color1 <- "white"
+    circle_color2 <- "#E65832"
+    base <- 5.0
+    outline <- 7.5
+    line1 <- "solid"
+    line2 <- orange_circle_dash_length
+    hurricane_image_path <- NULL
+  }
+  
+  # Set line thicknesses for legend
+  legend_outline <- outline * 0.5
+  legend_base <- base * 0.5
+  
+  # Text labels
+  text1 <- "TC Bud Eye"
+  text2 <- "TC Aletta Eye"
+  text3 <- "200km Diameter\nStation 3.5"
+  
+  # Calculate positions for elements
+  if (is_vertical) {
+    # For vertical layout, we will stack elements from top to bottom
+    # with consistent spacing
+    
+    # Element positions (vertical layout)
+    y_start <- plot_height - left_margin
+    
+    # Bud hurricane and text
+    y_bud <- y_start
+    y_bud_text <- y_bud - icon_text_gap
+    
+    # Aletta symbol and text
+    y_aletta <- y_bud_text - element_gap
+    y_aletta_text <- y_aletta - icon_text_gap
+    
+    # Station circle and text
+    y_station <- y_aletta_text - element_gap
+    y_station_text <- y_station - icon_text_gap
+    
+    # Center all elements horizontally
+    x_center <- plot_width / 2
+    
+    # For circle coordinates
+    circle_points <- data.frame(
+      x = x_center + adjusted_circle_size * cos(seq(0, 2*pi, length.out = 100)),
+      y = y_station + adjusted_circle_size * sin(seq(0, 2*pi, length.out = 100))
+    )
+  } else {
+    # For horizontal layout, we will arrange elements from left to right
+    # with consistent spacing
+    
+    # Element positions (horizontal layout)
+    x_start <- left_margin
+    
+    # Bud hurricane and text
+    x_bud <- x_start
+    x_bud_text <- x_bud + icon_text_gap
+    
+    # Aletta symbol and text
+    x_aletta <- x_bud_text + element_gap
+    x_aletta_text <- x_aletta + icon_text_gap
+    
+    # Station circle and text
+    x_station <- x_aletta_text + element_gap
+    x_station_text <- x_station + icon_text_gap
+    
+    # Center all elements vertically
+    y_center <- plot_height / 2
+    
+    # For circle coordinates
+    circle_points <- data.frame(
+      x = x_station + adjusted_circle_size * cos(seq(0, 2*pi, length.out = 100)),
+      y = y_center + adjusted_circle_size * sin(seq(0, 2*pi, length.out = 100))
+    )
+  }
+  
+  # Create base plot with proper dimensions
+  p <- ggplot() +
+    theme_void() +
+    theme(
+      plot.margin = margin(0, 0, 0, 0),
+      panel.border = element_blank(),
+      panel.background = element_rect(fill = NA, color = NA)
+    )
+  
+  # Add debug grid if requested
+  if (debug_grid) {
+    grid_x <- seq(0, plot_width, length.out = 11)
+    grid_y <- seq(0, plot_height, length.out = 11)
+    
+    p <- p + 
+      geom_vline(xintercept = grid_x, color = "lightblue", linetype = "dotted") +
+      geom_hline(yintercept = grid_y, color = "lightpink", linetype = "dotted") +
+      annotate("text", x = grid_x, y = rep(10, length(grid_x)), 
+               label = paste0(round(grid_x)), size = 2, color = "blue") +
+      annotate("text", x = rep(10, length(grid_y)), y = grid_y, 
+               label = paste0(round(grid_y)), size = 2, color = "red")
+  }
+  
+  # Add elements to the plot based on orientation
+  if (is_vertical) {
+    # Station circle (white solid outline)
+    p <- p + geom_path(
+      data = circle_points,
+      aes(x, y),
+      color = circle_color1,
+      linewidth = legend_outline,
+      linetype = line1,
+      alpha = 1,
+      inherit.aes = FALSE
+    )
+    
+    # Station circle (orange dashed)
+    p <- p + geom_path(
+      data = circle_points,
+      aes(x, y),
+      color = circle_color2,
+      linewidth = legend_base,
+      linetype = line2,
+      alpha = 1,
+      inherit.aes = FALSE
+    )
+    
+    # Aletta eye symbol
+    p <- p + geom_point(
+      data = data.frame(x = x_center, y = y_aletta),
+      aes(x, y),
+      shape = 25,  # Default triangle shape if not defined externally
+      color = "black",  # Default color if not defined externally
+      fill = "black",   # Default fill if not defined externally
+      size = adjusted_aletta_scale,
+      inherit.aes = FALSE
+    )
+    
+    # Bud eye image (hurricane)
+    if (!is.null(hurricane_image_path)) {
+      p <- p + geom_image(
+        data = data.frame(x = x_center, y = y_bud, image = hurricane_image_path),
+        aes(x, y, image = image),
+        size = adjusted_bud_scale,
+        inherit.aes = FALSE
+      )
+    } else {
+      # Placeholder if no image provided
+      p <- p + annotate(
+        "text", x = x_center, y = y_bud,
+        label = "H", size = adjusted_bud_scale * 10, fontface = "bold"
+      )
+    }
+    
+    # Text labels with rotation for vertical layout
+    p <- p + 
+      annotate("text", x = x_center, y = y_bud_text, label = text1, 
+               angle = 90, hjust = 1, vjust = 0.5, size = text_size/2.5) +
+      annotate("text", x = x_center, y = y_aletta_text, label = text2, 
+               angle = 90, hjust = 1, vjust = 0.5, size = text_size/2.5) +
+      annotate("text", x = x_center, y = y_station_text, label = text3, 
+               angle = 90, hjust = 1, vjust = 0.5, size = text_size/2.5)
+  } else {
+    # Station circle (white solid outline)
+    p <- p + geom_path(
+      data = circle_points,
+      aes(x, y),
+      color = circle_color1,
+      linewidth = legend_outline,
+      linetype = line1,
+      alpha = 1,
+      inherit.aes = FALSE
+    )
+    
+    # Station circle (orange dashed)
+    p <- p + geom_path(
+      data = circle_points,
+      aes(x, y),
+      color = circle_color2,
+      linewidth = legend_base,
+      linetype = line2,
+      alpha = 1,
+      inherit.aes = FALSE
+    )
+    
+    # Aletta eye symbol
+    p <- p + geom_point(
+      data = data.frame(x = x_aletta, y = y_center),
+      aes(x, y),
+      shape = 25,  # Default triangle shape if not defined externally
+      color = "black",  # Default color if not defined externally
+      fill = "black",   # Default fill if not defined externally
+      size = adjusted_aletta_scale,
+      inherit.aes = FALSE
+    )
+    
+    # Bud eye image (hurricane)
+    if (!is.null(hurricane_image_path)) {
+      p <- p + geom_image(
+        data = data.frame(x = x_bud, y = y_center, image = hurricane_image_path),
+        aes(x, y, image = image),
+        size = adjusted_bud_scale,
+        inherit.aes = FALSE
+      )
+    } else {
+      # Placeholder if no image provided
+      p <- p + annotate(
+        "text", x = x_bud, y = y_center,
+        label = "H", size = adjusted_bud_scale * 10, fontface = "bold"
+      )
+    }
+    
+    # Text labels for horizontal layout
+    p <- p + 
+      annotate("text", x = x_bud_text, y = y_center, label = text1, 
+               hjust = 0, vjust = 0.5, size = text_size/2.5) +
+      annotate("text", x = x_aletta_text, y = y_center, label = text2, 
+               hjust = 0, vjust = 0.5, size = text_size/2.5) +
+      annotate("text", x = x_station_text, y = y_center, label = text3, 
+               hjust = 0, vjust = 0.5, size = text_size/2.5)
+  }
+  
+  # Ensure plot dimensions are fixed and proper
+  p <- p + coord_fixed(
+    xlim = c(0, plot_width),
+    ylim = c(0, plot_height),
+    expand = FALSE
+  )
+  
+  return(p)
+}
+```
+v9
+```{r}
+# Function to create a horizontal or vertical eye legend - Version 9
+# Improved implementation with better proportions and spacing based on original approach
+f.eye_legend_horiz_to_vert_v9 <- function(
+  # Basic layout parameters similar to original approach
+  offset_1 = 0.06,           # Offset for first element (proportion of plot_width)
+  x_space = 80,              # Base spacing unit for elements
+  plot_x = 3014,             # Total plot width
+  plot_y = 252,              # Total plot height
+  
+  # Display parameters
+  text_size = 6,             # Text size (original used 6)
+  is_vertical = FALSE,       # Control orientation
+  
+  # Circle styling parameters
+  circle_parameters = NULL,  # Circle styling parameters
+  
+  # Debug options
+  debug_grid = FALSE         # Add debug grid to visualize layout
+) {
+  # Helper function for null values
+  "%||%" <- function(x, y) {
+    if (is.null(x)) y else x
+  }
+  
+  # Determine basic dimensions
+  if (is_vertical) {
+    # For vertical orientation, swap dimensions
+    temp <- plot_x
+    plot_x <- plot_y
+    plot_y <- temp
+  }
+  
+  # Calculate positions using original approach
+  x1 <- round((offset_1 * plot_x), 1)  # First element x position
+  x_equal <- (plot_x - x1) / 3         # Equal spacing for remaining elements
+  
+  # Horizontal element positions
+  x2 <- x1 + x_space                   # Bud text position
+  x3 <- x1 + x_equal                   # Aletta icon position
+  x4 <- x3 + x_space                   # Aletta text position
+  x5 <- x3 + x_equal                   # Station circle position
+  x6 <- x5 + (x_space * 3)             # Station text position
+  
+  # Vertical center
+  y1 <- plot_y / 2
+  
+  # Extract styling from circle_parameters
+  if (!is.null(circle_parameters)) {
+    circle_color1 <- circle_parameters["circle_color1"] %||% "white"
+    circle_color2 <- circle_parameters["circle_color2"] %||% "#E65832"
+    base <- as.numeric(circle_parameters["base"] %||% "5.0")
+    outline <- as.numeric(circle_parameters["outline"] %||% "7.5")
+    line1 <- circle_parameters["line1"] %||% "solid"
+    line2 <- circle_parameters["line2"] %||% "dashed"
+    hurricane_image_path <- circle_parameters["hurricane_image_path"] %||% NULL
+    aletta_symbol <- as.numeric(circle_parameters["aletta_symbol"] %||% "25")
+    aletta_color <- circle_parameters["aletta_color"] %||% "black"
+    aletta_size <- as.numeric(circle_parameters["aletta_size"] %||% "2.5")
+  } else {
+    # Default values if circle_parameters is NULL
+    circle_color1 <- "white"
+    circle_color2 <- "#E65832"
+    base <- 5.0
+    outline <- 7.5
+    line1 <- "solid"
+    line2 <- "dashed"
+    hurricane_image_path <- NULL
+    aletta_symbol <- 25  # Triangle symbol
+    aletta_color <- "black"
+    aletta_size <- 2.5
+  }
+  
+  # Set line thicknesses for legend
+  legend_outline <- outline * 0.5
+  legend_base <- base * 0.5
+  
+  # Text labels
+  text1 <- "TC Bud Eye"
+  text2 <- "TC Aletta Eye"
+  text3 <- "200km Diameter\nStation 3.5"
+  
+  # Create circle points data - use x_space as the circle size like in original
+  circle_size <- x_space / 4  # Adjusted for better proportions compared to original
+  
+  # Create data for images and points
+  if (is_vertical) {
+    # Vertical orientation - transform coordinates
+    # For a clean 90-degree rotation:
+    # - New x = original y
+    # - New y = plot height - original x
+    bud_data <- data.frame(x = y1, y = plot_y - x1, image = hurricane_image_path)
+    aletta_data <- data.frame(x = y1, y = plot_y - x3)
+    
+    # For circle coordinates - rotate points
+    circle_points <- data.frame(
+      x = y1 + circle_size * cos(seq(0, 2*pi, length.out = 100)),
+      y = plot_y - x5 + circle_size * sin(seq(0, 2*pi, length.out = 100))
+    )
+    
+    # Text positions
+    bud_text_x <- y1
+    bud_text_y <- plot_y - x2
+    
+    aletta_text_x <- y1
+    aletta_text_y <- plot_y - x4
+    
+    station_text_x <- y1
+    station_text_y <- plot_y - x6
+    
+    # Text angles
+    text_angle <- 90
+    text_hjust <- 1
+  } else {
+    # Horizontal orientation - use original coordinates
+    bud_data <- data.frame(x = x1, y = y1, image = hurricane_image_path)
+    aletta_data <- data.frame(x = x3, y = y1)
+    
+    # For circle coordinates
+    circle_points <- data.frame(
+      x = x5 + circle_size * cos(seq(0, 2*pi, length.out = 100)),
+      y = y1 + circle_size * sin(seq(0, 2*pi, length.out = 100))
+    )
+    
+    # Text positions
+    bud_text_x <- x2
+    bud_text_y <- y1
+    
+    aletta_text_x <- x4
+    aletta_text_y <- y1
+    
+    station_text_x <- x6
+    station_text_y <- y1
+    
+    # Text angles
+    text_angle <- 0
+    text_hjust <- 0
+  }
+  
+  # Create base plot with proper dimensions
+  p <- ggplot() +
+    theme_void() +
+    theme(
+      plot.margin = margin(0, 0, 0, 0),
+      panel.border = element_blank(),
+      panel.background = element_rect(fill = NA, color = NA)
+    )
+  
+  # Add debug grid if requested
+  if (debug_grid) {
+    grid_x <- seq(0, plot_x, length.out = 21)
+    grid_y <- seq(0, plot_y, length.out = 11)
+    
+    p <- p + 
+      geom_vline(xintercept = grid_x, color = "lightblue", linetype = "dotted", alpha = 0.5) +
+      geom_hline(yintercept = grid_y, color = "lightpink", linetype = "dotted", alpha = 0.5) +
+      # Add key position markers
+      annotate("point", x = c(x1, x2, x3, x4, x5, x6), y = rep(10, 6), 
+               color = "blue", size = 3, alpha = 0.5) +
+      annotate("text", x = c(x1, x2, x3, x4, x5, x6), y = rep(20, 6), 
+               label = c("x1", "x2", "x3", "x4", "x5", "x6"), 
+               size = 3, color = "blue", angle = 0)
+  }
+  
+  # Station circle (white solid outline)
+  p <- p + geom_path(
+    data = circle_points,
+    aes(x, y),
+    color = circle_color1,
+    linewidth = legend_outline,
+    linetype = line1,
+    alpha = 1,
+    inherit.aes = FALSE
+  )
+  
+  # Station circle (orange dashed)
+  p <- p + geom_path(
+    data = circle_points,
+    aes(x, y),
+    color = circle_color2,
+    linewidth = legend_base,
+    linetype = line2,
+    alpha = 1,
+    inherit.aes = FALSE
+  )
+  
+  # Aletta eye symbol
+  p <- p + geom_point(
+    data = aletta_data,
+    aes(x, y),
+    shape = aletta_symbol,
+    color = aletta_color,
+    fill = aletta_color,
+    size = aletta_size,
+    inherit.aes = FALSE
+  )
+  
+  # Bud eye image (hurricane)
+  if (!is.null(hurricane_image_path)) {
+    p <- p + geom_image(
+      data = bud_data,
+      aes(x, y, image = image),
+      size = 0.15,  # Adjusted size for better proportions
+      inherit.aes = FALSE
+    )
+  } else {
+    # Placeholder if no image provided
+    p <- p + annotate(
+      "text", x = bud_data$x, y = bud_data$y,
+      label = "H", size = 10, fontface = "bold"
+    )
+  }
+  
+  # Add text labels
+  p <- p + 
+    annotate("text", x = bud_text_x, y = bud_text_y, 
+             label = text1, angle = text_angle, hjust = text_hjust, 
+             vjust = 0.5, size = text_size) +
+    annotate("text", x = aletta_text_x, y = aletta_text_y, 
+             label = text2, angle = text_angle, hjust = text_hjust, 
+             vjust = 0.5, size = text_size) +
+    annotate("text", x = station_text_x, y = station_text_y, 
+             label = text3, angle = text_angle, hjust = text_hjust, 
+             vjust = 0.5, size = text_size)
+  
+  # Ensure plot dimensions are fixed and proper
+  p <- p + coord_fixed(
+    xlim = c(0, plot_x),
+    ylim = c(0, plot_y),
+    expand = FALSE
+  )
+  
+  return(p)
+}
+```
+
+
+# testing
+
+H
+```{r}
+horizontal_legend <- f.eye_legend_horiz_to_vert_v9(
+  offset_1 = 0.06,
+  x_space = 80,
+  plot_x = 3014,
+  plot_y = 252,
+  text_size = 6,
+  circle_parameters = circle_parameters
+)
+```
+
+
+V
+```{r}
+vertical_legend <- f.eye_legend_horiz_to_vert_v9(
+  offset_1 = 0.06,
+  x_space = 80,
+  plot_x = 3014,
+  plot_y = 252,
+  text_size = 6,
+  is_vertical = TRUE,
+  circle_parameters = circle_parameters
+)
+```
+
+
+debug
+```{r}
+debug_legend <- f.eye_legend_horiz_to_vert_v9(
+  offset_1 = 0.06,
+  x_space = 80, 
+  plot_x = 3014,
+  plot_y = 252,
+  debug_grid = TRUE,
+  circle_parameters = circle_parameters
+)
+```
+
+
+
+# printing
+
+h
+```{r}
+setwd(wd)
+setwd(fig)
+pdf("test_horizontal_eye_legend.pdf", width=8, height=2)
+  print(horizontal_legend)
+  dev.off()
+```
+
+
+
+
+
+```{r}
+setwd(wd)
+setwd(fig)
+pdf("test_vertical_eye_legend.pdf", width=2, height=8)
+  print(vertical_legend)
+  dev.off()
+```
+
