@@ -1,4 +1,4 @@
-Function to create a horizontal or vertical eye legend - Version 7
+#Function to create a horizontal or vertical eye legend - Version 7
 # Dynamically adjusts dimensions based on orientation
 f.eye_legend_horiz_to_vert_v7 <- function(
     # Basic dimensions with dynamic orientation handling
