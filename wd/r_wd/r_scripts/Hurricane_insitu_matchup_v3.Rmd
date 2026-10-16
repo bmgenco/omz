@@ -361,7 +361,7 @@ function_variables$map.ylim<-c(5, 40)       # lat min, max
 
 # radius around TS in m
 function_variables$h.radi<-100000
-function_variables$land_buffer<- 50000
+function_variables$land_buffer<- 100000
 
 #fraction maxFODZ
 
@@ -462,11 +462,7 @@ gc()
 m.map<-m.coast+geom_sf(data=grid, aes(fill=track_count),lwd = 0)+scale_fill_cmocean(name="matter", direction =1) +labs(fill = "Count")+ggtitle("Hurricane observations per 0.5º x 0.5º cell")
 m.map<-m.map+coord_sf(xlim = fv$map.xlim, ylim = fv$map.ylim)
 
-m.map
-
-# setwd(drop_img)
-# pdf("hurricane_density.pdf")
-# m.map
-# dev.off()
-# knitr::plot_crop(paste0(drop_img, "/", "hurricane_density.pdf"))
+ggsave(file.path(fig, "hurricane_density_basin.png"), m.map,
+       width = 10, height = 5, units = "in")
+knitr::plot_crop(file.path(fig, "hurricane_density_basin.png"))
 ```
