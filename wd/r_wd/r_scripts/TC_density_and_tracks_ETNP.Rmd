@@ -29,15 +29,6 @@ f.ipak(c(
   "tidyverse", "lubridate", "data.table", "sf", "terra", "stars", "fasterize", "maps", "ncdf4", "tidync", "ncmeta", "oce", "cmocean", "ggthemes", "scales", "plot3D"
 ))
 
-# HURDAT: archived on CRAN (2021), install from archive once
-if (!requireNamespace("HURDAT", quietly = TRUE)) {
-  f.ipak("remotes")
-  remotes::install_version("HURDAT", version = "0.2.3.2",
-                           repos = "https://cran.r-project.org")
-}
-
-library(HURDAT)
-
 print(paste0("Current Working Directory is ", getwd()))
 ```
 
@@ -312,25 +303,14 @@ Using/used 'hurdat package' \* Data source: [hurdat2](https://www.nhc.noaa.gov/d
 
 ```{r}
 # download from online. Basin is eastern pacific
-h<-get_hurdat(basin="EP")
-# # saveRDS(h, "r_objects/hurdat.R")
-# h<-readRDS("r_wd/r_objects/hurdat.R")
-# # h<-readRDS("r_objects/hurdat.R")
-h$DateTime<-with_tz(h$DateTime, tz="UTC")
-# h<-filter(h, between(Lon,-113,-108)) %>% filter(., between(Lat, 18,22))
+
+# source(file.path(fun_d, "f.get_hurdat.R"))
+# h <- f.get_hurdat(basin = "EP")
+# h$DateTime<-with_tz(h$DateTime, tz="UTC")
+# saveRDS(h, file.path(robj, "hurdat_nepac_2025.rds"))
+
+h<-readRDS(file.path(robj, "hurdat_nepac_2025.rds"))
 ```
-
-
-## Import BioArgo metadata (requires submodule install):
-
-```{r}
-# initialize_argo() # downloads meta data for argo
-# setwd(robj)
-# save(Float, Setting, Sprof, sprof_update, file="init_argo.RData")
-# setwd(robj)
-# load("init_argo.RData")
-```
-
 
 # function_variables (INCLUDES DYNAMIC VARIABLES based on Hurdat (h)):
 
@@ -361,7 +341,7 @@ function_variables$map.ylim<-c(5, 40)       # lat min, max
 
 # radius around TS in m
 function_variables$h.radi<-100000
-function_variables$land_buffer<- 100000
+function_variables$land_buffer<- 75000
 
 #fraction maxFODZ
 
@@ -385,8 +365,7 @@ coastline<-st_read(file.path(gis_data, "ne_50m_land", "ne_50m_land.shp"))
 cl<-st_crop(coastline, xmin=function_variables$h.lon_min, ymin=function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax=function_variables$h.lat_max)
 rm(coastline)
 
-m.coast <- ggplot()+ geom_sf(data =cl, size=0.5)+ theme(axis.title.x=element_blank(), axis.title.y=element_blank())+
-  theme_bw()+ theme(text = element_text(size =12)) 
+m.coast <- ggplot() + geom_sf(data = cl, size = 0.5) + theme_bw() + theme(text = element_text(size = 12), axis.title = element_blank())
 # cl<-st_crop(coastline, xmin=-170, ymin=-20, xmax=-80, ymax=40) # change here based on desired figure size
 # cl<-st_crop(coastline, xmin=min(h$Lon), ymin=min(h$Lat), xmax=max(h$Lon), ymax=max(h$Lat))
 # oc<-st_crop(ocean, xmin=function_variables$h.lon_min, ymin=function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax=function_variables$h.lat_max)
@@ -404,13 +383,19 @@ x<-filter(h, Status == "HU") # save 'h' in order to adjust function variables if
 h.pts<- sf::st_as_sf(x, coords = c("Lon","Lat"), crs = "+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") %>% 
 sf::st_crop(., c(xmin=function_variables$h.lon_min, ymin=function_variables$h.lat_min, xmax=function_variables$h.lon_max, ymax=function_variables$h.lat_max)) #subset by user defined 
 
-h.pts<-st_difference(h.pts, st_combine(st_geometry(cl))) # remove all points over land
+
+# a brute force method to evermore a few tracks from strom(s) that passed from Atlantic over central america in to the pacific
+# north_atl_basins<-subset(oceans, name %in% c("North Atlantic Ocean", "Caribbean Sea", "Gulf of Mexico", "Sargasso Sea"))
+# north_atl<-st_union(north_atl_basins)
+# h.pts<-st_difference(h.pts, st_combine(st_geometry(coastline))) %>% st_difference(., st_combine(st_geometry(north_atl))) 
+
 rm(x)
 ```
 
 Plotting basic double check re projecting issues: \*<https://geocompr.robinlovelace.net/reproj-geo-data.html>
 
-#### Plotting Hurricanes with wind speed
+# data exploration and poltiing
+## Plotting Hurricanes with wind speed
 
 ```{r}
 # option 1
@@ -419,8 +404,7 @@ Plotting basic double check re projecting issues: \*<https://geocompr.robinlovel
 
 #option 2
 m.map<-m.coast+geom_sf(mapping = aes(col=Wind), data=h.pts, size=.25)+scale_color_cmocean(name="dense", direction= 1)+ggtitle(paste0("Hurricanes: ", function_variables$selection)) + labs(color = "Wind speed (m/s)")+theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
-fv<-function_variables
-m.map<-m.map+coord_sf(xlim = fv$map.xlim, ylim = fv$map.ylim)
+m.map<-m.map+coord_sf(xlim = function_variables$map.xlim, ylim = function_variables$map.ylim)
 
 m.map
 # rm(m.map) 
@@ -432,7 +416,8 @@ m.map
 <https://gis.stackexchange.com/questions/110117/counting-number-of-points-in-polygon-using-r>
 ```{r}
 
-# land buffer (all land in cl, 50 km default from function_variables)
+# land buffer (all land in cl,  75km  land buffer default from function_variables)
+
 y<-f.cl_buffer(function_variables, cl)
 y<-st_as_sf(y)
 
@@ -456,13 +441,288 @@ rm(y, temp)
 gc()
 ```
 
-#### plotting Hurricane count per grid
+## plotting Hurricane count per grid
 
 ```{r}
 m.map<-m.coast+geom_sf(data=grid, aes(fill=track_count),lwd = 0)+scale_fill_cmocean(name="matter", direction =1) +labs(fill = "Count")+ggtitle("Hurricane observations per 0.5º x 0.5º cell")
-m.map<-m.map+coord_sf(xlim = fv$map.xlim, ylim = fv$map.ylim)
+m.map<-m.map+coord_sf(xlim = function_variables$map.xlim, ylim = function_variables$map.ylim)
 
-ggsave(file.path(fig, "hurricane_density_basin.png"), m.map,
+# ggsave(file.path(fig, "hurricane_density_basin_top_5.png"), m.map,
+#        width = 10, height = 5, units = "in")
+# knitr::plot_crop(file.path(fig, "hurricane_density_basin.png"))
+m.map
+```
+
+
+
+
+## top grid cells
+
+```{r}
+
+# top5<-grid[order(grid$track_count, decreasing = TRUE), ][1:5, ]
+# 
+# cbind(st_coordinates(st_centroid(top5)),
+#       track_count = top5$track_count,
+#       grid_id = top5$grid_id)
+# m.top<-m.map+geom_sf(data = top5, fill = NA, color = "black", linewidth = 0.6)+coord_sf(xlim = function_variables$map.xlim, ylim = function_variables$map.ylim)
+
+
+top4<-grid[order(grid$track_count, decreasing = TRUE), ][1:4, ]
+
+cbind(st_coordinates(st_centroid(top4)),
+      track_count = top4$track_count,
+      grid_id = top4$grid_id)
+m.top<-m.map+geom_sf(data = top4, fill = NA, color = "black", linewidth = 0.6)+coord_sf(xlim = function_variables$map.xlim, ylim = function_variables$map.ylim)
+
+ggsave(file.path(fig, "hurricane_density_basin_top_4.png"), m.top,
        width = 10, height = 5, units = "in")
-knitr::plot_crop(file.path(fig, "hurricane_density_basin.png"))
+knitr::plot_crop(file.path(fig, "hurricane_density_basin_top_4.png"))
+```
+# 100 km density 
+```{r}
+crs_ea <- "+proj=laea +lat_0=20 +lon_0=-130 +datum=WGS84 +units=m"
+R_km   <- 100     # passage radius: report in caption
+res_km <- 10      # output pixel size
+
+# hurricane fixes, split into continuous HU runs (status can drop and return)
+hu <- h %>% filter(Status == "HU") %>% arrange(Key, DateTime) %>%
+  group_by(Key) %>%
+  mutate(run = cumsum(c(1, diff(as.numeric(DateTime)) / 3600 > 6))) %>%
+  ungroup()
+
+# project points BEFORE building lines so dateline-crossing tracks don't wrap
+pts <- st_as_sf(hu, coords = c("Lon", "Lat"), crs = 4326) %>% st_transform(crs_ea)
+
+tracks <- pts %>%
+  group_by(Key, run) %>% filter(n() > 1) %>%
+  summarise(do_union = FALSE, .groups = "drop") %>% st_cast("LINESTRING") %>%
+  group_by(Key) %>% summarise(.groups = "drop")          # one geometry per storm
+
+# footprint: each storm counted once wherever its track passes within R
+foot <- st_buffer(tracks, R_km * 1e3)
+
+template <- raster::raster(raster::extent(st_bbox(foot)[c(1, 3, 2, 4)]),
+                           res = res_km * 1e3, crs = crs_ea)
+dens <- terra::rast(fasterize::fasterize(foot, template, fun = "count"))
+
+# mask land + land buffer (same y as before)
+y <- st_as_sf(f.cl_buffer(function_variables, cl))
+dens <- terra::mask(dens, terra::vect(st_transform(y, crs_ea)), inverse = TRUE)
+
+dens_ll <- terra::project(dens, "EPSG:4326")
+df_ll <- as.data.frame(dens_ll, xy = TRUE); names(df_ll)[3] <- "n"
+
+m.track <- m.coast + geom_raster(data = df_ll, aes(x, y, fill = n)) +
+  scale_fill_cmocean(name = "dense", direction = 1) +
+  labs(fill = paste0("Hurricanes\nwithin ", R_km, " km")) +
+  ggtitle(paste0("Hurricanes passing within ", R_km, " km"))
+m.track <- m.track + coord_sf(xlim = function_variables$map.xlim, ylim = function_variables$map.ylim)
+m.track
+```
+
+## Track mapping
+```{r}
+# seg  a new line segment wherever the storm drops below hurricane strength and later returns, and wherever the track crosses the dateline. That prevents lines drawn straight across the map.
+# do_union = FALSE keeps the points in time order, so each line follows the actual track.
+# year and max_wind are kept for coloring or filtering later.
+# settings
+
+function_variables$track.year_min <- 1949       # e.g. 1990 for the recent era
+function_variables$track.status   <- "HU"       # hurricane-strength fixes only
+
+hu <- h %>%
+  filter(Status %in% function_variables$track.status, year(DateTime) >= function_variables$track.year_min) %>%
+  arrange(Key, DateTime) %>%
+  group_by(Key) %>%
+  mutate(seg = cumsum(c(1, diff(as.numeric(DateTime)) / 3600 > 6 |   # gap: status dropped and returned
+                          abs(diff(Lon)) > 180))) %>%                    # dateline jump: split, don't wrap
+  ungroup()
+
+tracks <- hu %>%
+  st_as_sf(coords = c("Lon", "Lat"), crs = 4326) %>%
+  group_by(Key, Name, seg) %>%
+  filter(n() > 1) %>%
+  summarise(year = year(min(DateTime)), max_wind = max(Wind, na.rm = TRUE),
+            do_union = FALSE, .groups = "drop") %>%
+  st_cast("LINESTRING")
+
+length(unique(tracks$Key))      # number of hurricanes
+
+# m.tracks <- m.coast +
+#   geom_sf(data = tracks, linewidth = 0.3, alpha = 0.15) +
+#   ggtitle(paste0("Hurricane tracks ", function_variables$track.year_min, "–", max(year(h$DateTime)))) +
+#   coord_sf(xlim = function_variables$map.xlim, ylim = function_variables$map.ylim)
+
+
+```
+
+## track ribbons 
+```{r track-ribbons}
+function_variables$track.radi   <- 100000    # half-width of each track ribbon (m)
+function_variables$track.res <- 10000    # pixel size (m); keep well below track.radi
+
+crs_ea <- "+proj=laea +lat_0=20 +lon_0=-130 +datum=WGS84 +units=m"
+
+# one buffered footprint per storm, built in the projection (no dateline wrap)
+foot <- tracks %>%
+  st_transform(crs_ea) %>%
+  group_by(Key) %>% summarise(.groups = "drop") %>%
+  st_buffer(function_variables$track.radi)
+
+template <- raster::raster(raster::extent(st_bbox(foot)[c(1, 3, 2, 4)]),
+                           res = function_variables$track.res, crs = crs_ea)
+track_dens <- terra::rast(fasterize::fasterize(foot, template, fun = "count"))
+
+# one footprint per year: number of years with >= 1 hurricane within track.R
+foot_yr <- tracks %>%
+  st_transform(crs_ea) %>%
+  group_by(year) %>% summarise(.groups = "drop") %>%
+    st_buffer(function_variables$track.radi)
+
+yrs_hit <- terra::rast(fasterize::fasterize(foot_yr, template, fun = "count"))
+
+# back to lon/lat for plotting with m.coast
+track_dens_ll <- terra::project(track_dens, "EPSG:4326")
+df <- as.data.frame(track_dens_ll, xy = TRUE); names(df)[3] <- "n"
+
+# m.track_dens <- m.coast +
+#   geom_raster(data = df, aes(x, y, fill = n)) +
+#   geom_sf(data = cl, linewidth = 0.2, fill = NA) +
+#   scale_fill_cmocean(name = "matter", direction = 1) +
+#   labs(fill = "Hurricanes") +
+#   ggtitle(paste0("Hurricanes passing within ", function_variables$track.radi / 1000, " km")) +
+#   coord_sf(xlim = function_variables$map.xlim, ylim = function_variables$map.ylim)
+# m.track_dens
+```
+
+## annual proablility
+```{r plot-p-annual}
+n_years <- year(max(hu$DateTime)) - function_variables$track.year_min + 1
+p_annual <- yrs_hit / n_years
+
+
+# land buffer (all land in cl, distance from function_variables$land_buffer)
+y<-f.cl_buffer(function_variables, cl)
+y<-st_as_sf(y)
+
+# mask pixels within the land buffer (buffer reprojected to the raster's CRS)
+p_annual <- terra::mask(p_annual, terra::vect(st_transform(y, crs_ea)), inverse = TRUE)
+rm(y)
+
+
+p_annual_ll <- terra::project(p_annual, "EPSG:4326")
+df <- as.data.frame(p_annual_ll, xy = TRUE); names(df)[3] <- "p"
+df$p[df$p < 0.03] <- NA          # hide single-year hits (1/77 ≈ 1.3%)
+
+brks <- c(0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6)
+cols <- cmocean::cmocean("tempo")(length(brks) + 2)[-1]   # drop the near-white end
+
+m.p_annual <- m.coast +
+  geom_raster(data = df, aes(x, y, fill = p)) +
+  geom_sf(data = cl, linewidth = 0.2, fill = NA) +
+  scale_fill_stepsn(colours = cols, breaks = brks, limits = c(0, 0.7),
+                    labels = scales::label_percent(accuracy = 1),
+                    na.value = NA, show.limits = FALSE) +
+  labs(fill = "Annual\nprobability") +
+  ggtitle(paste0("Annual probability of a hurricane within ", function_variables$track.radi / 1000, " km (",
+                 function_variables$track.year_min, "–", year(max(hu$DateTime)), ")")) +
+  coord_sf(xlim = function_variables$map.xlim, ylim = function_variables$map.ylim)
+m.p_annual
+```
+```{r, eval=FALSE}
+ggsave(file.path(fig, "Hurricane_Annual_Probaility_100km.png"), m.p_annual,
+       width = 10, height = 5, units = "in")
+knitr::plot_crop(file.path(fig, "Hurricane_Annual_Probaility_100km.png"))
+
+
+ggsave(file.path(fig, "Hurricanes_passing_within_100km.png"), m.track,
+       width = 10, height = 5, units = "in")
+knitr::plot_crop(file.path(fig, "Hurricanes_passing_within_100km.png"))
+
+```
+```
+
+
+```{r, eval=FALSE}
+
+x<-na.omit(df)
+x<-x[order(x$p, decreasing = TRUE), ][1:20, ]
+print(x)
+```
+
+#write kmls
+```{r track-kml}
+source(file.path(fun_d, "f.raster_kml.R"))
+
+# settings
+radii <- c(20000, 50000, 100000)                       # ribbon half-widths (m)
+function_variables$track.res_ratio <- 10               # res = radius / ratio (20 km -> 2 km)
+
+kml_d <- file.path(fig, "kml")
+dir.create(kml_d, recursive = TRUE, showWarnings = FALSE)
+
+n_years <- year(max(hu$DateTime)) - function_variables$track.year_min + 1
+yrs_txt <- paste0(function_variables$track.year_min, "–", year(max(hu$DateTime)))
+
+# map domain: lon/lat extent for cropping, projected extent for the template
+ext_ll <- terra::ext(c(function_variables$map.xlim, function_variables$map.ylim))
+dom_ea <- st_bbox(c(xmin = function_variables$map.xlim[1], xmax = function_variables$map.xlim[2],
+                    ymin = function_variables$map.ylim[1], ymax = function_variables$map.ylim[2]),
+                  crs = 4326) %>%
+  st_as_sfc() %>%
+  st_segmentize(units::set_units(50, km)) %>%          # densify edges so the projected box follows the curve
+  st_transform(crs_ea) %>%
+  st_bbox()
+
+# land buffer, same as the maps
+y    <- st_as_sf(f.cl_buffer(function_variables, cl))
+note <- paste0(yrs_txt, "; ", function_variables$land_buffer / 1000, " km from land excluded")
+
+# reproject to lon/lat, crop to map domain (avoids dateline wrap), mask land buffer
+f.to_ll <- function(r) {
+  r <- terra::project(r, "EPSG:4326", method = "near")
+  r <- terra::crop(r, ext_ll)
+  terra::mask(r, terra::vect(y), inverse = TRUE)
+}
+
+# bands (fixed across radii so files are comparable)
+p_brks <- c(0.03, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, Inf)
+p_labs <- c(paste0(scales::percent(head(p_brks, -2)), "–", scales::percent(p_brks[2:(length(p_brks) - 1)])), "≥60%")
+p_cols <- cmocean::cmocean("tempo")(length(p_labs) + 1)[-1]
+
+n_brks <- c(1, 2, 5, 10, 20, 30, 40, 60, Inf)
+n_labs <- c(paste0(head(n_brks, -2), "–", n_brks[2:(length(n_brks) - 1)] - 1), "≥60")
+n_cols <- cmocean::cmocean("matter")(length(n_labs) + 1)[-1]
+
+tr_ea <- st_transform(tracks, crs_ea)
+
+for (R in radii) {
+  km  <- R / 1000
+  res <- R / function_variables$track.res_ratio
+
+  # footprints: one per storm (counts), one per year (annual probability)
+  foot    <- tr_ea %>% group_by(Key)  %>% summarise(.groups = "drop") %>% st_buffer(R)
+  foot_yr <- tr_ea %>% group_by(year) %>% summarise(.groups = "drop") %>% st_buffer(R)
+
+  template <- raster::raster(raster::extent(dom_ea[c(1, 3, 2, 4)]), res = res, crs = crs_ea)
+
+  n_storm <- f.to_ll(terra::rast(fasterize::fasterize(foot,    template, fun = "count")))
+  p_ann   <- f.to_ll(terra::rast(fasterize::fasterize(foot_yr, template, fun = "count")) / n_years)
+
+  f.raster_kml(p_ann, p_brks, p_labs, p_cols,
+               layer = paste0("annual_probability_", km, "km"),
+               file  = file.path(kml_d, paste0("hurricane_annual_probability_", km, "km.kml")),
+               description = paste0("Annual probability of a hurricane within ", km, " km, ", note))
+
+  f.raster_kml(n_storm, n_brks, n_labs, n_cols,
+               layer = paste0("hurricanes_within_", km, "km"),
+               file  = file.path(kml_d, paste0("hurricanes_within_", km, "km.kml")),
+               description = paste0("Number of hurricanes passing within ", km, " km, ", note))
+
+  message("wrote ", km, " km at ", res / 1000, " km resolution")
+}
+
+rm(foot, foot_yr, template, n_storm, p_ann, tr_ea, y)
+gc()
 ```
